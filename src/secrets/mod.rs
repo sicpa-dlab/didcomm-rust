@@ -1,5 +1,23 @@
-pub(crate) mod did_secrets;
-pub(crate) mod did_secrets_resolver;
+//! Set of interfaces that allow access to DID Document secrets
 
-pub use did_secrets::{DIDAuthenticationSecret, DIDKeyAgreementSecret, DIDSecrets};
-pub use did_secrets_resolver::DIDSecretsResolver;
+use serde_json::Value;
+
+use crate::error::Result;
+
+/// Interface for secrets resolver.
+pub trait SecretsResolver {
+    fn resolve(did_url: &str) -> Result<Secret>;
+}
+
+/// Represents secret.
+pub struct Secret {
+    pub id: String,
+    pub type_: String,
+    pub private_key: PrivateKey,
+}
+
+/// Represents secret crypto material.
+pub enum PrivateKey {
+    JWK(Value),
+    Multibase(String),
+}

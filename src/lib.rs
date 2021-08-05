@@ -1,4 +1,4 @@
-pub(crate) mod message;
+mod message;
 
 pub mod did;
 pub mod error;
