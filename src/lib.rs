@@ -1,8 +1,8 @@
-pub(crate) mod did;
 pub(crate) mod message;
-pub(crate) mod secrets;
 
+pub mod did;
 pub mod error;
+pub mod secrets;
 
 pub use message::{
     Attachment, AttachmentBuilder, AttachmentData, Base64AttachmentData, JsonAttachmentData,

@@ -1,36 +1,58 @@
-//! Set of intrfaces that describe DID Document (https://www.w3.org/TR/did-core/)
+//! Set of interfaces that describe DID Document (https://www.w3.org/TR/did-core/)
 
-use crate::error::Result;
+use serde_json::Value;
 
-/// Represents DID Document (https://www.w3.org/TR/did-core/#dfn-did-documents)
+/// Represents DID Document (https://www.w3.org/TR/did-core/)
 pub trait DIDDoc {
-    fn key_agreements(&self) -> Vec<Box<dyn DIDKeyAgreement>>;
-    fn key_agreement(&self, kid: &str) -> Box<dyn DIDKeyAgreement>;
-    fn authentications(&self) -> Vec<Box<dyn DIDAuthentication>>;
-    fn authentication(&self, kid: &str) -> Box<dyn DIDAuthentication>;
-    fn endpoints(&self) -> Vec<Box<dyn DIDEndpoint>>;
+    /// Returns DID URLs of verification methods used for key agreement.
+    /// See https://www.w3.org/TR/did-core/#verification-methods.
+    fn key_agreements(&self) -> &[String];
+
+    /// Returns DID URLs of verification methods used for authentication.
+    /// See https://www.w3.org/TR/did-core/#authentication
+    fn authentications(&self) -> &[String];
+
+    /// Returns all local verification methods including embedded to
+    /// key agreement and authentication sections.
+    /// See https://www.w3.org/TR/did-core/#verification-methods.
+    fn verification_methods(&self) -> &[VerificationMethod];
+
+    /// Returns all services (https://www.w3.org/TR/did-core/#services)
+    fn services(&self) -> &[Service];
 }
 
-/// Represents KeyAgreement record in DID Document  (https://www.w3.org/TR/did-core/#key-agreement)
-pub trait DIDKeyAgreement {
-    /// Returns key agreement crypto material as JWK
-    fn as_jwk(&self) -> Result<String>; // public JWK
+/// Represents verification method record in DID Document
+/// (https://www.w3.org/TR/did-core/#verification-methods).
+pub struct VerificationMethod {
+    pub id: String,
+    pub type_: String,
+    pub controller: String,
+    pub public_key: PublicKey,
 }
 
-/// Represents Authentication record in DID Document (https://www.w3.org/TR/did-core/#authentication)
-pub trait DIDAuthentication {
-     /// Returns authentication crypto material as JWK
-    fn as_jwk(&self) -> Result<String>; // public JWK
+/// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
+pub enum PublicKey {
+    JWK(Value),
+    Multibase(String),
 }
 
-/// Represents endpoint record in DID Document (FIXME: provide link)
-pub trait DIDEndpoint {
-    /// Returns route key assotiated with this endpoint
-    fn route_key(&self) -> Option<Box<dyn DIDRouteKey>>; // public JWK
+/// Represents service record in DID Document (https://www.w3.org/TR/did-core/#services).
+pub struct Service {
+    pub id: String,
+    pub type_: String,
+    pub service_endpoint: Vec<String>,
+    pub kind: ServiceKind,
 }
 
-/// Represents RouteKey record in DID Document (FIXME: provide link)
-pub trait DIDRouteKey {
-    /// Returns rotue key crypto material as JWK
-    fn as_jwk(&self) -> Result<String>; // public JWK
+/// Represents additional service properties defined for specific Service type.
+pub enum ServiceKind {
+    DIDCommMessaging(DIDCommMessagingService),
+    Other(Value),
+}
+
+/// Properties for DIDCommMessagingService
+/// (https://identity.foundation/didcomm-messaging/spec/#did-document-service-endpoint).
+pub struct DIDCommMessagingService {
+    pub accept: Vec<String>,
+    pub route_keys: Vec<String>,
 }
