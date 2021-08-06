@@ -2,6 +2,7 @@ mod message;
 
 pub mod did;
 pub mod error;
+pub mod pack;
 pub mod secrets;
 
 pub use message::{

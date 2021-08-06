@@ -1,12 +1,14 @@
 //! Set of interfaces that allow access to DID Document secrets
 
+use async_trait::async_trait;
 use serde_json::Value;
 
 use crate::error::Result;
 
 /// Interface for secrets resolver.
+#[async_trait]
 pub trait SecretsResolver {
-    fn resolve(did_url: &str) -> Result<Secret>;
+    async fn resolve(did_url: &str) -> Result<Secret>;
 }
 
 /// Represents secret.

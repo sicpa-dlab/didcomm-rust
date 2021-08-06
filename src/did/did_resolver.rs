@@ -1,11 +1,12 @@
 //! DID Resolver (https://www.w3.org/TR/did-core/#dfn-did-resolvers) interfaces
 
+use async_trait::async_trait;
+
 use crate::did::did_doc::DIDDoc;
 use crate::error::Result;
 
-/**
- * Interface for DID Documents (https://www.w3.org/TR/did-core/#did-resolution) resolving.
- */
+/// Represents DID Doc resolver (https://www.w3.org/TR/did-core/#did-resolution).
+#[async_trait]
 pub trait DIDResolver {
-    fn resolve(did: &str) -> Result<Box<dyn DIDDoc>>;
+    async fn resolve(did: &str) -> Result<Box<dyn DIDDoc>>;
 }
