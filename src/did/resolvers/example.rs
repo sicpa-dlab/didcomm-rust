@@ -1,14 +1,22 @@
 use async_trait::async_trait;
 
-use crate::did::{DIDDoc, DIDResolver};
-use crate::error::Result;
+use crate::{
+    did::{DIDDoc, DIDResolver},
+    error::Result,
+};
 
 /// Allows resolve pre-defined did's for `example` and other methods.
-struct ExampleDIDResolver {}
+pub struct ExampleDIDResolver {}
+
+impl ExampleDIDResolver {
+    pub fn new() -> Self {
+        ExampleDIDResolver {}
+    }
+}
 
 #[async_trait]
 impl DIDResolver for ExampleDIDResolver {
-    async fn resolve(_did: &str) -> Result<Box<dyn DIDDoc>> {
+    async fn resolve(&self, _did: &str) -> Result<Box<dyn DIDDoc>> {
         todo!()
     }
 }

@@ -191,7 +191,6 @@ pub struct LinksAttachmentData {
 #[cfg(test)]
 mod tests {
     use core::panic;
-
     use serde_json::json;
 
     use super::*;

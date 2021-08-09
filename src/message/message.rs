@@ -16,6 +16,8 @@ pub struct Message {
     /// or example the presence of other attributes and how they should be processed.
     pub type_: String,
 
+    pub body: Value,
+
     /// Sender identifier. The from attribute MUST be a string that is a valid DID
     /// or DID URL (without the fragment component) which identifies the sender of the message.
     pub from: Option<String>,
@@ -54,14 +56,15 @@ pub struct Message {
 }
 
 impl Message {
-    pub fn build(id: String, type_: String) -> MessageBuilder {
-        MessageBuilder::new(id, type_)
+    pub fn build(id: String, type_: String, body: Value) -> MessageBuilder {
+        MessageBuilder::new(id, type_, body)
     }
 }
 
 pub struct MessageBuilder {
     id: String,
     type_: String,
+    body: Value,
     from: Option<String>,
     to: Option<Vec<String>>,
     thid: Option<String>,
@@ -73,10 +76,11 @@ pub struct MessageBuilder {
 }
 
 impl MessageBuilder {
-    fn new(id: String, type_: String) -> Self {
+    fn new(id: String, type_: String, body: Value) -> Self {
         MessageBuilder {
             id,
             type_,
+            body,
             from: None,
             to: None,
             thid: None,
@@ -174,6 +178,7 @@ impl MessageBuilder {
         Message {
             id: self.id,
             type_: self.type_,
+            body: self.body,
             to: self.to,
             thid: self.thid,
             pthid: self.pthid,
@@ -194,33 +199,38 @@ mod tests {
 
     #[test]
     fn message_build_works() {
-        let message = Message::build("example-1".into(), "example/v1".into())
-            .to("did:example:1".into())
-            .to_many(vec!["did:example:2".into(), "did:example:3".into()])
-            .from("did:example:4".into())
-            .thid("example-thread-1".into())
-            .pthid("example-parent-thread-1".into())
-            .header("example-header-1".into(), json!("example-header-1-value"))
-            .header("example-header-2".into(), json!("example-header-2-value"))
-            .created_time(10000)
-            .expires_time(20000)
-            .attachement(
-                Attachment::base64("ZXhhbXBsZQ==".into())
-                    .id("attachment1".into())
-                    .finalize(),
-            )
-            .attachements(vec![
-                Attachment::json(json!("example"))
-                    .id("attachment2".into())
-                    .finalize(),
-                Attachment::json(json!("example"))
-                    .id("attachment3".into())
-                    .finalize(),
-            ])
-            .finalize();
+        let message = Message::build(
+            "example-1".into(),
+            "example/v1".into(),
+            json!("example-body"),
+        )
+        .to("did:example:1".into())
+        .to_many(vec!["did:example:2".into(), "did:example:3".into()])
+        .from("did:example:4".into())
+        .thid("example-thread-1".into())
+        .pthid("example-parent-thread-1".into())
+        .header("example-header-1".into(), json!("example-header-1-value"))
+        .header("example-header-2".into(), json!("example-header-2-value"))
+        .created_time(10000)
+        .expires_time(20000)
+        .attachement(
+            Attachment::base64("ZXhhbXBsZQ==".into())
+                .id("attachment1".into())
+                .finalize(),
+        )
+        .attachements(vec![
+            Attachment::json(json!("example"))
+                .id("attachment2".into())
+                .finalize(),
+            Attachment::json(json!("example"))
+                .id("attachment3".into())
+                .finalize(),
+        ])
+        .finalize();
 
         assert_eq!(message.id, "example-1");
         assert_eq!(message.type_, "example/v1");
+        assert_eq!(message.body, json!("example-body"));
         assert_eq!(message.from, Some("did:example:4".into()));
         assert_eq!(message.thid, Some("example-thread-1".into()));
         assert_eq!(message.pthid, Some("example-parent-thread-1".into()));
@@ -240,10 +250,16 @@ mod tests {
         assert_eq!(extra_headers.len(), 2);
 
         assert!(extra_headers.contains_key(&"example-header-1".to_owned()));
-        assert_eq!(extra_headers[&"example-header-1".to_owned()], "example-header-1-value");
+        assert_eq!(
+            extra_headers[&"example-header-1".to_owned()],
+            "example-header-1-value"
+        );
 
         assert!(extra_headers.contains_key(&"example-header-2".to_owned()));
-        assert_eq!(extra_headers[&"example-header-2".to_owned()], "example-header-2-value");
+        assert_eq!(
+            extra_headers[&"example-header-2".to_owned()],
+            "example-header-2-value"
+        );
 
         let attachments = message.attachments.expect("attachments is some.");
         assert_eq!(attachments.len(), 3);

@@ -23,6 +23,7 @@ pub trait DIDDoc {
 
 /// Represents verification method record in DID Document
 /// (https://www.w3.org/TR/did-core/#verification-methods).
+#[derive(Clone, Debug)]
 pub struct VerificationMethod {
     pub id: String,
     pub type_: String,
@@ -31,20 +32,22 @@ pub struct VerificationMethod {
 }
 
 /// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
+#[derive(Clone, Debug)]
 pub enum PublicKey {
     JWK(Value),
     Multibase(String),
 }
 
 /// Represents service record in DID Document (https://www.w3.org/TR/did-core/#services).
+#[derive(Clone, Debug)]
 pub struct Service {
     pub id: String,
     pub type_: String,
-    pub service_endpoint: Vec<String>,
     pub kind: ServiceKind,
 }
 
 /// Represents additional service properties defined for specific Service type.
+#[derive(Clone, Debug)]
 pub enum ServiceKind {
     DIDCommMessaging(DIDCommMessagingService),
     Other(Value),
@@ -52,7 +55,9 @@ pub enum ServiceKind {
 
 /// Properties for DIDCommMessagingService
 /// (https://identity.foundation/didcomm-messaging/spec/#did-document-service-endpoint).
+#[derive(Clone, Debug)]
 pub struct DIDCommMessagingService {
+    pub service_endpoint: String,
     pub accept: Vec<String>,
     pub route_keys: Vec<String>,
 }
