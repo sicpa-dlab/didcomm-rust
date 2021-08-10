@@ -20,3 +20,9 @@ pub enum AuthCryptAlg {
     /// ECDH-1PU key agreement with A256KW key wrapping
     A256CBC_HS512_ECDH_1PU_A256KW,
 }
+
+pub enum SignAlg {
+    EdDSA,
+    ES256,
+    ES256K,
+}

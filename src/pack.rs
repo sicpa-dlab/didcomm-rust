@@ -45,8 +45,8 @@ impl Message {
     ///
     /// # Errors
     /// - DIDNotFound
-    /// - IncompatibleCrypto
     /// - SecretNotFound
+    /// - NoCompatibleCrypto
     /// - InvalidState
     /// TODO: verify and update errors list
     pub async fn pack<'dr, 'sr>(
@@ -61,7 +61,7 @@ impl Message {
     }
 }
 
-/// Message `pack` customization options.
+/// Allow fine configuration of packing process.
 pub struct PackOptions {
     /// If `true` and message is authenticated than information about sender will be hidden from mediators, but
     /// additional re-encryption will be required. For anonymous messages this property will be ignored.

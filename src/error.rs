@@ -3,17 +3,26 @@ use std::fmt;
 
 #[derive(thiserror::Error, Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub enum ErrorKind {
-    #[error("DID not found")]
+    #[error("DID or DID URL not found.")]
     DIDNotFound,
 
-    #[error("Entity already exists")]
+    #[error("Secret not found.")]
     SecretNotFound,
 
-    #[error("IO error")]
+    #[error("Message malformed.")]
+    MessageMalformed,
+
+    #[error("Message doesn't meet trust requrements.")]
+    MessageUntrusted,
+
+    #[error("IO error.")]
     IoError,
 
-    #[error("Invalid state")]
+    #[error("Invalid state.")]
     InvalidState,
+
+    #[error("No compatible crypto.")]
+    NoCompatibleCrypto,
 }
 
 #[derive(Debug, thiserror::Error)]
