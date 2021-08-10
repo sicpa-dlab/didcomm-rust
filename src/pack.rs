@@ -31,7 +31,7 @@ impl Message {
     /// - `from` a sender DID or key ID the sender uses for authenticated encryption.
     /// - `to`  a DID or key ID the sender uses for authenticated encryption.
     ///    Must match `from` header in Plaintext if the header is set.
-    /// - `did_resolver` instance of `DIDResolver` to resolve DIDs
+    /// - `did_resolver` instance of `DIDResolver` to resolve DIDs.
     /// - `secrets_resolver` instance of SecretsResolver` to resolve sender DID keys secrets
     /// - `options` allow fine configuration of packing process and have implemented `Default`
     ///   that performs repudiable encryption (auth_crypt if `from` is set and anon_crypt otherwise)
@@ -39,15 +39,16 @@ impl Message {
     /// 
     /// # Returns
     /// Tuple `(packed_msg, pack_metadata)`. 
-    /// - `packed_msg` packed message as a JSON string
+    /// - `packed_msg` packed message as a JSON string.
     /// - `pack_metadata` additional metadata about this `pack` execution like used keys identifiers,
     ///   used messaging service.
     ///
     /// # Errors
-    /// - DIDNotFound
-    /// - SecretNotFound
-    /// - NoCompatibleCrypto
-    /// - InvalidState
+    /// - `DIDNotFound` Sender or recipient DID or DID key is not found.
+    /// - `SecretNotFound` Sender secret is not found.
+    /// - `NoCompatibleCrypto` No compatible keys are found between sender and recipient.
+    /// - `InvalidState` Indicates library error.
+    /// - `IOError` IO error during DID or secrets resolving
     /// TODO: verify and update errors list
     pub async fn pack<'dr, 'sr>(
         &self,
@@ -114,6 +115,9 @@ pub struct PackMetadata {
 
     /// Identifier (DID URL) of sender key used for message encryption.
     pub from_kid: Option<String>,
+
+    /// Identifier (DID URL) of sender key used for message sign.
+    pub sign_from_kid: Option<String>,
 
     /// Identifiers (DID URLs) of recipient keys used for message encryption.
     pub to_kid: Vec<String>,
