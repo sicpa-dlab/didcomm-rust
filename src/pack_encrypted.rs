@@ -1,12 +1,18 @@
 use serde_json::Value;
 
-use crate::{Message, algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg}, did::DIDResolver, error::Result, secrets::SecretsResolver};
+use crate::{
+    algorithms::{AnonCryptAlg, AuthCryptAlg},
+    did::DIDResolver,
+    error::Result,
+    secrets::SecretsResolver,
+    Message,
+};
 
 impl Message {
     /// Produces `DIDComm Encrypted Message`
     /// https://identity.foundation/didcomm-messaging/spec/#didcomm-encrypted-message.
     ///
-    /// A DIDComm encrypted message is an encrypted JWM (JSON Web Messages) and 
+    /// A DIDComm encrypted message is an encrypted JWM (JSON Web Messages) and
     /// hides its content from all but authorized recipients, discloses (optionally) and proves
     /// the sender to exactly and only those recipients, and provides integrity guarantees.
     /// It is important in privacy-preserving routing. It is what normally moves over network
@@ -19,14 +25,14 @@ impl Message {
     ///    which are compatible the sender's key.
     ///  - if `to` is a key ID, then encryption is done for the receiver's `keyAgreement`
     ///    verification method identified by the given key ID.
-    ///  - if `from` is a DID, then sender `keyAgreement` will be negotiated based on recipient preference and 
+    ///  - if `from` is a DID, then sender `keyAgreement` will be negotiated based on recipient preference and
     ///    sender-recipient crypto compatibility.
     ///  - if `from` is a key ID, then the sender's `keyAgreement` verification method
     ///    identified by the given key ID is used.
     ///  - if `from` is None, then anonymous encryption is done and there will be no sender authentication property.
     ///
     /// It's possible to add non-repudiation by providing `sign_by` parameter.
-    /// 
+    ///
     /// # Params
     /// - `to` recipient DID or key ID the sender uses encryption.
     /// - `from` a sender DID or key ID. If set message will be repudiable authenticated or anonymous otherwise.
@@ -40,9 +46,9 @@ impl Message {
     /// - `did_resolver` instance of `DIDResolver` to resolve DIDs.
     /// - `secrets_resolver` instance of SecretsResolver` to resolve sender DID keys secrets.
     /// - `options` allow fine configuration of packing process and have implemented `Default`.
-    /// 
+    ///
     /// # Returns
-    /// Tuple `(encrypted_message, metadata)`. 
+    /// Tuple `(encrypted_message, metadata)`.
     /// - `encrypted_message` A DIDComm encrypted message as a JSON string.
     /// - `metadata` additional metadata about this `pack` execution like used keys identifiers,
     ///   used messaging service.
