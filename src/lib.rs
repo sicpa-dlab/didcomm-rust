@@ -7,7 +7,6 @@ mod unpack;
 pub mod algorithms;
 pub mod did;
 pub mod error;
-
 pub mod secrets;
 
 pub use message::{

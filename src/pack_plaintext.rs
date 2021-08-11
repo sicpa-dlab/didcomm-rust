@@ -1,5 +1,4 @@
-use crate::error::Result;
-use crate::Message;
+use crate::{error::Result, Message};
 
 impl Message {
     /// Produces `DIDComm Plaintext Messages`
