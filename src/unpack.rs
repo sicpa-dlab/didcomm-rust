@@ -8,6 +8,7 @@ use crate::{
 
 impl Message {
     /// Unpacks the packed message by doing decryption and verifying the signatures.
+    /// This method supports all DID Comm message types (encrypted, signed, plaintext).
     ///
     /// If unpack options expect a particular property (for example that a message is encrypted)
     /// and the packed message doesn't meet the criteria (it's not encrypted), then a MessageUntrusted
@@ -21,9 +22,9 @@ impl Message {
     /// to message to be trusted.
     ///
     /// # Returns
-    /// Tuple `(message, pack_metadata)`.
+    /// Tuple `(message, metadata)`.
     /// - `message` plain message instance
-    /// - `unpack_metadata` additional metadata about this `unpack` execution like used keys identifiers,
+    /// - `metadata` additional metadata about this `unpack` execution like used keys identifiers,
     ///   trust context, algorithms and etc.
     ///
     /// # Errors
@@ -101,10 +102,10 @@ pub struct UnpackMetadata {
     pub re_wrapped_in_forward: bool,
 
     /// Key ID of the sender used for authentication encryption if the plaintext has been authenticated and encrypted
-    pub encrypted_from: Option<String>,
+    pub encrypted_from_kid: Option<String>,
 
     /// Target key IDS for encryption if the plaintext has been encrypted
-    pub encrypted_to: Option<Vec<String>>,
+    pub encrypted_to_kids: Option<Vec<String>>,
 
     /// Key ID used for signature if the plaintext has been signed
     pub sign_from: Option<String>,
