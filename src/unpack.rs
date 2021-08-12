@@ -58,7 +58,7 @@ pub struct UnpackOptions {
     pub expect_authenticated: bool,
 
     /// Whether the sender ID must be protected. Not expected by default.
-    pub expect_hidden_sender: bool,
+    pub expect_protected_sender: bool,
 
     /// Whether the same DID must be used for encryption and signing. True by default.
     pub expect_signed_by_encrypter: bool,
@@ -78,7 +78,7 @@ impl Default for UnpackOptions {
             expect_non_repudiation: false,
             expect_encrypted: false,
             expect_authenticated: false,
-            expect_hidden_sender: false,
+            expect_protected_sender: false,
             expect_signed_by_encrypter: true,
             expect_decrypt_by_all_keys: false,
             unwrap_re_wrapping_forward: true,

@@ -54,7 +54,8 @@ impl Message {
     ///   used messaging service.
     ///
     /// # Errors
-    /// - `DIDNotFound` Sender or recipient DID or DID key is not found.
+    /// - `DIDNotResolved` Sender or recipient DID not found.
+    /// - `DIDUrlNotResolved` DID doesn't contain mentioned DID Urls (for ex., key id)
     /// - `SecretNotFound` Sender secret is not found.
     /// - `NoCompatibleCrypto` No compatible keys are found between sender and recipient.
     /// - `InvalidState` Indicates library error.
@@ -75,9 +76,9 @@ impl Message {
 
 /// Allow fine configuration of packing process.
 pub struct PackEncryptedOptions {
-    /// If `true` and message is authenticated than information about sender will be hidden from mediators, but
+    /// If `true` and message is authenticated than information about sender will be protected from mediators, but
     /// additional re-encryption will be required. For anonymous messages this property will be ignored.
-    pub hide_sender: bool,
+    pub protect_sender: bool,
 
     /// Whether the encrypted messages need to be wrapped into `Forward` messages to be sent to Mediators
     /// as defined by the `Forward` protocol.
@@ -102,7 +103,7 @@ pub struct PackEncryptedOptions {
 impl Default for PackEncryptedOptions {
     fn default() -> Self {
         PackEncryptedOptions {
-            hide_sender: false,
+            protect_sender: false,
             forward: true,
             forward_headers: None,
             messaging_service: None,
