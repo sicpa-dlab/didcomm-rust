@@ -4,6 +4,9 @@ use serde_json::Value;
 
 /// Represents DID Document (https://www.w3.org/TR/did-core/)
 pub trait DIDDoc {
+    /// Returns a DID for the given DID Doc
+    fn did(&self) -> String;
+
     /// Returns DID URLs of verification methods used for key agreement.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
     fn key_agreements(&self) -> &[String];
@@ -28,14 +31,17 @@ pub struct VerificationMethod {
     pub id: String,
     pub type_: String,
     pub controller: String,
-    pub public_key: PublicKey,
+    pub verification_matherial: VerificationMatherial,
 }
 
 /// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
 #[derive(Clone, Debug)]
-pub enum PublicKey {
+pub enum VerificationMatherial {
     JWK(Value),
     Multibase(String),
+    Base58(String),
+    Hex(String),
+    Other(Value),
 }
 
 /// Represents service record in DID Document (https://www.w3.org/TR/did-core/#services).

@@ -21,6 +21,14 @@ impl Message {
     /// Tuple (signed_message, metadata)
     /// - `signed_message` a DIDComm signed message as JSON string
     /// - `metadata` additional metadata about this `encrypt` execution like used keys identifiers and algorithms.
+    ///
+    /// # Errors
+    /// - `DIDNotResolved` Sender or recipient DID not found.
+    /// - `DIDUrlNotResolved` DID doesn't contain mentioned DID Urls (for ex., key id)
+    /// - `SecretNotFound` Sender secret is not found.
+    /// - `InvalidState` Indicates library error.
+    /// - `IOError` IO error during DID or secrets resolving
+    /// TODO: verify and update errors list
     pub async fn pack_signed<'dr, 'sr>(
         &self,
         _sign_by: &str,

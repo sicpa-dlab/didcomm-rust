@@ -16,7 +16,7 @@ impl ExampleDIDResolver {
 
 #[async_trait]
 impl DIDResolver for ExampleDIDResolver {
-    async fn resolve(&self, _did: &str) -> Result<Box<dyn DIDDoc>> {
+    async fn resolve(&self, _did: &str) -> Result<Option<Box<dyn DIDDoc>>> {
         todo!()
     }
 }

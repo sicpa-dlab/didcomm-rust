@@ -15,7 +15,7 @@ impl ExampleSecretsResolver {
 
 #[async_trait]
 impl SecretsResolver for ExampleSecretsResolver {
-    async fn resolve(&self, _did_url: &str) -> Result<Secret> {
+    async fn resolve(&self, _did_url: &str) -> Result<Option<Secret>> {
         todo!()
     }
 }

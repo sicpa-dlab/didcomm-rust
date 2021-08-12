@@ -3,8 +3,11 @@ use std::fmt;
 
 #[derive(thiserror::Error, Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub enum ErrorKind {
-    #[error("DID or DID URL not found.")]
-    DIDNotFound,
+    #[error("DID not resolved.")]
+    DIDNotResolved,
+
+    #[error("DID not resolved.")]
+    DIDUrlNotFound,
 
     #[error("Secret not found.")]
     SecretNotFound,

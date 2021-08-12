@@ -28,7 +28,8 @@ impl Message {
     ///   trust context, algorithms and etc.
     ///
     /// # Errors
-    /// - `DIDNotFound` Sender or recipient DID or DID key is not found.
+    /// - `DIDNotResolved` Sender or recipient DID not found.
+    /// - `DIDUrlNotResolved` DID doesn't contain mentioned DID Urls (for ex., key id)
     /// - `MessageMalformed` message doesn't correspond to DID Comm or has invalid encryption or signatures.
     /// - `MessageUntrusted` message doesn't satisfy checks requested by unpack options.
     /// - `SecretNotFound` No recipient secrets found.
