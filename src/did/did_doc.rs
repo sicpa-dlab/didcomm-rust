@@ -5,7 +5,7 @@ use serde_json::Value;
 /// Represents DID Document (https://www.w3.org/TR/did-core/)
 pub trait DIDDoc {
     /// Returns a DID for the given DID Doc
-    fn did(&self) -> String;
+    fn did(&self) -> &str;
 
     /// Returns DID URLs of verification methods used for key agreement.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
