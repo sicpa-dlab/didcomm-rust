@@ -31,12 +31,12 @@ pub struct VerificationMethod {
     pub id: String,
     pub type_: String,
     pub controller: String,
-    pub verification_matherial: VerificationMatherial,
+    pub verification_material: VerificationMaterial,
 }
 
 /// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
 #[derive(Clone, Debug)]
-pub enum VerificationMatherial {
+pub enum VerificationMaterial {
     JWK(Value),
     Multibase(String),
     Base58(String),

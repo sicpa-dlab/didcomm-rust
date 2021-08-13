@@ -4,7 +4,7 @@ pub(crate) mod did_doc;
 pub(crate) mod did_resolver;
 
 pub use did_doc::{
-    DIDCommMessagingService, DIDDoc, Service, ServiceKind, VerificationMatherial,
+    DIDCommMessagingService, DIDDoc, Service, ServiceKind, VerificationMaterial,
     VerificationMethod,
 };
 
