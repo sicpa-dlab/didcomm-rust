@@ -16,42 +16,51 @@ pub struct Message {
     /// or example the presence of other attributes and how they should be processed.
     pub type_: String,
 
+    /// Message body.
     pub body: Value,
 
     /// Sender identifier. The from attribute MUST be a string that is a valid DID
     /// or DID URL (without the fragment component) which identifies the sender of the message.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub from: Option<String>,
 
     /// Identifier(s) for recipients. MUST be an array of strings where each element
     /// is a valid DID or DID URL (without the fragment component) that identifies a member
     /// of the message’s intended audience.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub to: Option<Vec<String>>,
 
     /// Uniquely identifies the thread that the message belongs to.
     /// If not included the id property of the message MUST be treated as the value of the `thid`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thid: Option<String>,
 
     /// If the message is a child of a thread the `pthid`
     /// will uniquely identify which thread is the parent.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pthid: Option<String>,
 
     /// Custom message headers.
     #[serde(flatten)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_headers: Option<HashMap<String, Value>>,
 
     /// The attribute is used for the sender
     /// to express when they created the message, expressed in
     /// UTC Epoch Seconds (seconds since 1970-01-01T00:00:00Z UTC).
     /// This attribute is informative to the recipient, and may be relied on by protocols.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub created_time: Option<u64>,
 
     /// The expires_time attribute is used for the sender to express when they consider
     /// the message to be expired, expressed in UTC Epoch Seconds (seconds since 1970-01-01T00:00:00Z UTC).
     /// This attribute signals when the message is considered no longer valid by the sender.
     /// When omitted, the message is considered to have no expiration by the sender.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_time: Option<u64>,
 
     /// Message attachments
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub attachments: Option<Vec<Attachment>>,
 }
 
@@ -248,14 +257,16 @@ mod tests {
 
         let extra_headers = message.extra_headers.expect("extra headers is some.");
         assert_eq!(extra_headers.len(), 2);
-
+       
         assert!(extra_headers.contains_key(&"example-header-1".to_owned()));
+        
         assert_eq!(
             extra_headers[&"example-header-1".to_owned()],
             "example-header-1-value"
         );
 
         assert!(extra_headers.contains_key(&"example-header-2".to_owned()));
+        
         assert_eq!(
             extra_headers[&"example-header-2".to_owned()],
             "example-header-2-value"

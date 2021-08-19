@@ -1,8 +1,11 @@
+mod authcrypt;
+mod jwk;
 mod message;
 mod pack_encrypted;
 mod pack_plaintext;
 mod pack_signed;
 mod unpack;
+mod utils;
 
 pub mod algorithms;
 pub mod did;
@@ -41,8 +44,8 @@ mod tests {
 
         // --- Packing message ---
 
-        let sender_did_resolver = ExampleDIDResolver::new();
-        let sender_secrets_resolver = ExampleSecretsResolver::new();
+        let sender_did_resolver = ExampleDIDResolver::new(vec![]);
+        let sender_secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
         let (packed_msg, metadata) = msg
             .pack_encrypted(
@@ -69,8 +72,8 @@ mod tests {
 
         // --- Unpacking message ---
 
-        let recepient_did_resolver = ExampleDIDResolver::new();
-        let recepient_secrets_resolver = ExampleSecretsResolver::new();
+        let recepient_did_resolver = ExampleDIDResolver::new(vec![]);
+        let recepient_secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
         let (msg, metadata) = Message::unpack(
             &packed_msg,

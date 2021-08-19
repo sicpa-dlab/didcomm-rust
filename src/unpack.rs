@@ -134,8 +134,8 @@ mod test {
     async fn unpack_works() {
         let msg = "{}"; // TODO: use test vector from DID Comm specification.
 
-        let did_resolver = ExampleDIDResolver::new();
-        let secrets_resolver = ExampleSecretsResolver::new();
+        let did_resolver = ExampleDIDResolver::new(vec![]);
+        let secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
         let (_msg, _metadata) = Message::unpack(
             msg,

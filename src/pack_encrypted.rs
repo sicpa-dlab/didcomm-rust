@@ -159,8 +159,8 @@ mod tests {
         .to("did:example:2".into())
         .finalize();
 
-        let did_resolver = ExampleDIDResolver::new();
-        let secrets_resolver = ExampleSecretsResolver::new();
+        let did_resolver = ExampleDIDResolver::new(vec![]);
+        let secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
         let (_msg, _metadata) = msg
             .pack_encrypted(
