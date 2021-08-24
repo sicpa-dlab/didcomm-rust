@@ -18,7 +18,7 @@ pub trait SecretsResolver {
     ///
     /// # Returns
     /// A private key or None of there is no key for the given key ID
-    /// 
+    ///
     /// # Errors
     /// - IOError
     /// - InvalidState
