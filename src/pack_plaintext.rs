@@ -28,6 +28,8 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[ignore]
+    // will be fixed after https://github.com/sicpa-dlab/didcomm-gemini/issues/71
     async fn pack_plaintext_works() {
         let msg = Message::build(
             "example-1".into(),

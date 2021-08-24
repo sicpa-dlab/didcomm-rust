@@ -131,6 +131,8 @@ mod test {
     use crate::{did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver};
 
     #[tokio::test]
+    #[ignore]
+    // will be fixed after https://github.com/sicpa-dlab/didcomm-gemini/issues/71
     async fn unpack_works() {
         let msg = "{}"; // TODO: use test vector from DID Comm specification.
 
