@@ -6,12 +6,12 @@ use crate::{
 };
 
 pub struct ExampleSecretsResolver {
-    known_secrets: Vec<Secret>,
+    _known_secrets: Vec<Secret>,
 }
 
 impl ExampleSecretsResolver {
     pub fn new(known_secrets: Vec<Secret>) -> Self {
-        ExampleSecretsResolver { known_secrets }
+        ExampleSecretsResolver { _known_secrets: known_secrets }
     }
 }
 

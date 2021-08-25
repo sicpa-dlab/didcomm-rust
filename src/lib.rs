@@ -12,6 +12,8 @@ pub mod did;
 pub mod error;
 pub mod secrets;
 
+pub(crate) use askar_crypto as crypto;
+
 pub use message::{
     Attachment, AttachmentBuilder, AttachmentData, Base64AttachmentData, JsonAttachmentData,
     LinksAttachmentData, Message, MessageBuilder,

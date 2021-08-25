@@ -12,8 +12,8 @@ pub enum ErrorKind {
     #[error("Secret not found.")]
     SecretNotFound,
 
-    #[error("Message malformed.")]
-    MessageMalformed,
+    #[error("Malformed.")]
+    Malformed,
 
     #[error("Message doesn't meet trust requrements.")]
     UnsatisfiedConstraint,
