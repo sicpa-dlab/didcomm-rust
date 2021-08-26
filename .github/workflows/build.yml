@@ -1,9 +1,7 @@
 name: build
 
 on:
-  pull_request:
-    paths:
-      - '**.rs'
+  pull_request
 
 jobs:
   check:
@@ -34,20 +32,14 @@ jobs:
           command: fmt
           args: --all -- --check
 
-      - name: Cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --workspace --tests --examples
-
       - name: Debug build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --all-targets
+          args: --verbose
 
       - name: Test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --workspace
+          args: --verbose
