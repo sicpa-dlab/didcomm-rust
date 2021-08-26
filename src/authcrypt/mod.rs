@@ -1,3 +1,8 @@
+mod compose;
+mod decrypt;
+mod parse;
+
 pub(crate) mod envelope;
 
-mod compose;
+pub(crate) use compose::compose;
+pub(crate) use parse::{parse, ParsedJWE};

@@ -1,3 +1,5 @@
+// TODO: remove dead_code
+#[allow(dead_code)]
 mod authcrypt;
 mod jwk;
 mod message;

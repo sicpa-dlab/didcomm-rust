@@ -1,12 +1,11 @@
 use askar_crypto::{
-    alg::aes::{A128CbcHs256, A256Kw, AesKey},
+    alg::aes::{A128CbcHs256, AesKey},
     buffer::SecretBytes,
     encrypt::{KeyAeadInPlace, KeyAeadMeta},
     jwk::ToJwk,
     kdf::{ecdh_1pu::Ecdh1PU, FromKeyDerivation, KeyExchange},
     repr::{KeyGen, ToSecretBytes},
 };
-
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
@@ -15,14 +14,15 @@ use crate::{
         Algorithm, EncAlgorithm, PerRecipientHeader, ProtectedHeader, Recepient, JWE,
     },
     error::{ErrorKind, Result, ResultExt},
+    utils::crypto::KeyWrap,
 };
 
-pub(crate) fn _compose<KE, CE, KW>(
+pub(crate) fn compose<KE, CE, KW>(
     plaintext: &[u8],
     alg: Algorithm,
     enc: EncAlgorithm,
     sender: (&str, &KE),        // (skid, sender key)
-    recepients: &[(&str, &KE)], // (kid, recipient key)
+    recipients: &[(&str, &KE)], // (kid, recipient key)
 ) -> Result<String>
 where
     KE: KeyExchange + KeyGen + ToJwk + ?Sized,
@@ -35,18 +35,18 @@ where
     let apu = base64::encode_config(skid, base64::URL_SAFE_NO_PAD);
 
     let apv = {
-        let mut kids = recepients.into_iter().map(|r| r.0).collect::<Vec<_>>();
+        let mut kids = recipients.iter().map(|r| r.0).collect::<Vec<_>>();
         kids.sort();
-        let apv = Sha256::digest(kids.join("").as_bytes());
+        let apv = Sha256::digest(kids.join(".").as_bytes());
         base64::encode_config(apv, base64::URL_SAFE_NO_PAD)
     };
 
     let epk = KE::generate(&mut rng).kind(ErrorKind::InvalidState, "unable generate EPK.")?;
 
     let encrypted_keys = {
-        let mut encrypted_keys: Vec<(&str, String)> = Vec::with_capacity(recepients.len());
+        let mut encrypted_keys: Vec<(&str, String)> = Vec::with_capacity(recipients.len());
 
-        for (kid, key) in recepients {
+        for (kid, key) in recipients {
             let deriviation = Ecdh1PU::new(
                 &epk,
                 &skey,
@@ -149,23 +149,3 @@ where
 
     Ok(authcrypt)
 }
-
-/// Note that trait is compatible with KeyAeadInPlace that
-pub(crate) trait KeyWrap: KeyAeadInPlace {
-    fn wrap_key<K: KeyAeadInPlace + ToSecretBytes>(&self, key: &K) -> Result<SecretBytes> {
-        let params = self.aead_params();
-
-        let key_len = key
-            .secret_bytes_length()
-            .kind(ErrorKind::InvalidState, "unable get key len.")?;
-
-        let mut encrypted_key = SecretBytes::with_capacity(key_len + params.tag_length);
-
-        self.encrypt_in_place(&mut encrypted_key, &[], &[])
-            .kind(ErrorKind::InvalidState, "unable encrypt.")?;
-
-        Ok(encrypted_key)
-    }
-}
-
-impl KeyWrap for AesKey<A256Kw> {}
