@@ -2,31 +2,36 @@ use askar_crypto::{
     buffer::SecretBytes,
     encrypt::KeyAeadInPlace,
     jwk::{FromJwk, ToJwk},
-    kdf::{ecdh_1pu::Ecdh1PU, FromKeyDerivation, KeyExchange},
+    kdf::{FromKeyDerivation, KeyExchange},
     repr::{KeyGen, KeySecretBytes},
 };
 
 use crate::{
-    authcrypt::parse::ParsedJWE,
     error::{err_msg, ErrorKind, Result, ResultExt},
-    utils::crypto::KeyWrap,
+    jwe::parse::ParsedJWE,
+    utils::crypto::{JoseKDF, KeyWrap},
 };
 
 impl<'a, 'b> ParsedJWE<'a, 'b> {
-    pub(crate) fn decrypt<KE, KW, CE>(
+    pub(crate) fn decrypt<CE, KDF, KE, KW>(
         &self,
-        sender: (&str, &KE),
+        sender: Option<(&str, &KE)>,
         recepient: (&str, &KE),
     ) -> Result<Vec<u8>>
     where
+        CE: KeyAeadInPlace + KeySecretBytes,
+        KDF: JoseKDF<KE, KW>,
         KE: KeyExchange + KeyGen + ToJwk + FromJwk + ?Sized,
         KW: KeyWrap + FromKeyDerivation,
-        CE: KeyAeadInPlace + KeySecretBytes,
     {
-        let (skid, skey) = sender;
+        let (skid, skey) = match sender {
+            Some((skid, skey)) => (Some(skid), Some(skey)),
+            None => (None, None),
+        };
+
         let (kid, key) = recepient;
 
-        if skid != self.skid {
+        if skid != self.skid.as_deref() {
             Err(err_msg(ErrorKind::InvalidState, "wrong skid used"))?
         }
 
@@ -52,21 +57,15 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
             KE::from_jwk(&epk).kind(ErrorKind::Malformed, "unable produce jwk for epk.")?
         };
 
-        let kw = {
-            let deriviation = Ecdh1PU::new(
-                &epk,
-                &skey,
-                &key,
-                b"A256GCM",
-                self.protected.apu.as_bytes(),
-                self.protected.apv.as_bytes(),
-                &[],
-                false,
-            );
-
-            KW::from_key_derivation(deriviation)
-                .kind(ErrorKind::InvalidState, "unable derive kw.")?
-        };
+        let kw = KDF::derive_key(
+            &epk,
+            skey,
+            &key,
+            self.protected.apu.map(|apu| apu.as_bytes()),
+            self.protected.apv.as_bytes(),
+            true,
+        )
+        .kind(ErrorKind::InvalidState, "unable derive kw.")?;
 
         let cek: CE = kw
             .unwrap_key(&encrypted_key)
@@ -78,10 +77,15 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
         let iv = base64::decode_config(self.jwe.iv, base64::URL_SAFE_NO_PAD)
             .kind(ErrorKind::Malformed, "unable decode iv.")?;
 
-        let plaintext = {
-            let mut buf = SecretBytes::from_slice(&cyphertext);
+        let tag = base64::decode_config(self.jwe.tag, base64::URL_SAFE_NO_PAD)
+            .kind(ErrorKind::Malformed, "unable decode tag.")?;
 
-            cek.decrypt_in_place(&mut buf, self.jwe.protected.as_bytes(), &iv)
+        let plaintext = {
+            let mut buf = SecretBytes::with_capacity(cyphertext.len() + tag.len());
+            buf.extend_from_slice(&cyphertext);
+            buf.extend_from_slice(&tag);
+
+            cek.decrypt_in_place(&mut buf, &iv, self.jwe.protected.as_bytes())
                 .kind(ErrorKind::Malformed, "unable decrypt content.")?;
 
             buf.to_vec()

@@ -1,14 +1,14 @@
 use sha2::{Digest, Sha256};
 
 use crate::{
-    authcrypt::envelope::{ProtectedHeader, JWE},
+    jwe::envelope::{ProtectedHeader, JWE},
     error::{err_msg, ErrorKind, Result, ResultExt},
 };
 
 pub(crate) struct ParsedJWE<'a, 'b> {
     pub(crate) jwe: JWE<'a>,
     pub(crate) protected: ProtectedHeader<'b>,
-    pub(crate) skid: String,
+    pub(crate) skid: Option<String>,
 }
 
 pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<ParsedJWE<'a, 'b>> {
@@ -36,18 +36,24 @@ pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<Parsed
         Err(err_msg(ErrorKind::Malformed, "apv mismatch."))?;
     }
 
-    let skid = {
-        let skid = base64::decode_config(protected.apu, base64::URL_SAFE_NO_PAD)
+    let skid = if let Some(skid) = protected.apu {
+        let skid = base64::decode_config(skid, base64::URL_SAFE_NO_PAD)
             .kind(ErrorKind::InvalidState, "unable parse apv.")?;
 
-        String::from_utf8(skid).kind(ErrorKind::InvalidState, "unable parse apv.")?
+        let skid = String::from_utf8(skid).kind(ErrorKind::InvalidState, "unable parse apv.")?;
+
+        Some(skid)
+    } else {
+        None
     };
 
-    if let Some(pskid) = protected.skid {
-        if skid != pskid {
-            Err(err_msg(ErrorKind::Malformed, "apu mismatch."))?;
+    match (&skid, &protected.skid) {
+        (Some(skid), Some(pskid)) if skid != pskid => {
+            Err(err_msg(ErrorKind::Malformed, "apu mismatch."))?
         }
-    }
+        (None, Some(_)) => Err(err_msg(ErrorKind::Malformed, "apu mismatch."))?,
+        _ => (),
+    };
 
     let jwe = ParsedJWE {
         jwe,

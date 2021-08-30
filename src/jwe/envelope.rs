@@ -43,7 +43,7 @@ pub(crate) struct ProtectedHeader<'a> {
     pub skid: Option<&'a str>,
 
     /// BASE64URL("skid" header value),
-    pub apu: &'a str,
+    pub apu: Option<&'a str>,
 
     /// BASE64URL(SHA256(CONCAT('.', SORT([recipients[0].kid, ..., recipients[n].kid])))))
     pub apv: &'a str,
@@ -78,6 +78,9 @@ pub(crate) enum Algorithm {
     #[serde(rename = "ECDH-1PU+A256KW")]
     Ecdh1puA256kw,
 
+    #[serde(rename = "ECDH-ES+A256KW")]
+    Ecdh1esA256kw,
+
     #[serde(other)]
     Other(String),
 }
@@ -89,6 +92,12 @@ pub(crate) enum Algorithm {
 pub(crate) enum EncAlgorithm {
     #[serde(rename = "A256CBC-HS512")]
     A256cbcHs512,
+
+    #[serde(rename = "XC20P")]
+    Xc20P,
+
+    #[serde(rename = "A256GCM")]
+    A256Gcm,
 
     #[serde(other)]
     Other(String),

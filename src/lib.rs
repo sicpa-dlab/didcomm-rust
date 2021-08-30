@@ -1,6 +1,6 @@
 // TODO: remove dead_code
 #[allow(dead_code)]
-mod authcrypt;
+mod jwe;
 mod jwk;
 mod message;
 mod pack_encrypted;
