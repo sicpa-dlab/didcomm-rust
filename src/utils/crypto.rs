@@ -8,7 +8,7 @@ use askar_crypto::{
 
 use crate::error::{err_msg, ErrorKind, Result, ResultExt};
 
-/// Note that trait is compatible with KW algorithms only
+/// Note this trait is compatible with KW algorithms only
 pub(crate) trait KeyWrap: KeyAeadInPlace {
     fn wrap_key<K: KeyAeadInPlace + ToSecretBytes>(&self, key: &K) -> Result<SecretBytes> {
         let params = self.aead_params();

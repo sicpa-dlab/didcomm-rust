@@ -1,7 +1,6 @@
-// TODO: remove dead_code
-#[allow(dead_code)]
 mod jwe;
 mod jwk;
+mod jws;
 mod message;
 mod pack_encrypted;
 mod pack_plaintext;

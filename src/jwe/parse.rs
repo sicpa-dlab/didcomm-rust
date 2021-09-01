@@ -5,6 +5,7 @@ use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
 };
 
+#[derive(Debug)]
 pub(crate) struct ParsedJWE<'a, 'b> {
     pub(crate) jwe: JWE<'a>,
     pub(crate) protected: ProtectedHeader<'b>,

@@ -1,10 +1,25 @@
-mod compose;
+// TODO: remove allow
+#[allow(dead_code)]
+mod encrypt;
+
+// TODO: remove allow
+#[allow(dead_code)]
 mod decrypt;
+
+// TODO: remove allow
+#[allow(dead_code)]
 mod parse;
 
+// TODO: remove allow
+#[allow(dead_code)]
 pub(crate) mod envelope;
 
-pub(crate) use compose::compose;
+// TODO: remove allow
+#[allow(unused_imports)]
+pub(crate) use encrypt::encrypt;
+
+// TODO: remove allow
+#[allow(unused_imports)]
 pub(crate) use parse::{parse, ParsedJWE};
 
 #[cfg(test)]
@@ -15,7 +30,7 @@ mod tests {
             x25519::X25519KeyPair,
         },
         kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs},
-        repr::KeyGen,
+        repr::{KeyGen, KeyPublicBytes, ToPublicBytes},
     };
 
     use crate::jwe::{
@@ -28,42 +43,58 @@ mod tests {
         let alice_kid = "did:example:alice#key-1";
         let alice_key = X25519KeyPair::random().expect("unable random.");
 
+        let alice_pkey = {
+            let bytes = alice_key
+                .to_public_bytes()
+                .expect("unable to_public_bytes.");
+
+            X25519KeyPair::from_public_bytes(&bytes).expect("unable from_public_bytes.")
+        };
+
         let bob_kid = "did:example:bob#key-1";
         let bob_key = X25519KeyPair::random().expect("unable random.");
 
-        let msg = jwe::compose::<
+        let bob_pkey = {
+            let bytes = bob_key.to_public_bytes().expect("unable to_public_bytes.");
+
+            X25519KeyPair::from_public_bytes(&bytes).expect("unable from_public_bytes.")
+        };
+
+        let plaintext = "Some plaintext.";
+
+        let msg = jwe::encrypt::<
             AesKey<A128CbcHs256>,
             Ecdh1PU<'_, X25519KeyPair>,
             X25519KeyPair,
             AesKey<A256Kw>,
         >(
-            "Some private message".as_bytes(),
+            plaintext.as_bytes(),
             Algorithm::Ecdh1puA256kw,
             EncAlgorithm::A256cbcHs512,
             Some((alice_kid, &alice_key)),
-            &[(bob_kid, &bob_key)],
+            &[(bob_kid, &bob_pkey)],
         )
-        .expect("unable compose.");
+        .expect("unable encrypt.");
 
         let mut buf = Vec::new();
         let msg = jwe::parse(&msg, &mut buf).expect("unable parse.");
 
         assert_eq!(msg.jwe.recipients.len(), 1);
-        assert_eq!(msg.jwe.recipients[0].header.kid, "did:example:bob#key-1");
+        assert_eq!(msg.jwe.recipients[0].header.kid, bob_kid);
 
         assert_eq!(msg.protected.alg, Algorithm::Ecdh1puA256kw);
         assert_eq!(msg.protected.enc, EncAlgorithm::A256cbcHs512);
 
-        assert_eq!(msg.skid.as_deref(), Some("did:example:alice#key-1"));
+        assert_eq!(msg.skid.as_deref(), Some(alice_kid));
 
-        let plaintext = msg
+        let plaintext_ = msg
             .decrypt::<AesKey<A128CbcHs256>, Ecdh1PU<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
-                Some((alice_kid, &alice_key)),
+                Some((alice_kid, &alice_pkey)),
                 (bob_kid, &bob_key),
             )
             .expect("unable decrypt.");
 
-        assert_eq!(plaintext, "Some private message".as_bytes());
+        assert_eq!(plaintext_, plaintext.as_bytes());
     }
 
     #[test]
@@ -71,19 +102,27 @@ mod tests {
         let bob_kid = "did:example:bob#key-1";
         let bob_key = X25519KeyPair::random().expect("unable random.");
 
-        let msg = jwe::compose::<
+        let bob_pkey = {
+            let bytes = bob_key.to_public_bytes().expect("unable to_public_bytes.");
+
+            X25519KeyPair::from_public_bytes(&bytes).expect("unable from_public_bytes.")
+        };
+
+        let plaintext = "Some plaintext.";
+
+        let msg = jwe::encrypt::<
             AesKey<A128CbcHs256>,
             EcdhEs<'_, X25519KeyPair>,
             X25519KeyPair,
             AesKey<A256Kw>,
         >(
-            "Some private message".as_bytes(),
+            plaintext.as_bytes(),
             Algorithm::Ecdh1esA256kw,
             EncAlgorithm::A256cbcHs512,
             None,
-            &[(bob_kid, &bob_key)],
+            &[(bob_kid, &bob_pkey)],
         )
-        .expect("unable compose.");
+        .expect("unable encrypt.");
 
         let mut buf = Vec::new();
         let msg = jwe::parse(&msg, &mut buf).expect("unable parse.");
@@ -96,13 +135,13 @@ mod tests {
 
         assert_eq!(msg.skid, None);
 
-        let plaintext = msg
+        let _plaintext = msg
             .decrypt::<AesKey<A128CbcHs256>, EcdhEs<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
                 None,
                 (bob_kid, &bob_key),
             )
             .expect("unable decrypt.");
 
-        assert_eq!(plaintext, "Some private message".as_bytes());
+        assert_eq!(_plaintext, plaintext.as_bytes());
     }
 }

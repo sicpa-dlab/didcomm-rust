@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
 use serde_json::Value;
 
-/// Subset of JWE in generic json serialization form used for authcrypt.
+/// Subset of JWE in generic json serialization form used for authcrypt
+/// and anoncrypt message types.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct JWE<'a> {
     /// BASE64URL(UTF8(JWE Protected Header))
@@ -22,7 +23,7 @@ pub(crate) struct JWE<'a> {
     pub tag: &'a str,
 }
 
-/// Protected header for authcrypt-specific JWE.
+/// Protected header for authcrypt/anoncrypt-specific JWE.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct ProtectedHeader<'a> {
     /// Must be `application/didcomm-encrypted+json` or `didcomm-encrypted+json` for now.
@@ -53,7 +54,7 @@ pub(crate) struct ProtectedHeader<'a> {
     /// with the sender key must be on the same curve.
     pub epk: Value,
 }
-/// Recipient part of authcrypt-specific JWE
+/// Recipient part of authcrypt/anoncrypt-specific JWE
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct Recepient<'a> {
     /// Per-recipient header
@@ -64,7 +65,7 @@ pub(crate) struct Recepient<'a> {
     pub encrypted_key: &'a str,
 }
 
-/// Per-recipient header part of authcrypt-specific JWE
+/// Per-recipient header part of authcrypt/anoncrypt-specific JWE
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct PerRecipientHeader<'a> {
     /// Recipient KID as DID URL

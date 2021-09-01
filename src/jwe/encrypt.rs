@@ -9,11 +9,13 @@ use askar_crypto::{
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use crate::{error::{ErrorKind, Result, ResultExt}, jwe::envelope::{
-        Algorithm, EncAlgorithm, PerRecipientHeader, ProtectedHeader, Recepient, JWE,
-    }, utils::crypto::{JoseKDF, KeyWrap}};
+use crate::{
+    error::{ErrorKind, Result, ResultExt},
+    jwe::envelope::{Algorithm, EncAlgorithm, PerRecipientHeader, ProtectedHeader, Recepient, JWE},
+    utils::crypto::{JoseKDF, KeyWrap},
+};
 
-pub(crate) fn compose<CE, KDF, KE, KW>(
+pub(crate) fn encrypt<CE, KDF, KE, KW>(
     plaintext: &[u8],
     alg: Algorithm,
     enc: EncAlgorithm,
@@ -142,8 +144,7 @@ where
         tag: &tag,
     };
 
-    let authcrypt =
-        serde_json::to_string(&jwe).kind(ErrorKind::InvalidState, "unable serialize jwe.")?;
+    let jwe = serde_json::to_string(&jwe).kind(ErrorKind::InvalidState, "unable serialize jwe.")?;
 
-    Ok(authcrypt)
+    Ok(jwe)
 }
