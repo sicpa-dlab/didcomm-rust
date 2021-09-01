@@ -1,5 +1,4 @@
 use askar_crypto::{
-    alg::aes::{A128CbcHs256, AesKey},
     buffer::SecretBytes,
     encrypt::{KeyAeadInPlace, KeyAeadMeta},
     jwk::ToJwk,
@@ -23,9 +22,9 @@ pub(crate) fn encrypt<CE, KDF, KE, KW>(
     recipients: &[(&str, &KE)],  // (kid, recipient key)
 ) -> Result<String>
 where
-    CE: KeyAeadInPlace + KeyGen + ToSecretBytes,
+    CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes,
     KDF: JoseKDF<KE, KW>,
-    KE: KeyExchange + KeyGen + ToJwk + ?Sized,
+    KE: KeyExchange + KeyGen + ToJwk,
     KW: KeyWrap + FromKeyDerivation,
 {
     let (skid, skey) = match sender {
@@ -112,7 +111,7 @@ where
 
     let (ciphertext, tag, iv) = {
         // TODO: use `rng` based version when available
-        let iv = AesKey::<A128CbcHs256>::random_nonce();
+        let iv = CE::random_nonce();
 
         let mut buf = {
             let mut buf =

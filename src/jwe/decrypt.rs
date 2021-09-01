@@ -21,7 +21,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
     where
         CE: KeyAeadInPlace + KeySecretBytes,
         KDF: JoseKDF<KE, KW>,
-        KE: KeyExchange + KeyGen + ToJwk + FromJwk + ?Sized,
+        KE: KeyExchange + KeyGen + ToJwk + FromJwk,
         KW: KeyWrap + FromKeyDerivation,
     {
         let (skid, skey) = match sender {
