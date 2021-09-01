@@ -151,6 +151,8 @@ mod tests {
         _anoncrypt_works::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
         );
 
+         /// TODO: P-384 and P-521 support after solving https://github.com/hyperledger/aries-askar/issues/10
+
         fn _anoncrypt_works<CE, KDF, KE, KW>()
         where
             CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes + KeySecretBytes,
