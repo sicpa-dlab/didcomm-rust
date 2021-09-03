@@ -25,8 +25,8 @@ pub(crate) fn parse<'a, 'b>(jws: &'a str, buf: &'b mut Vec<Vec<u8>>) -> Result<P
             base64::decode_config_buf(signature.protected, base64::URL_SAFE_NO_PAD, b)
                 .kind(ErrorKind::Malformed, "unable decode protected header.")?;
 
-            let p: ProtectedHeader =
-                serde_json::from_slice(b).kind(ErrorKind::Malformed, "unable parse protected header.")?;
+            let p: ProtectedHeader = serde_json::from_slice(b)
+                .kind(ErrorKind::Malformed, "unable parse protected header.")?;
 
             protected.push(p);
         }

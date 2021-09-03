@@ -1,8 +1,8 @@
 use sha2::{Digest, Sha256};
 
 use crate::{
-    jwe::envelope::{ProtectedHeader, JWE},
     error::{err_msg, ErrorKind, Result, ResultExt},
+    jwe::envelope::{ProtectedHeader, JWE},
 };
 
 #[derive(Debug)]

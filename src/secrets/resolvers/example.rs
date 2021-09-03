@@ -11,7 +11,9 @@ pub struct ExampleSecretsResolver {
 
 impl ExampleSecretsResolver {
     pub fn new(known_secrets: Vec<Secret>) -> Self {
-        ExampleSecretsResolver { _known_secrets: known_secrets }
+        ExampleSecretsResolver {
+            _known_secrets: known_secrets,
+        }
     }
 }
 
