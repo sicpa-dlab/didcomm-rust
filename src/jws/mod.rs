@@ -24,25 +24,73 @@ pub(crate) use parse::{parse, ParsedJWS};
 
 #[cfg(test)]
 mod tests {
-    use askar_crypto::{alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair}, jwk::FromJwk, repr::{KeyGen, KeyPublicBytes, ToPublicBytes}, sign::KeySign};
+    use askar_crypto::{
+        alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair},
+        jwk::FromJwk,
+        repr::{KeyGen, KeyPublicBytes, ToPublicBytes},
+        sign::KeySign,
+    };
 
     use crate::jws::{self, envelope::Algorithm};
 
     #[test]
-    fn sign_verify_works() {
-        _sign_verify_works::<Ed25519KeyPair>(Algorithm::EdDSA);
+    fn sign_works() {
+        _sign_works::<Ed25519KeyPair>(
+            "did:example:alice#key-1",
+            r#"
+            {
+                "kty":"OKP",
+                "d":"pFRUKkyzx4kHdJtFSnlPA9WzqkDT1HWV0xZ5OYZd2SY",
+                "crv":"Ed25519",
+                "x":"G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww"
+             }
+            "#,
+            Algorithm::EdDSA,
+            r#"
+            {"id":"1234567890","typ":"application/didcomm-plain+json","type":"http://example.com/protocols/lets_do_lunch/1.0/proposal","from":"did:example:alice","to":["did:example:bob"],"created_time":1516269022,"expires_time":1516385931,"body":{"messagespecificattribute":"and its value"}}
+            "#,
+        );
 
         // TODO: Uncomment after fixing https://github.com/hyperledger/aries-askar/issues/26
-        //_sign_verify_works::<P256KeyPair>(Algorithm::Es256);
+        // _sign_verify_works::<P256KeyPair>(
+        //     "did:example:alice#key-2",
+        //     r#"
+        //     {
+        //         "kty":"EC",
+        //         "d":"7TCIdt1rhThFtWcEiLnk_COEjh1ZfQhM4bW2wz-dp4A",
+        //         "crv":"P-256",
+        //         "x":"2syLh57B-dGpa0F8p1JrO6JU7UUSF6j7qL-vfk1eOoY",
+        //         "y":"BgsGtI7UPsObMRjdElxLOrgAO9JggNMjOcfzEPox18w"
+        //      }
+        //     "#,
+        //     Algorithm::Es256,
+        //     r#"
+        //     {"id":"1234567890","typ":"application/didcomm-plain+json","type":"http://example.com/protocols/lets_do_lunch/1.0/proposal","from":"did:example:alice","to":["did:example:bob"],"created_time":1516269022,"expires_time":1516385931,"body":{"messagespecificattribute":"and its value"}}
+        //     "#
+        // );
 
-        _sign_verify_works::<K256KeyPair>(Algorithm::Es256K);
+        _sign_works::<K256KeyPair>(
+            "did:example:alice#key-3",
+            r#"
+            {
+                "kty":"EC",
+                "d":"N3Hm1LXA210YVGGsXw_GklMwcLu_bMgnzDese6YQIyA",
+                "crv":"secp256k1",
+                "x":"aToW5EaTq5mlAf8C5ECYDSkqsJycrW-e1SQ6_GJcAOk",
+                "y":"JAGX94caA21WKreXwYUaOCYTBMrqaX4KWIlsQZTHWCk"
+             }
+            "#,
+            Algorithm::Es256K,
+            r#"
+            {"id":"1234567890","typ":"application/didcomm-plain+json","type":"http://example.com/protocols/lets_do_lunch/1.0/proposal","from":"did:example:alice","to":["did:example:bob"],"created_time":1516269022,"expires_time":1516385931,"body":{"messagespecificattribute":"and its value"}}
+            "#,
+        );
 
-        fn _sign_verify_works<Key>(alg: Algorithm)
+        fn _sign_works<Key>(alice_kid: &str, alice_key: &str, alg: Algorithm, payload: &str)
         where
-            Key: KeySign + KeyGen + ToPublicBytes + KeyPublicBytes,
+            Key: KeySign + KeyGen + ToPublicBytes + KeyPublicBytes + FromJwk,
         {
-            let alice_kid = "did:example:alice#key-1";
-            let alice_key = Key::random().expect("unable random.");
+            let alice_key = Key::from_jwk(alice_key).expect("unable from_jwk.");
 
             let alice_pkey = {
                 let bytes = alice_key
@@ -51,8 +99,6 @@ mod tests {
 
                 Key::from_public_bytes(&bytes).expect("unable from_public_bytes.")
             };
-
-            let payload = "Some payload.";
 
             let msg = jws::sign(payload.as_bytes(), (&alice_kid, &alice_key), alg.clone())
                 .expect("unable sign.");
