@@ -109,7 +109,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn algorythm_serialize_works() {
+    fn algorithm_serialize_works() {
         let alg = Algorithm::Ecdh1puA256kw;
         let alg = serde_json::to_string(&alg).expect("unable serialize.");
         assert_eq!(alg, "\"ECDH-1PU+A256KW\"");
@@ -120,7 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn algorythm_deserialize_works() {
+    fn algorithm_deserialize_works() {
         let alg: Algorithm =
             serde_json::from_str("\"ECDH-1PU+A256KW\"").expect("unable deserialize.");
 
@@ -134,7 +134,7 @@ mod tests {
     }
 
     #[test]
-    fn enc_algorythm_serialize_works() {
+    fn enc_algorithm_serialize_works() {
         let enc_alg = EncAlgorithm::A256cbcHs512;
         let enc_alg = serde_json::to_string(&enc_alg).expect("unable serialize.");
         assert_eq!(enc_alg, "\"A256CBC-HS512\"");
@@ -145,7 +145,7 @@ mod tests {
     }
 
     #[test]
-    fn enc_algorythm_deserialize_works() {
+    fn enc_algorithm_deserialize_works() {
         let enc_alg: EncAlgorithm =
             serde_json::from_str("\"A256CBC-HS512\"").expect("unable deserialize.");
 

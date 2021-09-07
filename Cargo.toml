@@ -17,9 +17,15 @@ sha2 = '0.9'
 version = '1.0'
 features = ['derive']
 
+# TODO: switch to next release to get the following fixed
+# https://github.com/hyperledger/aries-askar/issues/26
+# https://github.com/hyperledger/aries-askar/issues/22
 [dependencies.askar-crypto]
 version = '0.2'
 features = ['std']
+git = 'https://github.com/hyperledger/aries-askar'
+branch = 'main'
+
 [dev-dependencies.tokio]
 version = '1.9'
 features = [

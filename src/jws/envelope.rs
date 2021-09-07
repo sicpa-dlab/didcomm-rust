@@ -5,7 +5,7 @@ use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
 use crate::error::{err_msg, ErrorKind, Result};
 
 /// Subset of JWS in generic json serialization used for signed message type.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub(crate) struct JWS<'a> {
     /// Array of signatures
     pub signatures: Vec<Signature<'a>>,
@@ -16,7 +16,7 @@ pub(crate) struct JWS<'a> {
 
 /// Represents a signature or MAC over the JWS Payload and
 /// the JWS Protected Header.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub(crate) struct Signature<'a> {
     /// JWS unprotected header
     /// Note it isn't serialized and not integrity protected
@@ -32,7 +32,7 @@ pub(crate) struct Signature<'a> {
 }
 
 /// JWS protected header.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub(crate) struct ProtectedHeader<'a> {
     /// Must be `application/didcomm-signed+json` or `didcomm-signed+json` for now.
     /// Something like `application/didcomm-signed+cbor` can be introduced in the
@@ -44,7 +44,7 @@ pub(crate) struct ProtectedHeader<'a> {
 }
 
 /// JWS unprotected header.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub(crate) struct Header<'a> {
     /// KID used to produce signature as DID URL.
     pub kid: &'a str,
@@ -75,7 +75,7 @@ impl Algorithm {
             Algorithm::Es256K => SignatureType::ES256K,
             Algorithm::Other(_) => Err(err_msg(
                 ErrorKind::NoCompatibleCrypto,
-                "unsuported signature type.",
+                "Unsuported signature type",
             ))?,
         };
 
@@ -88,42 +88,46 @@ mod tests {
     use super::*;
 
     #[test]
-    fn algorythm_serialize_works() {
+    fn algorithm_serialize_works() {
         let alg = Algorithm::EdDSA;
-        let alg = serde_json::to_string(&alg).expect("unable serialize.");
+        let alg = serde_json::to_string(&alg).expect("Unable serialize");
         assert_eq!(alg, "\"EdDSA\"");
 
         let alg = Algorithm::Es256;
-        let alg = serde_json::to_string(&alg).expect("unable serialize.");
+        let alg = serde_json::to_string(&alg).expect("Unable serialize");
         assert_eq!(alg, "\"ES256\"");
 
         let alg = Algorithm::Es256K;
-        let alg = serde_json::to_string(&alg).expect("unable serialize.");
+        let alg = serde_json::to_string(&alg).expect("Unable serialize");
         assert_eq!(alg, "\"ES256K\"");
 
         let alg = Algorithm::Other("Unknown".into());
-        let alg = serde_json::to_string(&alg).expect("unable serialize.");
+        let alg = serde_json::to_string(&alg).expect("Unable serialize");
         assert_eq!(alg, "\"Unknown\"");
+
+        let alg = Algorithm::Other("Unknown 2".into());
+        let alg = serde_json::to_string(&alg).expect("Unable serialize");
+        assert_eq!(alg, "\"Unknown 2\"");
     }
 
     #[test]
-    fn algorythm_deserialize_works() {
-        let alg: Algorithm = serde_json::from_str("\"EdDSA\"").expect("unable deserialize.");
+    fn algorithm_deserialize_works() {
+        let alg: Algorithm = serde_json::from_str("\"EdDSA\"").expect("Unable deserialize");
 
         assert_eq!(alg, Algorithm::EdDSA);
 
-        let alg: Algorithm = serde_json::from_str("\"ES256\"").expect("unable deserialize.");
+        let alg: Algorithm = serde_json::from_str("\"ES256\"").expect("Unable deserialize");
 
         assert_eq!(alg, Algorithm::Es256);
 
-        let alg: Algorithm = serde_json::from_str("\"ES256K\"").expect("unable deserialize.");
+        let alg: Algorithm = serde_json::from_str("\"ES256K\"").expect("Unable deserialize");
 
         assert_eq!(alg, Algorithm::Es256K);
 
-        let alg: Algorithm = serde_json::from_str("\"Unknown\"").expect("unable deserialize.");
+        let alg: Algorithm = serde_json::from_str("\"Unknown\"").expect("Unable deserialize");
         assert_eq!(alg, Algorithm::Other("Unknown".into()));
 
-        let alg: Algorithm = serde_json::from_str("\"Unknown 2\"").expect("unable deserialize.");
+        let alg: Algorithm = serde_json::from_str("\"Unknown 2\"").expect("Unable deserialize");
         assert_eq!(alg, Algorithm::Other("Unknown 2".into()));
     }
 }

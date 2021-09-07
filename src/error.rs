@@ -3,33 +3,33 @@ use std::fmt;
 
 #[derive(thiserror::Error, Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub enum ErrorKind {
-    #[error("DID not resolved.")]
+    #[error("DID not resolved")]
     DIDNotResolved,
 
-    #[error("DID not resolved.")]
+    #[error("DID not resolved")]
     DIDUrlNotFound,
 
-    #[error("Secret not found.")]
+    #[error("Secret not found")]
     SecretNotFound,
 
-    #[error("Malformed.")]
+    #[error("Malformed")]
     Malformed,
 
-    #[error("Message doesn't meet trust requrements.")]
+    #[error("Message doesn't meet trust requrements")]
     UnsatisfiedConstraint,
 
-    #[error("IO error.")]
+    #[error("IO error")]
     IoError,
 
-    #[error("Invalid state.")]
+    #[error("Invalid state")]
     InvalidState,
 
-    #[error("No compatible crypto.")]
+    #[error("No compatible crypto")]
     NoCompatibleCrypto,
 }
 
 #[derive(Debug, thiserror::Error)]
-#[error("{kind}")]
+#[error("{kind}: {source:#}")]
 pub struct Error {
     kind: ErrorKind,
     pub source: anyhow::Error,
