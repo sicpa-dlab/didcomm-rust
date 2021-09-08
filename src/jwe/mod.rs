@@ -23,179 +23,115 @@ pub(crate) use encrypt::encrypt;
 pub(crate) use parse::{parse, ParsedJWE};
 
 #[cfg(test)]
-mod tests {
-    use askar_crypto::{
-        alg::{
-            aes::{A128CbcHs256, A256Gcm, A256Kw, AesKey},
-            chacha20::{Chacha20Key, XC20P},
-            p256::P256KeyPair,
-            x25519::X25519KeyPair,
-        },
-        encrypt::{KeyAeadInPlace, KeyAeadMeta},
-        jwk::{FromJwk, ToJwk},
-        kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation, KeyExchange},
-        repr::{KeyGen, KeyPublicBytes, KeySecretBytes, ToPublicBytes, ToSecretBytes},
-    };
+pub(crate) mod test_support {
+    pub(crate) const ALICE_KID_X25519_1: &str = "did:example:alice#key-x25519-1";
 
-    use crate::{
-        jwe::{
-            self,
-            envelope::{Algorithm, EncAlgorithm},
-        },
-        utils::crypto::{JoseKDF, KeyWrap},
-    };
+    pub(crate) const ALICE_KEY_X25519_1: &str = r#"{
+        "kty":"OKP",
+        "d":"r-jK2cO3taR8LQnJB1_ikLBTAnOtShJOsHXRUWT-aZA",
+        "crv":"X25519",
+        "x":"avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs"
+     }"#;
 
-    #[test]
-    fn authcrypt_works() {
-        _authcrypt_works::<
-            AesKey<A128CbcHs256>,
-            Ecdh1PU<'_, X25519KeyPair>,
-            X25519KeyPair,
-            AesKey<A256Kw>,
-        >();
+    pub(crate) const ALICE_PKEY_X25519_1: &str = r#"{
+        "kty":"OKP",
+        "crv":"X25519",
+        "x":"avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs"
+     }"#;
 
-        _authcrypt_works::<
-            AesKey<A128CbcHs256>,
-            Ecdh1PU<'_, P256KeyPair>,
-            P256KeyPair,
-            AesKey<A256Kw>,
-        >();
+    pub(crate) const ALICE_KID_P256_1: &str = "did:example:alice#key-p256-1";
 
-        /// TODO: P-384 and P-521 support after solving https://github.com/hyperledger/aries-askar/issues/10
+    pub(crate) const ALICE_KEY_P256_1: &str = r#"{
+        "kty":"EC",
+        "d":"sB0bYtpaXyp-h17dDpMx91N3Du1AdN4z1FUq02GbmLw",
+        "crv":"P-256",
+        "x":"L0crjMN1g0Ih4sYAJ_nGoHUck2cloltUpUVQDhF2nHE",
+        "y":"SxYgE7CmEJYi7IDhgK5jI4ZiajO8jPRZDldVhqFpYoo"
+    }"#;
 
-        fn _authcrypt_works<CE, KDF, KE, KW>()
-        where
-            CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes + KeySecretBytes,
-            KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwk + FromJwk + ToPublicBytes + KeyPublicBytes,
-            KW: KeyWrap + FromKeyDerivation,
-        {
-            let alice_kid = "did:example:alice#key-1";
-            let alice_key = KE::random().expect("unable random.");
+    pub(crate) const ALICE_PKEY_P256_1: &str = r#"{
+        "kty":"EC",
+        "crv":"P-256",
+        "x":"L0crjMN1g0Ih4sYAJ_nGoHUck2cloltUpUVQDhF2nHE",
+        "y":"SxYgE7CmEJYi7IDhgK5jI4ZiajO8jPRZDldVhqFpYoo"
+    }"#;
 
-            let alice_pkey = {
-                let bytes = alice_key
-                    .to_public_bytes()
-                    .expect("unable to_public_bytes.");
+    pub(crate) const BOB_KID_X25519_1: &str = "did:example:bob#key-x25519-1";
 
-                KE::from_public_bytes(&bytes).expect("unable from_public_bytes.")
-            };
+    pub(crate) const BOB_KEY_X25519_1: &str = r#"{
+        "kty":"OKP",
+        "d":"b9NnuOCB0hm7YGNvaE9DMhwH_wjZA1-gWD6dA0JWdL0",
+        "crv":"X25519",
+        "x":"GDTrI66K0pFfO54tlCSvfjjNapIs44dzpneBgyx0S3E"
+    }"#;
 
-            let bob_kid = "did:example:bob#key-1";
-            let bob_key = KE::random().expect("unable random.");
+    pub(crate) const BOB_PKEY_X25519_1: &str = r#"{
+        "kty":"OKP",
+        "crv":"X25519",
+        "x":"GDTrI66K0pFfO54tlCSvfjjNapIs44dzpneBgyx0S3E"
+    }"#;
 
-            let bob_pkey = {
-                let bytes = bob_key.to_public_bytes().expect("unable to_public_bytes.");
+    pub(crate) const BOB_KID_X25519_2: &str = "did:example:bob#key-x25519-2";
 
-                KE::from_public_bytes(&bytes).expect("unable from_public_bytes.")
-            };
+    pub(crate) const BOB_KEY_X25519_2: &str = r#"{
+        "kty":"OKP",
+        "d":"p-vteoF1gopny1HXywt76xz_uC83UUmrgszsI-ThBKk",
+        "crv":"X25519",
+        "x":"UT9S3F5ep16KSNBBShU2wh3qSfqYjlasZimn0mB8_VM"
+    }"#;
 
-            let plaintext = "Some plaintext.";
+    pub(crate) const BOB_PKEY_X25519_2: &str = r#"{
+        "kty":"OKP",
+        "crv":"X25519",
+        "x":"UT9S3F5ep16KSNBBShU2wh3qSfqYjlasZimn0mB8_VM"
+    }"#;
 
-            let msg = jwe::encrypt::<CE, KDF, KE, KW>(
-                plaintext.as_bytes(),
-                Algorithm::Ecdh1puA256kw,
-                EncAlgorithm::A256cbcHs512,
-                Some((alice_kid, &alice_key)),
-                &[(bob_kid, &bob_pkey)],
-            )
-            .expect("unable encrypt.");
+    pub(crate) const BOB_KID_X25519_3: &str = "did:example:bob#key-x25519-3";
 
-            let mut buf = Vec::new();
-            let msg = jwe::parse(&msg, &mut buf).expect("unable parse.");
+    pub(crate) const BOB_KEY_X25519_3: &str = r#"{
+        "kty":"OKP",
+        "d":"f9WJeuQXEItkGM8shN4dqFr5fLQLBasHnWZ-8dPaSo0",
+        "crv":"X25519",
+        "x":"82k2BTUiywKv49fKLZa-WwDi8RBf0tB0M8bvSAUQ3yY"
+    }"#;
 
-            assert_eq!(msg.jwe.recipients.len(), 1);
-            assert_eq!(msg.jwe.recipients[0].header.kid, bob_kid);
+    pub(crate) const BOB_PKEY_X25519_3: &str = r#"{
+        "kty":"OKP",
+        "crv":"X25519",
+        "x":"82k2BTUiywKv49fKLZa-WwDi8RBf0tB0M8bvSAUQ3yY"
+    }"#;
 
-            assert_eq!(msg.protected.alg, Algorithm::Ecdh1puA256kw);
-            assert_eq!(msg.protected.enc, EncAlgorithm::A256cbcHs512);
+    pub(crate) const BOB_KID_P256_1: &str = "did:example:bob#key-p256-1";
 
-            assert_eq!(msg.skid.as_deref(), Some(alice_kid));
+    pub(crate) const BOB_KEY_P256_1: &str = r#"{
+        "kty":"EC",
+        "d":"PgwHnlXxt8pwR6OCTUwwWx-P51BiLkFZyqHzquKddXQ",
+        "crv":"P-256",
+        "x":"FQVaTOksf-XsCUrt4J1L2UGvtWaDwpboVlqbKBY2AIo",
+        "y":"6XFB9PYo7dyC5ViJSO9uXNYkxTJWn0d_mqJ__ZYhcNY"
+    }"#;
 
-            let plaintext_ = msg
-                .decrypt::<CE, KDF, KE, KW>(Some((alice_kid, &alice_pkey)), (bob_kid, &bob_key))
-                .expect("unable decrypt.");
+    pub(crate) const BOB_PKEY_P256_1: &str = r#"{
+        "kty":"EC",
+        "crv":"P-256",
+        "x":"FQVaTOksf-XsCUrt4J1L2UGvtWaDwpboVlqbKBY2AIo",
+        "y":"6XFB9PYo7dyC5ViJSO9uXNYkxTJWn0d_mqJ__ZYhcNY"
+    }"#;
 
-            assert_eq!(plaintext_, plaintext.as_bytes());
-        }
-    }
+    pub(crate) const BOB_KID_P256_2: &str = "did:example:bob#key-p256-2";
 
-    #[test]
-    fn anoncrypt_works() {
-        _anoncrypt_works::<
-            AesKey<A128CbcHs256>,
-            EcdhEs<'_, X25519KeyPair>,
-            X25519KeyPair,
-            AesKey<A256Kw>,
-        >();
+    pub(crate) const BOB_KEY_P256_2: &str = r#"{
+        "kty":"EC",
+        "d":"agKz7HS8mIwqO40Q2dwm_Zi70IdYFtonN5sZecQoxYU",
+        "crv":"P-256",
+        "x":"n0yBsGrwGZup9ywKhzD4KoORGicilzIUyfcXb1CSwe0",
+        "y":"ov0buZJ8GHzV128jmCw1CaFbajZoFFmiJDbMrceCXIw"
+    }"#;
 
-        _anoncrypt_works::<
-            AesKey<A128CbcHs256>,
-            EcdhEs<'_, P256KeyPair>,
-            P256KeyPair,
-            AesKey<A256Kw>,
-        >();
-
-        _anoncrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
-        );
-
-        _anoncrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>();
-
-        _anoncrypt_works::<
-            Chacha20Key<XC20P>,
-            EcdhEs<'_, X25519KeyPair>,
-            X25519KeyPair,
-            AesKey<A256Kw>,
-        >();
-
-        _anoncrypt_works::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
-        );
-
-        /// TODO: P-384 and P-521 support after solving https://github.com/hyperledger/aries-askar/issues/10
-
-        fn _anoncrypt_works<CE, KDF, KE, KW>()
-        where
-            CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes + KeySecretBytes,
-            KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwk + FromJwk + ToPublicBytes + KeyPublicBytes,
-            KW: KeyWrap + FromKeyDerivation,
-        {
-            let bob_kid = "did:example:bob#key-1";
-            let bob_key = KE::random().expect("unable random.");
-
-            let bob_pkey = {
-                let bytes = bob_key.to_public_bytes().expect("unable to_public_bytes.");
-
-                KE::from_public_bytes(&bytes).expect("unable from_public_bytes.")
-            };
-
-            let plaintext = "Some plaintext.";
-
-            let msg = jwe::encrypt::<CE, KDF, KE, KW>(
-                plaintext.as_bytes(),
-                Algorithm::Ecdh1esA256kw,
-                EncAlgorithm::A256cbcHs512,
-                None,
-                &[(bob_kid, &bob_pkey)],
-            )
-            .expect("unable encrypt.");
-
-            let mut buf = Vec::new();
-            let msg = jwe::parse(&msg, &mut buf).expect("unable parse.");
-
-            assert_eq!(msg.jwe.recipients.len(), 1);
-            assert_eq!(msg.jwe.recipients[0].header.kid, "did:example:bob#key-1");
-
-            assert_eq!(msg.protected.alg, Algorithm::Ecdh1esA256kw);
-            assert_eq!(msg.protected.enc, EncAlgorithm::A256cbcHs512);
-
-            assert_eq!(msg.skid, None);
-
-            let _plaintext = msg
-                .decrypt::<CE, KDF, KE, KW>(None, (bob_kid, &bob_key))
-                .expect("unable decrypt.");
-
-            assert_eq!(_plaintext, plaintext.as_bytes());
-        }
-    }
+    pub(crate) const BOB_PKEY_P256_2: &str = r#"{
+        "kty":"EC",
+        "crv":"P-256",
+        "x":"n0yBsGrwGZup9ywKhzD4KoORGicilzIUyfcXb1CSwe0",
+        "y":"ov0buZJ8GHzV128jmCw1CaFbajZoFFmiJDbMrceCXIw"
+    }"#;
 }

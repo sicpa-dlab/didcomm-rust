@@ -15,15 +15,15 @@ pub(crate) trait KeyWrap: KeyAeadInPlace {
 
         let key_len = key
             .secret_bytes_length()
-            .kind(ErrorKind::InvalidState, "unable get key len.")?;
+            .kind(ErrorKind::InvalidState, "Unable get key len")?;
 
         let mut buf = SecretBytes::with_capacity(key_len + params.tag_length);
 
         key.write_secret_bytes(&mut buf)
-            .kind(ErrorKind::InvalidState, "unable encrypt.")?;
+            .kind(ErrorKind::InvalidState, "Unable encrypt")?;
 
         self.encrypt_in_place(&mut buf, &[], &[])
-            .kind(ErrorKind::InvalidState, "unable encrypt.")?;
+            .kind(ErrorKind::InvalidState, "Unable encrypt")?;
 
         Ok(buf)
     }
@@ -32,10 +32,10 @@ pub(crate) trait KeyWrap: KeyAeadInPlace {
         let mut buf = SecretBytes::from_slice(cyphertext);
 
         self.decrypt_in_place(&mut buf, &[], &[])
-            .kind(ErrorKind::Malformed, "unable decrypt key.")?;
+            .kind(ErrorKind::Malformed, "Unable decrypt key")?;
 
         let key =
-            K::from_secret_bytes(buf.as_ref()).kind(ErrorKind::Malformed, "unable create key.")?;
+            K::from_secret_bytes(buf.as_ref()).kind(ErrorKind::Malformed, "Unable create key")?;
 
         Ok(key)
     }
@@ -72,9 +72,9 @@ impl<Key: KeyExchange, KW: KeyWrap + FromKeyDerivation + Sized> JoseKDF<Key, KW>
         receive: bool,
     ) -> Result<KW> {
         let send_key = send_key
-            .ok_or_else(|| err_msg(ErrorKind::InvalidState, "no sendery key for ecdh-1pu."))?;
+            .ok_or_else(|| err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu"))?;
 
-        let apu = apu.ok_or_else(|| err_msg(ErrorKind::InvalidState, "no apu for ecdh-1pu."))?;
+        let apu = apu.ok_or_else(|| err_msg(ErrorKind::InvalidState, "No apu for ecdh-1pu"))?;
 
         let deriviation = Ecdh1PU::new(
             ephem_key,
@@ -88,7 +88,7 @@ impl<Key: KeyExchange, KW: KeyWrap + FromKeyDerivation + Sized> JoseKDF<Key, KW>
         );
 
         let kw = KW::from_key_derivation(deriviation)
-            .kind(ErrorKind::InvalidState, "unable derive kw.")?;
+            .kind(ErrorKind::InvalidState, "Unable derive kw")?;
 
         Ok(kw)
     }
@@ -115,7 +115,7 @@ impl<Key: KeyExchange, KW: KeyWrap + FromKeyDerivation + Sized> JoseKDF<Key, KW>
         );
 
         let kw = KW::from_key_derivation(deriviation)
-            .kind(ErrorKind::InvalidState, "unable derive kw.")?;
+            .kind(ErrorKind::InvalidState, "Unable derive kw")?;
 
         Ok(kw)
     }

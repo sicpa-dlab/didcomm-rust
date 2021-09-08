@@ -243,7 +243,7 @@ mod tests {
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::Malformed);
-           
+
             assert_eq!(
                 format!("{}", err),
                 "Malformed: Unable decode signature: Invalid byte 33, offset 0."

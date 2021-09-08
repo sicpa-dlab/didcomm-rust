@@ -197,7 +197,7 @@ mod tests {
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::InvalidState);
-          
+
             assert_eq!(
                 format!("{}", err),
                 "Invalid state: Unable create signature: Unsupported signature type"
@@ -238,7 +238,7 @@ mod tests {
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::NoCompatibleCrypto);
-            
+
             assert_eq!(
                 format!("{}", err),
                 "No compatible crypto: Unsuported signature type"

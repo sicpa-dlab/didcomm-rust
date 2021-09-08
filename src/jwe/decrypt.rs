@@ -8,7 +8,7 @@ use askar_crypto::{
 
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
-    jwe::parse::ParsedJWE,
+    jwe::ParsedJWE,
     utils::crypto::{JoseKDF, KeyWrap},
 };
 

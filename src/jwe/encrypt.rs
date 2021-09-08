@@ -33,7 +33,7 @@ where
     };
 
     let mut rng = crate::crypto::random::default_rng();
-    let cek = CE::generate(&mut rng).kind(ErrorKind::InvalidState, "unable generate cek.")?;
+    let cek = CE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate cek")?;
 
     let apu = skid.map(|skid| base64::encode_config(skid, base64::URL_SAFE_NO_PAD));
 
@@ -44,7 +44,7 @@ where
         base64::encode_config(apv, base64::URL_SAFE_NO_PAD)
     };
 
-    let epk = KE::generate(&mut rng).kind(ErrorKind::InvalidState, "unable generate epk.")?;
+    let epk = KE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate epk")?;
 
     let encrypted_keys = {
         let mut encrypted_keys: Vec<(&str, String)> = Vec::with_capacity(recipients.len());
@@ -58,11 +58,11 @@ where
                 apv.as_bytes(),
                 false,
             )
-            .kind(ErrorKind::InvalidState, "unable derive kw.")?;
+            .kind(ErrorKind::InvalidState, "Unable derive kw")?;
 
             let encrypted_key = kw
                 .wrap_key(&cek)
-                .kind(ErrorKind::InvalidState, "unable wrap key.")?;
+                .kind(ErrorKind::InvalidState, "Unable wrap key")?;
 
             let encrypted_key = base64::encode_config(&encrypted_key, base64::URL_SAFE_NO_PAD);
             encrypted_keys.push((kid.clone(), encrypted_key));
@@ -83,10 +83,10 @@ where
         let epk = {
             let epk = epk
                 .to_jwk_public(None)
-                .kind(ErrorKind::InvalidState, "unable produce jwk for epk.")?;
+                .kind(ErrorKind::InvalidState, "Unable produce jwk for epk")?;
 
             let epk: Value = serde_json::from_str(&epk)
-                .kind(ErrorKind::InvalidState, "unable produce jwk for epk.")?;
+                .kind(ErrorKind::InvalidState, "Unable produce jwk for epk")?;
 
             epk
         };
@@ -101,10 +101,8 @@ where
             epk,
         };
 
-        let p = serde_json::to_string(&p).kind(
-            ErrorKind::InvalidState,
-            "unable serialize protected header.",
-        )?;
+        let p = serde_json::to_string(&p)
+            .kind(ErrorKind::InvalidState, "Unable serialize protected header")?;
 
         base64::encode_config(&p, base64::URL_SAFE_NO_PAD)
     };
@@ -123,7 +121,7 @@ where
 
         let ciphertext_len = cek
             .encrypt_in_place(&mut buf, &iv[..], protected.as_bytes())
-            .kind(ErrorKind::InvalidState, "unable encrypt content.")?;
+            .kind(ErrorKind::InvalidState, "Unable encrypt content")?;
 
         let ciphertext = &buf.as_ref()[0..ciphertext_len];
         let tag = &buf.as_ref()[ciphertext_len..];
@@ -143,7 +141,269 @@ where
         tag: &tag,
     };
 
-    let jwe = serde_json::to_string(&jwe).kind(ErrorKind::InvalidState, "unable serialize jwe.")?;
+    let jwe = serde_json::to_string(&jwe).kind(ErrorKind::InvalidState, "Unable serialize jwe")?;
 
     Ok(jwe)
+}
+
+#[cfg(test)]
+mod tests {
+    use askar_crypto::{
+        alg::{
+            aes::{A128CbcHs256, A256Gcm, A256Kw, AesKey},
+            chacha20::{Chacha20Key, XC20P},
+            p256::P256KeyPair,
+            x25519::X25519KeyPair,
+        },
+        encrypt::{KeyAeadInPlace, KeyAeadMeta},
+        jwk::{FromJwk, ToJwk},
+        kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation, KeyExchange},
+        repr::{KeyGen, KeyPublicBytes, KeySecretBytes, ToPublicBytes, ToSecretBytes},
+    };
+
+    use crate::{
+        error::ErrorKind,
+        jwe::{
+            self,
+            envelope::{Algorithm, EncAlgorithm},
+            test_support::*,
+        },
+        utils::crypto::{JoseKDF, KeyWrap},
+    };
+
+    #[test]
+    fn encrypt_works() {
+        _encrypt_works::<
+            AesKey<A128CbcHs256>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            Some((ALICE_KID_X25519_1, ALICE_KEY_X25519_1, ALICE_PKEY_X25519_1)),
+            &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
+        );
+
+        _encrypt_works::<
+            AesKey<A128CbcHs256>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            Some((ALICE_KID_X25519_1, ALICE_KEY_X25519_1, ALICE_PKEY_X25519_1)),
+            &[
+                (BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1),
+                (BOB_KID_X25519_2, BOB_KEY_X25519_2, BOB_PKEY_X25519_2),
+                (BOB_KID_X25519_3, BOB_KEY_X25519_3, BOB_PKEY_X25519_3),
+            ],
+        );
+
+        _encrypt_works::<AesKey<A128CbcHs256>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+            Some((ALICE_KID_P256_1, ALICE_KEY_P256_1, ALICE_PKEY_P256_1)),
+            &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
+        );
+
+        _encrypt_works::<AesKey<A128CbcHs256>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+            Some((ALICE_KID_P256_1, ALICE_KEY_P256_1, ALICE_PKEY_P256_1)),
+            &[
+                (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
+                (BOB_KID_P256_2, BOB_KEY_P256_2, BOB_PKEY_P256_2),
+            ],
+        );
+
+        _encrypt_works::<
+            AesKey<A128CbcHs256>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            None,
+            &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
+        );
+
+        _encrypt_works::<
+            AesKey<A128CbcHs256>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            None,
+            &[
+                (BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1),
+                (BOB_KID_X25519_2, BOB_KEY_X25519_2, BOB_PKEY_X25519_2),
+                (BOB_KID_X25519_3, BOB_KEY_X25519_3, BOB_PKEY_X25519_3),
+            ],
+        );
+
+        _encrypt_works::<AesKey<A128CbcHs256>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+            None,
+            &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
+        );
+
+        _encrypt_works::<AesKey<A128CbcHs256>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+            None,
+            &[
+                (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
+                (BOB_KID_P256_2, BOB_KEY_P256_2, BOB_PKEY_P256_2),
+            ],
+        );
+
+        _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
+            None,
+            &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
+        );
+
+        _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
+            None,
+            &[
+                (BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1),
+                (BOB_KID_X25519_2, BOB_KEY_X25519_2, BOB_PKEY_X25519_2),
+                (BOB_KID_X25519_3, BOB_KEY_X25519_3, BOB_PKEY_X25519_3),
+            ],
+        );
+
+        _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+            None,
+            &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
+        );
+
+        _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+            None,
+            &[
+                (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
+                (BOB_KID_P256_2, BOB_KEY_P256_2, BOB_PKEY_P256_2),
+            ],
+        );
+
+        _encrypt_works::<
+            Chacha20Key<XC20P>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            None,
+            &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
+        );
+
+        _encrypt_works::<
+            Chacha20Key<XC20P>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            None,
+            &[
+                (BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1),
+                (BOB_KID_X25519_2, BOB_KEY_X25519_2, BOB_PKEY_X25519_2),
+                (BOB_KID_X25519_3, BOB_KEY_X25519_3, BOB_PKEY_X25519_3),
+            ],
+        );
+
+        _encrypt_works::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+            None,
+            &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
+        );
+
+        _encrypt_works::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+            None,
+            &[
+                (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
+                (BOB_KID_P256_2, BOB_KEY_P256_2, BOB_PKEY_P256_2),
+            ],
+        );
+
+        /// TODO: P-384 and P-521 support after solving https://github.com/hyperledger/aries-askar/issues/10
+
+        fn _encrypt_works<CE, KDF, KE, KW>(
+            alice: Option<(&str, &str, &str)>,
+            bob: &[(&str, &str, &str)],
+        ) where
+            CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes + KeySecretBytes,
+            KDF: JoseKDF<KE, KW>,
+            KE: KeyExchange + KeyGen + ToJwk + FromJwk + ToPublicBytes + KeyPublicBytes,
+            KW: KeyWrap + FromKeyDerivation,
+        {
+            let alice = alice.map(|a| {
+                (
+                    a.0,
+                    KE::from_jwk(a.1).expect("Unable from_jwk"),
+                    KE::from_jwk(a.2).expect("Unable from_jwk"),
+                )
+            });
+
+            let alice_kid = alice.as_ref().map(|a| a.0);
+            let alice_priv = alice.as_ref().map(|a| (a.0, &a.1));
+            let alice_pub = alice.as_ref().map(|a| (a.0, &a.2));
+
+            let bob = bob
+                .iter()
+                .map(|b| {
+                    (
+                        b.0,
+                        KE::from_jwk(b.1).expect("Unable from_jwk"),
+                        KE::from_jwk(b.2).expect("Unable from_jwk"),
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            let bob_priv: Vec<_> = bob.iter().map(|b| (b.0, &b.1)).collect();
+            let bob_pub: Vec<_> = bob.iter().map(|b| (b.0, &b.2)).collect();
+
+            let plaintext = "Some plaintext.";
+
+            let msg = jwe::encrypt::<CE, KDF, KE, KW>(
+                plaintext.as_bytes(),
+                Algorithm::Ecdh1puA256kw,
+                EncAlgorithm::A256cbcHs512,
+                alice_priv,
+                &bob_pub,
+            )
+            .expect("Unable encrypt");
+
+            let mut buf = Vec::new();
+            let msg = jwe::parse(&msg, &mut buf).expect("Unable parse");
+
+            assert_eq!(msg.protected.alg, Algorithm::Ecdh1puA256kw);
+            assert_eq!(msg.protected.enc, EncAlgorithm::A256cbcHs512);
+            assert_eq!(msg.jwe.recipients.len(), bob.len());
+
+            assert_eq!(msg.skid.as_deref(), alice_kid);
+
+            for recipient in &msg.jwe.recipients {
+                let bob_edge_priv = bob_priv
+                    .iter()
+                    .find(|b| recipient.header.kid == b.0)
+                    .expect("recepint not found.");
+
+                let plaintext_ = msg
+                    .decrypt::<CE, KDF, KE, KW>(alice_pub, *bob_edge_priv)
+                    .expect("unable decrypt.");
+
+                assert_eq!(plaintext_, plaintext.as_bytes());
+            }
+        }
+    }
+
+    #[test]
+    fn encrypt_works_no_sender() {
+        let bob_kid = BOB_KID_X25519_1;
+        let bob_pkey = X25519KeyPair::from_jwk(BOB_PKEY_X25519_1).expect("unable from_jwk");
+        let plaintext = "Some plaintext.";
+
+        let res = jwe::encrypt::<
+            AesKey<A128CbcHs256>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            plaintext.as_bytes(),
+            Algorithm::Ecdh1puA256kw,
+            EncAlgorithm::A256cbcHs512,
+            None,
+            &[(bob_kid, &bob_pkey)],
+        );
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::InvalidState);
+        assert_eq!(format!("{}", err), "Invalid state: Unable derive kw: Invalid state: No sender key for ecdh-1pu: No sender key for ecdh-1pu");
+    }
 }

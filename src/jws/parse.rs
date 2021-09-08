@@ -150,14 +150,14 @@ mod tests {
     #[test]
     fn parse_works_unparsable() {
         let msg = r#"
-        {.
+        {
             "payload":"eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3NhbCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVhdGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNzYWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19",
             "signatures":[
                {
                   "protected":"eyJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXNpZ25lZCtqc29uIiwiYWxnIjoiRWREU0EifQ",
                   "signature":"FW33NnvOHV0Ted9-F7GZbkia-vYAfBKtH4oBxbrttWAhBZ6UFJMxcGjL3lwOl4YohI3kyyd08LHPWNMgP2EVCQ",
                   "header":{
-                     "kid":"did:example:alice#key-1"
+                     "kid":"did:example:alice#key-1",
                   }
                }
             ]
@@ -169,9 +169,10 @@ mod tests {
 
         let res = res.expect_err("res is ok");
         assert_eq!(res.kind(), ErrorKind::Malformed);
+       
         assert_eq!(
             format!("{}", res),
-            "Malformed: Unable parse jws: key must be a string at line 2 column 10"
+            "Malformed: Unable parse jws: trailing comma at line 10 column 19"
         );
     }
 
