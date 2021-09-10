@@ -1,0 +1,45 @@
+name: build
+
+on:
+  pull_request
+
+jobs:
+  check:
+    name: Run Checks
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: Cache cargo resources
+        uses: Swatinem/rust-cache@v1
+        with:
+          sharedKey: deps
+
+      - name: Cargo fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Debug build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --verbose
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose
