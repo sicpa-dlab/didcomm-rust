@@ -182,6 +182,8 @@ mod tests {
         >(
             Some((ALICE_KID_X25519_1, ALICE_KEY_X25519_1, ALICE_PKEY_X25519_1)),
             &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
+            Algorithm::Ecdh1puA256kw,
+            EncAlgorithm::A256cbcHs512,
         );
 
         _encrypt_works::<
@@ -196,11 +198,15 @@ mod tests {
                 (BOB_KID_X25519_2, BOB_KEY_X25519_2, BOB_PKEY_X25519_2),
                 (BOB_KID_X25519_3, BOB_KEY_X25519_3, BOB_PKEY_X25519_3),
             ],
+            Algorithm::Ecdh1puA256kw,
+            EncAlgorithm::A256cbcHs512,
         );
 
         _encrypt_works::<AesKey<A128CbcHs256>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             Some((ALICE_KID_P256_1, ALICE_KEY_P256_1, ALICE_PKEY_P256_1)),
             &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
+            Algorithm::Ecdh1puA256kw,
+            EncAlgorithm::A256cbcHs512,
         );
 
         _encrypt_works::<AesKey<A128CbcHs256>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
@@ -209,6 +215,8 @@ mod tests {
                 (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
                 (BOB_KID_P256_2, BOB_KEY_P256_2, BOB_PKEY_P256_2),
             ],
+            Algorithm::Ecdh1puA256kw,
+            EncAlgorithm::A256cbcHs512,
         );
 
         _encrypt_works::<
@@ -219,6 +227,8 @@ mod tests {
         >(
             None,
             &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::A256cbcHs512,
         );
 
         _encrypt_works::<
@@ -233,11 +243,15 @@ mod tests {
                 (BOB_KID_X25519_2, BOB_KEY_X25519_2, BOB_PKEY_X25519_2),
                 (BOB_KID_X25519_3, BOB_KEY_X25519_3, BOB_PKEY_X25519_3),
             ],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::A256cbcHs512,
         );
 
         _encrypt_works::<AesKey<A128CbcHs256>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::A256cbcHs512,
         );
 
         _encrypt_works::<AesKey<A128CbcHs256>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
@@ -246,11 +260,15 @@ mod tests {
                 (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
                 (BOB_KID_P256_2, BOB_KEY_P256_2, BOB_PKEY_P256_2),
             ],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::A256cbcHs512,
         );
 
         _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
             None,
             &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::A256Gcm,
         );
 
         _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
@@ -260,11 +278,15 @@ mod tests {
                 (BOB_KID_X25519_2, BOB_KEY_X25519_2, BOB_PKEY_X25519_2),
                 (BOB_KID_X25519_3, BOB_KEY_X25519_3, BOB_PKEY_X25519_3),
             ],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::A256Gcm,
         );
 
         _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::A256Gcm,
         );
 
         _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
@@ -273,6 +295,8 @@ mod tests {
                 (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
                 (BOB_KID_P256_2, BOB_KEY_P256_2, BOB_PKEY_P256_2),
             ],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::A256Gcm,
         );
 
         _encrypt_works::<
@@ -283,6 +307,8 @@ mod tests {
         >(
             None,
             &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::Xc20P,
         );
 
         _encrypt_works::<
@@ -297,11 +323,15 @@ mod tests {
                 (BOB_KID_X25519_2, BOB_KEY_X25519_2, BOB_PKEY_X25519_2),
                 (BOB_KID_X25519_3, BOB_KEY_X25519_3, BOB_PKEY_X25519_3),
             ],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::Xc20P,
         );
 
         _encrypt_works::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::Xc20P,
         );
 
         _encrypt_works::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
@@ -310,6 +340,8 @@ mod tests {
                 (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
                 (BOB_KID_P256_2, BOB_KEY_P256_2, BOB_PKEY_P256_2),
             ],
+            Algorithm::EcdhEsA256kw,
+            EncAlgorithm::Xc20P,
         );
 
         /// TODO: P-384 and P-521 support after solving https://github.com/hyperledger/aries-askar/issues/10
@@ -317,6 +349,8 @@ mod tests {
         fn _encrypt_works<CE, KDF, KE, KW>(
             alice: Option<(&str, &str, &str)>,
             bob: &[(&str, &str, &str)],
+            alg: Algorithm,
+            enc_alg: EncAlgorithm,
         ) where
             CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
@@ -353,8 +387,8 @@ mod tests {
 
             let msg = jwe::encrypt::<CE, KDF, KE, KW>(
                 plaintext.as_bytes(),
-                Algorithm::Ecdh1puA256kw,
-                EncAlgorithm::A256cbcHs512,
+                alg.clone(),
+                enc_alg.clone(),
                 alice_priv,
                 &bob_pub,
             )
@@ -363,8 +397,8 @@ mod tests {
             let mut buf = vec![];
             let msg = jwe::parse(&msg, &mut buf).expect("Unable parse");
 
-            assert_eq!(msg.protected.alg, Algorithm::Ecdh1puA256kw);
-            assert_eq!(msg.protected.enc, EncAlgorithm::A256cbcHs512);
+            assert_eq!(msg.protected.alg, alg);
+            assert_eq!(msg.protected.enc, enc_alg);
             assert_eq!(msg.jwe.recipients.len(), bob.len());
 
             assert_eq!(msg.apu.as_deref(), alice_kid);
