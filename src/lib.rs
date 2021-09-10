@@ -30,8 +30,7 @@ mod tests {
     };
 
     #[tokio::test]
-    #[ignore]
-    // will be fixed after https://github.com/sicpa-dlab/didcomm-gemini/issues/71
+    #[ignore = "will be fixed after https://github.com/sicpa-dlab/didcomm-gemini/issues/71"]
     async fn demo_works() {
         // --- Build message ---
 
