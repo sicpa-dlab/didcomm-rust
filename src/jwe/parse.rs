@@ -9,7 +9,8 @@ use crate::{
 pub(crate) struct ParsedJWE<'a, 'b> {
     pub(crate) jwe: JWE<'a>,
     pub(crate) protected: ProtectedHeader<'b>,
-    pub(crate) skid: Option<String>,
+    pub(crate) apu: Option<String>,
+    pub(crate) apv: Vec<u8>,
 }
 
 pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<ParsedJWE<'a, 'b>> {
@@ -29,26 +30,25 @@ pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<Parsed
             .collect::<Vec<_>>();
 
         kids.sort();
-        let apv = Sha256::digest(kids.join(".").as_bytes());
-        base64::encode_config(apv, base64::URL_SAFE_NO_PAD)
+        Sha256::digest(kids.join(".").as_bytes())
     };
 
-    if protected.apv != apv {
+    if protected.apv != base64::encode_config(apv, base64::URL_SAFE_NO_PAD) {
         Err(err_msg(ErrorKind::Malformed, "APV mismatch"))?;
     }
 
-    let skid = if let Some(skid) = protected.apu {
-        let skid = base64::decode_config(skid, base64::URL_SAFE_NO_PAD)
+    let apu = if let Some(apu) = protected.apu {
+        let apu = base64::decode_config(apu, base64::URL_SAFE_NO_PAD)
             .kind(ErrorKind::Malformed, "Unable decode apv")?;
 
-        let skid = String::from_utf8(skid).kind(ErrorKind::Malformed, "Invalid utf8 for apv")?;
+        let apu = String::from_utf8(apu).kind(ErrorKind::Malformed, "Invalid utf8 for apv")?;
 
-        Some(skid)
+        Some(apu)
     } else {
         None
     };
 
-    match (&skid, &protected.skid) {
+    match (&apu, &protected.skid) {
         (Some(skid), Some(pskid)) if skid != pskid => {
             Err(err_msg(ErrorKind::Malformed, "APU mismatch"))?
         }
@@ -59,12 +59,14 @@ pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<Parsed
     let jwe = ParsedJWE {
         jwe,
         protected,
-        skid,
+        apu,
+        apv: apv.to_vec(),
     };
 
     Ok(jwe)
 }
 
+#[cfg(test)]
 mod tests {
     use serde_json::json;
 
@@ -146,7 +148,8 @@ mod tests {
                     "x":"JHjsmIRZAaB0zRG_wNXLV2rPggF00hdHbW5rj8g0I24"
                 }),
             },
-            skid: None,
+            apu: None,
+            apv: vec![53, 203, 46, 2, 122, 209, 124, 242, 186, 244, 15, 171, 145, 157, 11, 245, 117, 148, 27, 136, 204, 188, 208, 183, 102, 14, 248, 4, 252, 249, 220, 240],
         };
 
         assert_eq!(res, exp);
@@ -221,7 +224,8 @@ mod tests {
                     "x":"GFcMopJljf4pLZfch4a_GhTM_YAf6iNI1dWDGyVCaw0"
                 }),
             },
-            skid: Some("did:example:alice#key-x25519-1".to_owned()),
+            apu: Some("did:example:alice#key-x25519-1".to_owned()),
+            apv: vec![53, 203, 46, 2, 122, 209, 124, 242, 186, 244, 15, 171, 145, 157, 11, 245, 117, 148, 27, 136, 204, 188, 208, 183, 102, 14, 248, 4, 252, 249, 220, 240],
         };
 
         assert_eq!(res, exp);
@@ -604,10 +608,7 @@ mod tests {
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
 
-        assert_eq!(
-            format!("{}", err),
-            "Malformed: APU mismatch"
-        );
+        assert_eq!(format!("{}", err), "Malformed: APU mismatch");
     }
 
     #[test]
@@ -647,9 +648,6 @@ mod tests {
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
 
-        assert_eq!(
-            format!("{}", err),
-            "Malformed: SKID present, but no apu"
-        );
+        assert_eq!(format!("{}", err), "Malformed: SKID present, but no apu");
     }
 }

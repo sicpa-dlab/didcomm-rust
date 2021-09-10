@@ -35,13 +35,11 @@ where
     let mut rng = crate::crypto::random::default_rng();
     let cek = CE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate cek")?;
 
-    let apu = skid.map(|skid| base64::encode_config(skid, base64::URL_SAFE_NO_PAD));
 
     let apv = {
         let mut kids = recipients.iter().map(|r| r.0).collect::<Vec<_>>();
         kids.sort();
-        let apv = Sha256::digest(kids.join(".").as_bytes());
-        base64::encode_config(apv, base64::URL_SAFE_NO_PAD)
+        Sha256::digest(kids.join(".").as_bytes())
     };
 
     let epk = KE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate epk")?;
@@ -54,8 +52,9 @@ where
                 &epk,
                 skey,
                 &key,
-                apu.as_ref().map(|apu| apu.as_bytes()),
-                apv.as_bytes(),
+                alg.as_str().as_bytes(),
+                skid.as_ref().map(|s| s.as_bytes()).unwrap_or(&[]),
+                apv.as_slice(),
                 false,
             )
             .kind(ErrorKind::InvalidState, "Unable derive kw")?;
@@ -90,6 +89,9 @@ where
 
             epk
         };
+
+        let apu = skid.map(|skid| base64::encode_config(skid, base64::URL_SAFE_NO_PAD));
+        let apv = base64::encode_config(apv, base64::URL_SAFE_NO_PAD);
 
         let p = ProtectedHeader {
             typ: "application/didcomm-encrypted+json",
@@ -359,14 +361,14 @@ mod tests {
             )
             .expect("Unable encrypt");
 
-            let mut buf = Vec::new();
+            let mut buf = vec![];
             let msg = jwe::parse(&msg, &mut buf).expect("Unable parse");
 
             assert_eq!(msg.protected.alg, Algorithm::Ecdh1puA256kw);
             assert_eq!(msg.protected.enc, EncAlgorithm::A256cbcHs512);
             assert_eq!(msg.jwe.recipients.len(), bob.len());
 
-            assert_eq!(msg.skid.as_deref(), alice_kid);
+            assert_eq!(msg.apu.as_deref(), alice_kid);
 
             for recipient in &msg.jwe.recipients {
                 let bob_edge_priv = bob_priv
