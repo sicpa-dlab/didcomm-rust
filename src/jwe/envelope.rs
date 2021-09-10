@@ -80,7 +80,7 @@ pub(crate) enum Algorithm {
     Ecdh1puA256kw,
 
     #[serde(rename = "ECDH-ES+A256KW")]
-    Ecdh1esA256kw,
+    EcdhEsA256kw,
 
     #[serde(other)]
     Other(String),
@@ -90,11 +90,10 @@ impl Algorithm {
     pub(crate) fn as_str(&self) -> &str {
         match self {
             Algorithm::Ecdh1puA256kw => "ECDH-1PU+A256KW",
-            Algorithm::Ecdh1esA256kw => "ECDH-ES+A256KW",
+            Algorithm::EcdhEsA256kw => "ECDH-ES+A256KW",
             Algorithm::Other(ref s) => &s,
         }
     }
-    
 }
 
 /// Represents possible values for `enc` header.

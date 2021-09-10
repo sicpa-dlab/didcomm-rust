@@ -35,7 +35,6 @@ where
     let mut rng = crate::crypto::random::default_rng();
     let cek = CE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate cek")?;
 
-
     let apv = {
         let mut kids = recipients.iter().map(|r| r.0).collect::<Vec<_>>();
         kids.sort();

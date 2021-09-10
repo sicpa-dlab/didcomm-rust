@@ -137,7 +137,7 @@ mod tests {
             },
             protected: ProtectedHeader {
                 typ: "application/didcomm-encrypted+json",
-                alg: jwe::envelope::Algorithm::Ecdh1esA256kw,
+                alg: jwe::envelope::Algorithm::EcdhEsA256kw,
                 enc: EncAlgorithm::Xc20P,
                 skid: None,
                 apu: None,

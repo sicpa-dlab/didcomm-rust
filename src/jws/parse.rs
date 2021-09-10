@@ -169,7 +169,7 @@ mod tests {
 
         let res = res.expect_err("res is ok");
         assert_eq!(res.kind(), ErrorKind::Malformed);
-       
+
         assert_eq!(
             format!("{}", res),
             "Malformed: Unable parse jws: trailing comma at line 10 column 19"
