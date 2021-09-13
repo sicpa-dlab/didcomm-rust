@@ -9,7 +9,7 @@ use crate::{
 pub(crate) struct ParsedJWE<'a, 'b> {
     pub(crate) jwe: JWE<'a>,
     pub(crate) protected: ProtectedHeader<'b>,
-    pub(crate) apu: Option<String>,
+    pub(crate) apu: Option<Vec<u8>>,
     pub(crate) apv: Vec<u8>,
 }
 
@@ -22,48 +22,61 @@ pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<Parsed
     let protected: ProtectedHeader =
         serde_json::from_slice(buf).kind(ErrorKind::Malformed, "Unable parse protected header")?;
 
-    let apv = {
-        let mut kids = jwe
-            .recipients
-            .iter()
-            .map(|r| r.header.kid)
-            .collect::<Vec<_>>();
+    let apv = base64::decode_config(protected.apv, base64::URL_SAFE_NO_PAD)
+        .kind(ErrorKind::Malformed, "Unable decode apv")?;
 
-        kids.sort();
-        Sha256::digest(kids.join(".").as_bytes())
-    };
-
-    if protected.apv != base64::encode_config(apv, base64::URL_SAFE_NO_PAD) {
-        Err(err_msg(ErrorKind::Malformed, "APV mismatch"))?;
-    }
-
-    let apu = if let Some(apu) = protected.apu {
-        let apu = base64::decode_config(apu, base64::URL_SAFE_NO_PAD)
-            .kind(ErrorKind::Malformed, "Unable decode apv")?;
-
-        let apu = String::from_utf8(apu).kind(ErrorKind::Malformed, "Invalid utf8 for apv")?;
-
-        Some(apu)
-    } else {
-        None
-    };
-
-    match (&apu, &protected.skid) {
-        (Some(skid), Some(pskid)) if skid != pskid => {
-            Err(err_msg(ErrorKind::Malformed, "APU mismatch"))?
-        }
-        (None, Some(_)) => Err(err_msg(ErrorKind::Malformed, "SKID present, but no apu"))?,
-        _ => (),
-    };
+    let apu = protected
+        .apu
+        .map(|apu| base64::decode_config(apu, base64::URL_SAFE_NO_PAD))
+        .transpose()
+        .kind(ErrorKind::Malformed, "Unable decode apv")?;
 
     let jwe = ParsedJWE {
         jwe,
         protected,
         apu,
-        apv: apv.to_vec(),
+        apv,
     };
 
     Ok(jwe)
+}
+
+impl<'a, 'b> ParsedJWE<'a, 'b> {
+    /// Verifies that apv and apu filled according DID Comm specification.
+    pub(crate) fn verify_didcomm(self) -> Result<Self> {
+        let did_comm_apv = {
+            let mut kids = self
+                .jwe
+                .recipients
+                .iter()
+                .map(|r| r.header.kid)
+                .collect::<Vec<_>>();
+
+            kids.sort();
+            Sha256::digest(kids.join(".").as_bytes())
+        };
+
+        if &self.apv != did_comm_apv.as_slice() {
+            Err(err_msg(ErrorKind::Malformed, "APV mismatch"))?;
+        }
+
+        let did_comm_apu = self
+            .apu
+            .as_deref()
+            .map(std::str::from_utf8)
+            .transpose()
+            .kind(ErrorKind::Malformed, "Invalid utf8 for apu")?;
+
+        match (did_comm_apu, self.protected.skid) {
+            (Some(apu), Some(skid)) if apu != skid => {
+                Err(err_msg(ErrorKind::Malformed, "APU mismatch"))?
+            }
+            (None, Some(_)) => Err(err_msg(ErrorKind::Malformed, "SKID present, but no apu"))?,
+            _ => (),
+        };
+
+        Ok(self)
+    }
 }
 
 #[cfg(test)]
@@ -136,7 +149,7 @@ mod tests {
                 tag: "6ylC_iAs4JvDQzXeY6MuYQ",
             },
             protected: ProtectedHeader {
-                typ: "application/didcomm-encrypted+json",
+                typ: Some("application/didcomm-encrypted+json"),
                 alg: jwe::envelope::Algorithm::EcdhEsA256kw,
                 enc: EncAlgorithm::Xc20P,
                 skid: None,
@@ -212,7 +225,7 @@ mod tests {
                 tag: "uYeo7IsZjN7AnvBjUZE5lNryNENbf6_zew_VC-d4b3U",
             },
             protected: ProtectedHeader {
-                typ: "application/didcomm-encrypted+json",
+                typ: Some("application/didcomm-encrypted+json"),
                 alg: jwe::envelope::Algorithm::Ecdh1puA256kw,
                 enc: EncAlgorithm::A256cbcHs512,
                 skid: Some("did:example:alice#key-x25519-1"),
@@ -224,7 +237,7 @@ mod tests {
                     "x":"GFcMopJljf4pLZfch4a_GhTM_YAf6iNI1dWDGyVCaw0"
                 }),
             },
-            apu: Some("did:example:alice#key-x25519-1".to_owned()),
+            apu: Some(b"did:example:alice#key-x25519-1".to_vec()),
             apv: vec![53, 203, 46, 2, 122, 209, 124, 242, 186, 244, 15, 171, 145, 157, 11, 245, 117, 148, 27, 136, 204, 188, 208, 183, 102, 14, 248, 4, 252, 249, 220, 240],
         };
 
@@ -446,46 +459,6 @@ mod tests {
     }
 
     #[test]
-    fn parse_works_apv_mismatch() {
-        let msg = r#"
-        {
-            "ciphertext":"MJezmxJ8DzUB01rMjiW6JViSaUhsZBhMvYtezkhmwts1qXWtDB63i4-FHZP6cJSyCI7eU-gqH8lBXO_UVuviWIqnIUrTRLaumanZ4q1dNKAnxNL-dHmb3coOqSvy3ZZn6W17lsVudjw7hUUpMbeMbQ5W8GokK9ZCGaaWnqAzd1ZcuGXDuemWeA8BerQsfQw_IQm-aUKancldedHSGrOjVWgozVL97MH966j3i9CJc3k9jS9xDuE0owoWVZa7SxTmhl1PDetmzLnYIIIt-peJtNYGdpd-FcYxIFycQNRUoFEr77h4GBTLbC-vqbQHJC1vW4O2LEKhnhOAVlGyDYkNbA4DSL-LMwKxenQXRARsKSIMn7z-ZIqTE-VCNj9vbtgR",
-            "protected":"eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkdGY01vcEpsamY0cExaZmNoNGFfR2hUTV9ZQWY2aU5JMWRXREd5VkNhdzAifSwiYXB2IjoiTWNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInNraWQiOiJkaWQ6ZXhhbXBsZTphbGljZSNrZXkteDI1NTE5LTEiLCJhcHUiOiJaR2xrT21WNFlXMXdiR1U2WVd4cFkyVWphMlY1TFhneU5UVXhPUzB4IiwidHlwIjoiYXBwbGljYXRpb24vZGlkY29tbS1lbmNyeXB0ZWQranNvbiIsImVuYyI6IkEyNTZDQkMtSFM1MTIiLCJhbGciOiJFQ0RILTFQVStBMjU2S1cifQ",
-            "recipients":[
-               {
-                  "encrypted_key":"o0FJASHkQKhnFo_rTMHTI9qTm_m2mkJp-wv96mKyT5TP7QjBDuiQ0AMKaPI_RLLB7jpyE-Q80Mwos7CvwbMJDhIEBnk2qHVB",
-                  "header":{
-                     "kid":"did:example:bob#key-x25519-1"
-                  }
-               },
-               {
-                  "encrypted_key":"rYlafW0XkNd8kaXCqVbtGJ9GhwBC3lZ9AihHK4B6J6V2kT7vjbSYuIpr1IlAjvxYQOw08yqEJNIwrPpB0ouDzKqk98FVN7rK",
-                  "header":{
-                     "kid":"did:example:bob#key-x25519-2"
-                  }
-               },
-               {
-                  "encrypted_key":"aqfxMY2sV-njsVo-_9Ke9QbOf6hxhGrUVh_m-h_Aq530w3e_4IokChfKWG1tVJvXYv_AffY7vxj0k5aIfKZUxiNmBwC_QsNo",
-                  "header":{
-                     "kid":"did:example:bob#key-x25519-3"
-                  }
-               }
-            ],
-            "tag":"uYeo7IsZjN7AnvBjUZE5lNryNENbf6_zew_VC-d4b3U",
-            "iv":"o02OXDQ6_-sKz2PX_6oyJg"
-         }
-        "#;
-
-        let mut buf = vec![];
-        let res = jwe::parse(&msg, &mut buf);
-
-        let err = res.expect_err("res is ok");
-        assert_eq!(err.kind(), ErrorKind::Malformed);
-
-        assert_eq!(format!("{}", err), "Malformed: APV mismatch");
-    }
-
-    #[test]
     fn parse_works_undecodable_apu() {
         let msg = r#"
         {
@@ -529,7 +502,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_works_non_utf8_apu() {
+    fn verify_didcomm_works_non_utf8_apu() {
         let msg = r#"
         {
             "ciphertext":"MJezmxJ8DzUB01rMjiW6JViSaUhsZBhMvYtezkhmwts1qXWtDB63i4-FHZP6cJSyCI7eU-gqH8lBXO_UVuviWIqnIUrTRLaumanZ4q1dNKAnxNL-dHmb3coOqSvy3ZZn6W17lsVudjw7hUUpMbeMbQ5W8GokK9ZCGaaWnqAzd1ZcuGXDuemWeA8BerQsfQw_IQm-aUKancldedHSGrOjVWgozVL97MH966j3i9CJc3k9jS9xDuE0owoWVZa7SxTmhl1PDetmzLnYIIIt-peJtNYGdpd-FcYxIFycQNRUoFEr77h4GBTLbC-vqbQHJC1vW4O2LEKhnhOAVlGyDYkNbA4DSL-LMwKxenQXRARsKSIMn7z-ZIqTE-VCNj9vbtgR",
@@ -560,19 +533,223 @@ mod tests {
         "#;
 
         let mut buf = vec![];
-        let res = jwe::parse(&msg, &mut buf);
+
+        let res = jwe::parse(&msg, &mut buf)
+            .expect("Unable parse")
+            .verify_didcomm();
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
 
         assert_eq!(
             format!("{}", err),
-            "Malformed: Invalid utf8 for apv: invalid utf-8 sequence of 1 bytes from index 0"
+            "Malformed: Invalid utf8 for apu: invalid utf-8 sequence of 1 bytes from index 0"
         );
     }
 
     #[test]
-    fn parse_works_apu_mismatch() {
+    fn verify_didcomm_works_apv_mismatch() {
+        let msg = r#"
+        {
+            "ciphertext":"MJezmxJ8DzUB01rMjiW6JViSaUhsZBhMvYtezkhmwts1qXWtDB63i4-FHZP6cJSyCI7eU-gqH8lBXO_UVuviWIqnIUrTRLaumanZ4q1dNKAnxNL-dHmb3coOqSvy3ZZn6W17lsVudjw7hUUpMbeMbQ5W8GokK9ZCGaaWnqAzd1ZcuGXDuemWeA8BerQsfQw_IQm-aUKancldedHSGrOjVWgozVL97MH966j3i9CJc3k9jS9xDuE0owoWVZa7SxTmhl1PDetmzLnYIIIt-peJtNYGdpd-FcYxIFycQNRUoFEr77h4GBTLbC-vqbQHJC1vW4O2LEKhnhOAVlGyDYkNbA4DSL-LMwKxenQXRARsKSIMn7z-ZIqTE-VCNj9vbtgR",
+            "protected":"eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkdGY01vcEpsamY0cExaZmNoNGFfR2hUTV9ZQWY2aU5JMWRXREd5VkNhdzAifSwiYXB2IjoiTWNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInNraWQiOiJkaWQ6ZXhhbXBsZTphbGljZSNrZXkteDI1NTE5LTEiLCJhcHUiOiJaR2xrT21WNFlXMXdiR1U2WVd4cFkyVWphMlY1TFhneU5UVXhPUzB4IiwidHlwIjoiYXBwbGljYXRpb24vZGlkY29tbS1lbmNyeXB0ZWQranNvbiIsImVuYyI6IkEyNTZDQkMtSFM1MTIiLCJhbGciOiJFQ0RILTFQVStBMjU2S1cifQ",
+            "recipients":[
+               {
+                  "encrypted_key":"o0FJASHkQKhnFo_rTMHTI9qTm_m2mkJp-wv96mKyT5TP7QjBDuiQ0AMKaPI_RLLB7jpyE-Q80Mwos7CvwbMJDhIEBnk2qHVB",
+                  "header":{
+                     "kid":"did:example:bob#key-x25519-1"
+                  }
+               },
+               {
+                  "encrypted_key":"rYlafW0XkNd8kaXCqVbtGJ9GhwBC3lZ9AihHK4B6J6V2kT7vjbSYuIpr1IlAjvxYQOw08yqEJNIwrPpB0ouDzKqk98FVN7rK",
+                  "header":{
+                     "kid":"did:example:bob#key-x25519-2"
+                  }
+               },
+               {
+                  "encrypted_key":"aqfxMY2sV-njsVo-_9Ke9QbOf6hxhGrUVh_m-h_Aq530w3e_4IokChfKWG1tVJvXYv_AffY7vxj0k5aIfKZUxiNmBwC_QsNo",
+                  "header":{
+                     "kid":"did:example:bob#key-x25519-3"
+                  }
+               }
+            ],
+            "tag":"uYeo7IsZjN7AnvBjUZE5lNryNENbf6_zew_VC-d4b3U",
+            "iv":"o02OXDQ6_-sKz2PX_6oyJg"
+         }
+        "#;
+
+        let mut buf = vec![];
+
+        let res = jwe::parse(&msg, &mut buf)
+            .expect("Unable parse")
+            .verify_didcomm();
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
+
+        assert_eq!(format!("{}", err), "Malformed: APV mismatch");
+    }
+
+    #[test]
+    fn verify_didcomm_works_anoncrypt() {
+        let msg = r#"
+        {
+            "ciphertext":"KWS7gJU7TbyJlcT9dPkCw-ohNigGaHSukR9MUqFM0THbCTCNkY-g5tahBFyszlKIKXs7qOtqzYyWbPou2q77XlAeYs93IhF6NvaIjyNqYklvj-OtJt9W2Pj5CLOMdsR0C30wchGoXd6wEQZY4ttbzpxYznqPmJ0b9KW6ZP-l4_DSRYe9B-1oSWMNmqMPwluKbtguC-riy356Xbu2C9ShfWmpmjz1HyJWQhZfczuwkWWlE63g26FMskIZZd_jGpEhPFHKUXCFwbuiw_Iy3R0BIzmXXdK_w7PZMMPbaxssl2UeJmLQgCAP8j8TukxV96EKa6rGgULvlo7qibjJqsS5j03bnbxkuxwbfyu3OxwgVzFWlyHbUH6p",
+            "protected":"eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkpIanNtSVJaQWFCMHpSR193TlhMVjJyUGdnRjAwaGRIYlc1cmo4ZzBJMjQifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tZW5jcnlwdGVkK2pzb24iLCJlbmMiOiJYQzIwUCIsImFsZyI6IkVDREgtRVMrQTI1NktXIn0",
+            "recipients":[
+               {
+                  "encrypted_key":"3n1olyBR3nY7ZGAprOx-b7wYAKza6cvOYjNwVg3miTnbLwPP_FmE1A",
+                  "header":{
+                     "kid":"did:example:bob#key-x25519-1"
+                  }
+               },
+               {
+                  "encrypted_key":"j5eSzn3kCrIkhQAWPnEwrFPMW6hG0zF_y37gUvvc5gvlzsuNX4hXrQ",
+                  "header":{
+                     "kid":"did:example:bob#key-x25519-2"
+                  }
+               },
+               {
+                  "encrypted_key":"TEWlqlq-ao7Lbynf0oZYhxs7ZB39SUWBCK4qjqQqfeItfwmNyDm73A",
+                  "header":{
+                     "kid":"did:example:bob#key-x25519-3"
+                  }
+               }
+            ],
+            "tag":"6ylC_iAs4JvDQzXeY6MuYQ",
+            "iv":"ESpmcyGiZpRjc5urDela21TOOTW8Wqd1"
+         }
+        "#;
+
+        let mut buf = vec![];
+
+        let res = jwe::parse(&msg, &mut buf)
+            .expect("Unable parse")
+            .verify_didcomm()
+            .expect("res is err");
+
+        let exp = ParsedJWE {
+            jwe: JWE {
+                protected: "eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkpIanNtSVJaQWFCMHpSR193TlhMVjJyUGdnRjAwaGRIYlc1cmo4ZzBJMjQifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tZW5jcnlwdGVkK2pzb24iLCJlbmMiOiJYQzIwUCIsImFsZyI6IkVDREgtRVMrQTI1NktXIn0",
+                recipients: vec![
+                    Recepient {
+                        header: PerRecipientHeader { kid: "did:example:bob#key-x25519-1" },
+                        encrypted_key: "3n1olyBR3nY7ZGAprOx-b7wYAKza6cvOYjNwVg3miTnbLwPP_FmE1A",
+                    },
+                    Recepient {
+                        header: PerRecipientHeader { kid: "did:example:bob#key-x25519-2" },
+                        encrypted_key: "j5eSzn3kCrIkhQAWPnEwrFPMW6hG0zF_y37gUvvc5gvlzsuNX4hXrQ",
+                    },
+                    Recepient {
+                        header: PerRecipientHeader { kid: "did:example:bob#key-x25519-3" },
+                        encrypted_key: "TEWlqlq-ao7Lbynf0oZYhxs7ZB39SUWBCK4qjqQqfeItfwmNyDm73A",
+                    },
+                ],
+                iv: "ESpmcyGiZpRjc5urDela21TOOTW8Wqd1",
+                ciphertext: "KWS7gJU7TbyJlcT9dPkCw-ohNigGaHSukR9MUqFM0THbCTCNkY-g5tahBFyszlKIKXs7qOtqzYyWbPou2q77XlAeYs93IhF6NvaIjyNqYklvj-OtJt9W2Pj5CLOMdsR0C30wchGoXd6wEQZY4ttbzpxYznqPmJ0b9KW6ZP-l4_DSRYe9B-1oSWMNmqMPwluKbtguC-riy356Xbu2C9ShfWmpmjz1HyJWQhZfczuwkWWlE63g26FMskIZZd_jGpEhPFHKUXCFwbuiw_Iy3R0BIzmXXdK_w7PZMMPbaxssl2UeJmLQgCAP8j8TukxV96EKa6rGgULvlo7qibjJqsS5j03bnbxkuxwbfyu3OxwgVzFWlyHbUH6p",
+                tag: "6ylC_iAs4JvDQzXeY6MuYQ",
+            },
+            protected: ProtectedHeader {
+                typ: Some("application/didcomm-encrypted+json"),
+                alg: jwe::envelope::Algorithm::EcdhEsA256kw,
+                enc: EncAlgorithm::Xc20P,
+                skid: None,
+                apu: None,
+                apv: "NcsuAnrRfPK69A-rkZ0L9XWUG4jMvNC3Zg74BPz53PA",
+                epk: json!({
+                    "kty":"OKP",
+                    "crv":"X25519",
+                    "x":"JHjsmIRZAaB0zRG_wNXLV2rPggF00hdHbW5rj8g0I24"
+                }),
+            },
+            apu: None,
+            apv: vec![53, 203, 46, 2, 122, 209, 124, 242, 186, 244, 15, 171, 145, 157, 11, 245, 117, 148, 27, 136, 204, 188, 208, 183, 102, 14, 248, 4, 252, 249, 220, 240],
+        };
+
+        assert_eq!(res, exp);
+    }
+
+    #[test]
+    fn verify_did_comm_works_authcrypt() {
+        let msg = r#"
+        {
+            "ciphertext":"MJezmxJ8DzUB01rMjiW6JViSaUhsZBhMvYtezkhmwts1qXWtDB63i4-FHZP6cJSyCI7eU-gqH8lBXO_UVuviWIqnIUrTRLaumanZ4q1dNKAnxNL-dHmb3coOqSvy3ZZn6W17lsVudjw7hUUpMbeMbQ5W8GokK9ZCGaaWnqAzd1ZcuGXDuemWeA8BerQsfQw_IQm-aUKancldedHSGrOjVWgozVL97MH966j3i9CJc3k9jS9xDuE0owoWVZa7SxTmhl1PDetmzLnYIIIt-peJtNYGdpd-FcYxIFycQNRUoFEr77h4GBTLbC-vqbQHJC1vW4O2LEKhnhOAVlGyDYkNbA4DSL-LMwKxenQXRARsKSIMn7z-ZIqTE-VCNj9vbtgR",
+            "protected":"eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkdGY01vcEpsamY0cExaZmNoNGFfR2hUTV9ZQWY2aU5JMWRXREd5VkNhdzAifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInNraWQiOiJkaWQ6ZXhhbXBsZTphbGljZSNrZXkteDI1NTE5LTEiLCJhcHUiOiJaR2xrT21WNFlXMXdiR1U2WVd4cFkyVWphMlY1TFhneU5UVXhPUzB4IiwidHlwIjoiYXBwbGljYXRpb24vZGlkY29tbS1lbmNyeXB0ZWQranNvbiIsImVuYyI6IkEyNTZDQkMtSFM1MTIiLCJhbGciOiJFQ0RILTFQVStBMjU2S1cifQ",
+            "recipients":[
+               {
+                  "encrypted_key":"o0FJASHkQKhnFo_rTMHTI9qTm_m2mkJp-wv96mKyT5TP7QjBDuiQ0AMKaPI_RLLB7jpyE-Q80Mwos7CvwbMJDhIEBnk2qHVB",
+                  "header":{
+                     "kid":"did:example:bob#key-x25519-1"
+                  }
+               },
+               {
+                  "encrypted_key":"rYlafW0XkNd8kaXCqVbtGJ9GhwBC3lZ9AihHK4B6J6V2kT7vjbSYuIpr1IlAjvxYQOw08yqEJNIwrPpB0ouDzKqk98FVN7rK",
+                  "header":{
+                     "kid":"did:example:bob#key-x25519-2"
+                  }
+               },
+               {
+                  "encrypted_key":"aqfxMY2sV-njsVo-_9Ke9QbOf6hxhGrUVh_m-h_Aq530w3e_4IokChfKWG1tVJvXYv_AffY7vxj0k5aIfKZUxiNmBwC_QsNo",
+                  "header":{
+                     "kid":"did:example:bob#key-x25519-3"
+                  }
+               }
+            ],
+            "tag":"uYeo7IsZjN7AnvBjUZE5lNryNENbf6_zew_VC-d4b3U",
+            "iv":"o02OXDQ6_-sKz2PX_6oyJg"
+         }
+        "#;
+
+        let mut buf = vec![];
+
+        let res = jwe::parse(&msg, &mut buf)
+            .expect("Unable parse")
+            .verify_didcomm()
+            .expect("res is err");
+
+        let exp = ParsedJWE {
+            jwe: JWE {
+                protected: "eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkdGY01vcEpsamY0cExaZmNoNGFfR2hUTV9ZQWY2aU5JMWRXREd5VkNhdzAifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInNraWQiOiJkaWQ6ZXhhbXBsZTphbGljZSNrZXkteDI1NTE5LTEiLCJhcHUiOiJaR2xrT21WNFlXMXdiR1U2WVd4cFkyVWphMlY1TFhneU5UVXhPUzB4IiwidHlwIjoiYXBwbGljYXRpb24vZGlkY29tbS1lbmNyeXB0ZWQranNvbiIsImVuYyI6IkEyNTZDQkMtSFM1MTIiLCJhbGciOiJFQ0RILTFQVStBMjU2S1cifQ",
+                recipients: vec![
+                    Recepient {
+                        header: PerRecipientHeader { kid: "did:example:bob#key-x25519-1" },
+                        encrypted_key: "o0FJASHkQKhnFo_rTMHTI9qTm_m2mkJp-wv96mKyT5TP7QjBDuiQ0AMKaPI_RLLB7jpyE-Q80Mwos7CvwbMJDhIEBnk2qHVB",
+                    },
+                    Recepient {
+                        header: PerRecipientHeader { kid: "did:example:bob#key-x25519-2" },
+                        encrypted_key: "rYlafW0XkNd8kaXCqVbtGJ9GhwBC3lZ9AihHK4B6J6V2kT7vjbSYuIpr1IlAjvxYQOw08yqEJNIwrPpB0ouDzKqk98FVN7rK",
+                    },
+                    Recepient {
+                        header: PerRecipientHeader { kid: "did:example:bob#key-x25519-3" },
+                        encrypted_key: "aqfxMY2sV-njsVo-_9Ke9QbOf6hxhGrUVh_m-h_Aq530w3e_4IokChfKWG1tVJvXYv_AffY7vxj0k5aIfKZUxiNmBwC_QsNo",
+                    },
+                ],
+                iv: "o02OXDQ6_-sKz2PX_6oyJg",
+                ciphertext: "MJezmxJ8DzUB01rMjiW6JViSaUhsZBhMvYtezkhmwts1qXWtDB63i4-FHZP6cJSyCI7eU-gqH8lBXO_UVuviWIqnIUrTRLaumanZ4q1dNKAnxNL-dHmb3coOqSvy3ZZn6W17lsVudjw7hUUpMbeMbQ5W8GokK9ZCGaaWnqAzd1ZcuGXDuemWeA8BerQsfQw_IQm-aUKancldedHSGrOjVWgozVL97MH966j3i9CJc3k9jS9xDuE0owoWVZa7SxTmhl1PDetmzLnYIIIt-peJtNYGdpd-FcYxIFycQNRUoFEr77h4GBTLbC-vqbQHJC1vW4O2LEKhnhOAVlGyDYkNbA4DSL-LMwKxenQXRARsKSIMn7z-ZIqTE-VCNj9vbtgR",
+                tag: "uYeo7IsZjN7AnvBjUZE5lNryNENbf6_zew_VC-d4b3U",
+            },
+            protected: ProtectedHeader {
+                typ: Some("application/didcomm-encrypted+json"),
+                alg: jwe::envelope::Algorithm::Ecdh1puA256kw,
+                enc: EncAlgorithm::A256cbcHs512,
+                skid: Some("did:example:alice#key-x25519-1"),
+                apu: Some("ZGlkOmV4YW1wbGU6YWxpY2Uja2V5LXgyNTUxOS0x"),
+                apv: "NcsuAnrRfPK69A-rkZ0L9XWUG4jMvNC3Zg74BPz53PA",
+                epk: json!({
+                    "kty":"OKP",
+                    "crv":"X25519",
+                    "x":"GFcMopJljf4pLZfch4a_GhTM_YAf6iNI1dWDGyVCaw0"
+                }),
+            },
+            apu: Some(b"did:example:alice#key-x25519-1".to_vec()),
+            apv: vec![53, 203, 46, 2, 122, 209, 124, 242, 186, 244, 15, 171, 145, 157, 11, 245, 117, 148, 27, 136, 204, 188, 208, 183, 102, 14, 248, 4, 252, 249, 220, 240],
+        };
+
+        assert_eq!(res, exp);
+    }
+
+    #[test]
+    fn verify_didcomm_works_apu_mismatch() {
         let msg = r#"
         {
             "ciphertext":"MJezmxJ8DzUB01rMjiW6JViSaUhsZBhMvYtezkhmwts1qXWtDB63i4-FHZP6cJSyCI7eU-gqH8lBXO_UVuviWIqnIUrTRLaumanZ4q1dNKAnxNL-dHmb3coOqSvy3ZZn6W17lsVudjw7hUUpMbeMbQ5W8GokK9ZCGaaWnqAzd1ZcuGXDuemWeA8BerQsfQw_IQm-aUKancldedHSGrOjVWgozVL97MH966j3i9CJc3k9jS9xDuE0owoWVZa7SxTmhl1PDetmzLnYIIIt-peJtNYGdpd-FcYxIFycQNRUoFEr77h4GBTLbC-vqbQHJC1vW4O2LEKhnhOAVlGyDYkNbA4DSL-LMwKxenQXRARsKSIMn7z-ZIqTE-VCNj9vbtgR",
@@ -603,7 +780,10 @@ mod tests {
         "#;
 
         let mut buf = vec![];
-        let res = jwe::parse(&msg, &mut buf);
+
+        let res = jwe::parse(&msg, &mut buf)
+            .expect("Unable parse")
+            .verify_didcomm();
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -612,7 +792,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_works_no_apu_skid_present() {
+    fn verify_didcomm_works_no_apu_skid_present() {
         let msg = r#"
         {
             "ciphertext":"MJezmxJ8DzUB01rMjiW6JViSaUhsZBhMvYtezkhmwts1qXWtDB63i4-FHZP6cJSyCI7eU-gqH8lBXO_UVuviWIqnIUrTRLaumanZ4q1dNKAnxNL-dHmb3coOqSvy3ZZn6W17lsVudjw7hUUpMbeMbQ5W8GokK9ZCGaaWnqAzd1ZcuGXDuemWeA8BerQsfQw_IQm-aUKancldedHSGrOjVWgozVL97MH966j3i9CJc3k9jS9xDuE0owoWVZa7SxTmhl1PDetmzLnYIIIt-peJtNYGdpd-FcYxIFycQNRUoFEr77h4GBTLbC-vqbQHJC1vW4O2LEKhnhOAVlGyDYkNbA4DSL-LMwKxenQXRARsKSIMn7z-ZIqTE-VCNj9vbtgR",
@@ -643,7 +823,10 @@ mod tests {
         "#;
 
         let mut buf = vec![];
-        let res = jwe::parse(&msg, &mut buf);
+
+        let res = jwe::parse(&msg, &mut buf)
+            .expect("Unable parse")
+            .verify_didcomm();
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);

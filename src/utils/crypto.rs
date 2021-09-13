@@ -1,5 +1,5 @@
 use askar_crypto::{
-    alg::aes::{A256Kw, AesKey, AesType},
+    alg::aes::{A128Kw, A256Kw, AesKey},
     buffer::SecretBytes,
     encrypt::KeyAeadInPlace,
     kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation, KeyExchange},
@@ -39,15 +39,11 @@ pub(crate) trait KeyWrap: KeyAeadInPlace {
 
         Ok(key)
     }
-
-    fn jwk_alg() -> &'static str;
 }
 
-impl KeyWrap for AesKey<A256Kw> {
-    fn jwk_alg() -> &'static str {
-        A256Kw::JWK_ALG
-    }
-}
+impl KeyWrap for AesKey<A256Kw> {}
+
+impl KeyWrap for AesKey<A128Kw> {}
 
 pub(crate) trait JoseKDF<Key: KeyExchange, KW: KeyWrap + Sized> {
     fn derive_key(
@@ -57,6 +53,7 @@ pub(crate) trait JoseKDF<Key: KeyExchange, KW: KeyWrap + Sized> {
         alg: &[u8],
         apu: &[u8],
         apv: &[u8],
+        cc_tag: &[u8],
         receive: bool,
     ) -> Result<KW>;
 }
@@ -71,12 +68,14 @@ impl<Key: KeyExchange, KW: KeyWrap + FromKeyDerivation + Sized> JoseKDF<Key, KW>
         alg: &[u8],
         apu: &[u8],
         apv: &[u8],
+        cc_tag: &[u8],
         receive: bool,
     ) -> Result<KW> {
         let send_key = send_key
             .ok_or_else(|| err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu"))?;
-
-        let deriviation = Ecdh1PU::new(ephem_key, send_key, recip_key, alg, apu, apv, &[], receive);
+        let deriviation = Ecdh1PU::new(
+            ephem_key, send_key, recip_key, alg, apu, apv, cc_tag, receive,
+        );
 
         let kw = KW::from_key_derivation(deriviation)
             .kind(ErrorKind::InvalidState, "Unable derive kw")?;
@@ -95,6 +94,7 @@ impl<Key: KeyExchange, KW: KeyWrap + FromKeyDerivation + Sized> JoseKDF<Key, KW>
         alg: &[u8],
         apu: &[u8],
         apv: &[u8],
+        _cc_tag: &[u8],
         receive: bool,
     ) -> Result<KW> {
         let deriviation = EcdhEs::new(ephem_key, recip_key, alg, apu, apv, receive);

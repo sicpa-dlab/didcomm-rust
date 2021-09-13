@@ -1,16 +1,16 @@
 use askar_crypto::{
     buffer::SecretBytes,
     encrypt::{KeyAeadInPlace, KeyAeadMeta},
-    jwk::ToJwk,
     kdf::{FromKeyDerivation, KeyExchange},
     repr::{KeyGen, ToSecretBytes},
 };
-use serde_json::Value;
+
 use sha2::{Digest, Sha256};
 
 use crate::{
     error::{ErrorKind, Result, ResultExt},
     jwe::envelope::{Algorithm, EncAlgorithm, PerRecipientHeader, ProtectedHeader, Recepient, JWE},
+    jwk::ToJwkValue,
     utils::crypto::{JoseKDF, KeyWrap},
 };
 
@@ -24,7 +24,7 @@ pub(crate) fn encrypt<CE, KDF, KE, KW>(
 where
     CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes,
     KDF: JoseKDF<KE, KW>,
-    KE: KeyExchange + KeyGen + ToJwk,
+    KE: KeyExchange + KeyGen + ToJwkValue,
     KW: KeyWrap + FromKeyDerivation,
 {
     let (skid, skey) = match sender {
@@ -43,6 +43,52 @@ where
 
     let epk = KE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate epk")?;
 
+    let protected = {
+        let epk = epk.to_jwk_public_value()?;
+        let apu = skid.map(|skid| base64::encode_config(skid, base64::URL_SAFE_NO_PAD));
+        let apv = base64::encode_config(apv, base64::URL_SAFE_NO_PAD);
+
+        let p = ProtectedHeader {
+            typ: Some("application/didcomm-encrypted+json"),
+            alg: alg.clone(),
+            enc,
+            skid,
+            apu: apu.as_deref(),
+            apv: &apv,
+            epk,
+        };
+
+        let p = serde_json::to_string(&p)
+            .kind(ErrorKind::InvalidState, "Unable serialize protected header")?;
+
+        base64::encode_config(&p, base64::URL_SAFE_NO_PAD)
+    };
+
+    let mut buf = {
+        let mut buf = SecretBytes::with_capacity(plaintext.len() + cek.aead_params().tag_length);
+
+        buf.extend_from_slice(plaintext);
+        buf
+    };
+
+    let (ciphertext, tag, tag_raw, iv) = {
+        // TODO: use `rng` based version when available
+        let iv = CE::random_nonce();
+
+        let ciphertext_len = cek
+            .encrypt_in_place(&mut buf, &iv[..], protected.as_bytes())
+            .kind(ErrorKind::InvalidState, "Unable encrypt content")?;
+
+        let ciphertext = &buf.as_ref()[0..ciphertext_len];
+        let tag_raw = &buf.as_ref()[ciphertext_len..];
+
+        let ciphertext = base64::encode_config(&ciphertext, base64::URL_SAFE_NO_PAD);
+        let tag = base64::encode_config(&tag_raw, base64::URL_SAFE_NO_PAD);
+        let iv = base64::encode_config(&iv, base64::URL_SAFE_NO_PAD);
+
+        (ciphertext, tag, tag_raw, iv)
+    };
+
     let encrypted_keys = {
         let mut encrypted_keys: Vec<(&str, String)> = Vec::with_capacity(recipients.len());
 
@@ -54,6 +100,7 @@ where
                 alg.as_str().as_bytes(),
                 skid.as_ref().map(|s| s.as_bytes()).unwrap_or(&[]),
                 apv.as_slice(),
+                &tag_raw,
                 false,
             )
             .kind(ErrorKind::InvalidState, "Unable derive kw")?;
@@ -77,63 +124,6 @@ where
         })
         .collect();
 
-    let protected = {
-        let epk = {
-            let epk = epk
-                .to_jwk_public(None)
-                .kind(ErrorKind::InvalidState, "Unable produce jwk for epk")?;
-
-            let epk: Value = serde_json::from_str(&epk)
-                .kind(ErrorKind::InvalidState, "Unable produce jwk for epk")?;
-
-            epk
-        };
-
-        let apu = skid.map(|skid| base64::encode_config(skid, base64::URL_SAFE_NO_PAD));
-        let apv = base64::encode_config(apv, base64::URL_SAFE_NO_PAD);
-
-        let p = ProtectedHeader {
-            typ: "application/didcomm-encrypted+json",
-            alg,
-            enc,
-            skid,
-            apu: apu.as_deref(),
-            apv: &apv,
-            epk,
-        };
-
-        let p = serde_json::to_string(&p)
-            .kind(ErrorKind::InvalidState, "Unable serialize protected header")?;
-
-        base64::encode_config(&p, base64::URL_SAFE_NO_PAD)
-    };
-
-    let (ciphertext, tag, iv) = {
-        // TODO: use `rng` based version when available
-        let iv = CE::random_nonce();
-
-        let mut buf = {
-            let mut buf =
-                SecretBytes::with_capacity(plaintext.len() + cek.aead_params().tag_length);
-
-            buf.extend_from_slice(plaintext);
-            buf
-        };
-
-        let ciphertext_len = cek
-            .encrypt_in_place(&mut buf, &iv[..], protected.as_bytes())
-            .kind(ErrorKind::InvalidState, "Unable encrypt content")?;
-
-        let ciphertext = &buf.as_ref()[0..ciphertext_len];
-        let tag = &buf.as_ref()[ciphertext_len..];
-
-        let ciphertext = base64::encode_config(&ciphertext, base64::URL_SAFE_NO_PAD);
-        let tag = base64::encode_config(&tag, base64::URL_SAFE_NO_PAD);
-        let iv = base64::encode_config(&iv, base64::URL_SAFE_NO_PAD);
-
-        (ciphertext, tag, iv)
-    };
-
     let jwe = JWE {
         protected: &protected,
         recipients,
@@ -151,13 +141,13 @@ where
 mod tests {
     use askar_crypto::{
         alg::{
-            aes::{A128CbcHs256, A256Gcm, A256Kw, AesKey},
+            aes::{A256CbcHs512, A256Gcm, A256Kw, AesKey},
             chacha20::{Chacha20Key, XC20P},
             p256::P256KeyPair,
             x25519::X25519KeyPair,
         },
         encrypt::{KeyAeadInPlace, KeyAeadMeta},
-        jwk::{FromJwk, ToJwk},
+        jwk::FromJwk,
         kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation, KeyExchange},
         repr::{KeyGen, KeyPublicBytes, KeySecretBytes, ToPublicBytes, ToSecretBytes},
     };
@@ -169,13 +159,14 @@ mod tests {
             envelope::{Algorithm, EncAlgorithm},
             test_support::*,
         },
+        jwk::{FromJwkValue, ToJwkValue},
         utils::crypto::{JoseKDF, KeyWrap},
     };
 
     #[test]
     fn encrypt_works() {
         _encrypt_works::<
-            AesKey<A128CbcHs256>,
+            AesKey<A256CbcHs512>,
             Ecdh1PU<'_, X25519KeyPair>,
             X25519KeyPair,
             AesKey<A256Kw>,
@@ -187,7 +178,7 @@ mod tests {
         );
 
         _encrypt_works::<
-            AesKey<A128CbcHs256>,
+            AesKey<A256CbcHs512>,
             Ecdh1PU<'_, X25519KeyPair>,
             X25519KeyPair,
             AesKey<A256Kw>,
@@ -202,14 +193,14 @@ mod tests {
             EncAlgorithm::A256cbcHs512,
         );
 
-        _encrypt_works::<AesKey<A128CbcHs256>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+        _encrypt_works::<AesKey<A256CbcHs512>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             Some((ALICE_KID_P256_1, ALICE_KEY_P256_1, ALICE_PKEY_P256_1)),
             &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
             Algorithm::Ecdh1puA256kw,
             EncAlgorithm::A256cbcHs512,
         );
 
-        _encrypt_works::<AesKey<A128CbcHs256>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+        _encrypt_works::<AesKey<A256CbcHs512>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             Some((ALICE_KID_P256_1, ALICE_KEY_P256_1, ALICE_PKEY_P256_1)),
             &[
                 (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
@@ -220,7 +211,7 @@ mod tests {
         );
 
         _encrypt_works::<
-            AesKey<A128CbcHs256>,
+            AesKey<A256CbcHs512>,
             EcdhEs<'_, X25519KeyPair>,
             X25519KeyPair,
             AesKey<A256Kw>,
@@ -232,7 +223,7 @@ mod tests {
         );
 
         _encrypt_works::<
-            AesKey<A128CbcHs256>,
+            AesKey<A256CbcHs512>,
             EcdhEs<'_, X25519KeyPair>,
             X25519KeyPair,
             AesKey<A256Kw>,
@@ -247,14 +238,14 @@ mod tests {
             EncAlgorithm::A256cbcHs512,
         );
 
-        _encrypt_works::<AesKey<A128CbcHs256>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+        _encrypt_works::<AesKey<A256CbcHs512>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::A256cbcHs512,
         );
 
-        _encrypt_works::<AesKey<A128CbcHs256>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+        _encrypt_works::<AesKey<A256CbcHs512>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             &[
                 (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
@@ -354,7 +345,7 @@ mod tests {
         ) where
             CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwk + FromJwk + ToPublicBytes + KeyPublicBytes,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + ToPublicBytes + KeyPublicBytes,
             KW: KeyWrap + FromKeyDerivation,
         {
             let alice = alice.map(|a| {
@@ -401,7 +392,7 @@ mod tests {
             assert_eq!(msg.protected.enc, enc_alg);
             assert_eq!(msg.jwe.recipients.len(), bob.len());
 
-            assert_eq!(msg.apu.as_deref(), alice_kid);
+            assert_eq!(msg.apu.as_deref(), alice_kid.map(str::as_bytes));
 
             for recipient in &msg.jwe.recipients {
                 let bob_edge_priv = bob_priv
@@ -425,7 +416,7 @@ mod tests {
         let plaintext = "Some plaintext.";
 
         let res = jwe::encrypt::<
-            AesKey<A128CbcHs256>,
+            AesKey<A256CbcHs512>,
             Ecdh1PU<'_, X25519KeyPair>,
             X25519KeyPair,
             AesKey<A256Kw>,

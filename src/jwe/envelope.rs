@@ -29,7 +29,7 @@ pub(crate) struct ProtectedHeader<'a> {
     /// Must be `application/didcomm-encrypted+json` or `didcomm-encrypted+json` for now.
     /// Something like `application/didcomm-encrypted+cbor` can be introduced in the
     /// future.
-    pub typ: &'a str,
+    pub typ: Option<&'a str>,
 
     /// Cryptographic algorithm used to encrypt or determine the value of the CEK.
     pub alg: Algorithm,
