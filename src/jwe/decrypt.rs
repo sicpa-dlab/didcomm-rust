@@ -122,6 +122,7 @@ mod tests {
             Some(("Alice", ALICE_ECDH_1PU_APP_B)),
             ("bob-key-2", BOB_ECDH_1PU_APP_B),
             MSG_ECDH_1PU_APP_B,
+            PAYLOAD_ECDH_1PU_APP_B,
         );
 
         _decrypt_works::<
@@ -133,6 +134,7 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_XC20P,
+            PAYLOAD,
         );
 
         _decrypt_works::<
@@ -144,6 +146,7 @@ mod tests {
             None,
             (BOB_KID_X25519_2, BOB_KEY_X25519_2),
             MSG_ANONCRYPT_X25519_XC20P,
+            PAYLOAD,
         );
 
         _decrypt_works::<
@@ -155,6 +158,7 @@ mod tests {
             None,
             (BOB_KID_X25519_3, BOB_KEY_X25519_3),
             MSG_ANONCRYPT_X25519_XC20P,
+            PAYLOAD,
         );
 
         _decrypt_works::<
@@ -166,12 +170,14 @@ mod tests {
             Some((ALICE_KID_X25519_1, ALICE_PKEY_X25519_1)),
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_AUTHCRYPT_X25519_A256CBC,
+            PAYLOAD,
         );
 
         fn _decrypt_works<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
             recepient: (&str, &str),
             msg: &str,
+            payload: &str,
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
@@ -179,8 +185,10 @@ mod tests {
             KW: KeyWrap + FromKeyDerivation,
         {
             let res = _decrypt::<CE, KDF, KE, KW>(sender, recepient, msg);
-            let _res = res.expect("res is err");
-            //assert_eq!(res, true);
+
+            let res = res.expect("res is err");
+            println!("{:?}", std::str::from_utf8(&res));
+            assert_eq!(res, payload.as_bytes());
         }
     }
 
@@ -208,6 +216,8 @@ mod tests {
 
         msg.decrypt::<CE, KDF, KE, KW>(sender, recepient)
     }
+
+    const PAYLOAD: &str = r#"{"id":"1234567890","typ":"application/didcomm-plain+json","type":"http://example.com/protocols/lets_do_lunch/1.0/proposal","from":"did:example:alice","to":["did:example:bob"],"created_time":1516269022,"expires_time":1516385931,"body":{"messagespecificattribute":"and its value"}}"#;
 
     const MSG_ANONCRYPT_X25519_XC20P: &str = r#"
     {
@@ -289,6 +299,8 @@ mod tests {
         "tag":"HLb4fTlm8spGmij3RyOs2gJ4DpHM4hhVRwdF_hGb3WQ"
     }
     "#;
+
+    const PAYLOAD_ECDH_1PU_APP_B: &str = "Three is a magic number.";
 
     const ALICE_ECDH_1PU_APP_B: &str = r#"
     {
