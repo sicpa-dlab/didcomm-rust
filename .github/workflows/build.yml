@@ -8,38 +8,35 @@ jobs:
     name: Run Checks
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
+      - name: Set rustup profile
+        run: rustup set profile minimal
 
-      - name: Cache cargo resources
-        uses: Swatinem/rust-cache@v1
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
         with:
-          sharedKey: deps
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
 
       - name: Debug build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --verbose
+        run: cargo build --verbose
 
       - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose
+        run: cargo test --verbose
