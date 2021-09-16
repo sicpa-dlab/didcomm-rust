@@ -112,3 +112,5 @@ where
 {
     Error::msg(kind, msg)
 }
+
+// TODO: Provide `From` implementation for serde and base64 errors to explicitly split malformed and no-memory errors
