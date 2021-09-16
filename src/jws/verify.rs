@@ -528,7 +528,7 @@ mod tests {
     Bob key secp256k1
     {"crv":"secp256k1","kty":"EC","x":"FCdNdYmCb37E84HSXaXsJHNawM-njeWTjr1g-PIN5dU","y":"Ds3RWwX770Yoyr0gEgKfxxACGRQEZg1s8BnE51CvNp8","d":"QOa9-22EOgjEa9CKJMKSrEQwsssJTQUlNyuhHLE7r1M"}"
     */
-    
+
     const BOB_MSG_K256: &str = r#"
     {
         "signatures":[{
