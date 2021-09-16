@@ -84,7 +84,27 @@ where
     }
 }
 
-pub type Context<T, E> = dyn anyhow::Context<T, E>;
+pub trait ResultContext<T> {
+    fn context<D>(self, msg: D) -> Result<T>
+    where
+        D: fmt::Display + fmt::Debug + Send + Sync + 'static;
+}
+
+impl<T> ResultContext<T> for Result<T> {
+    fn context<D>(self, msg: D) -> Result<T>
+    where
+        D: fmt::Display + fmt::Debug + Send + Sync + 'static,
+    {
+        self.map_err(|e| {
+            let Error { kind, source } = e;
+
+            Error {
+                kind,
+                source: source.context(msg),
+            }
+        })
+    }
+}
 
 pub fn err_msg<D>(kind: ErrorKind, msg: D) -> Error
 where

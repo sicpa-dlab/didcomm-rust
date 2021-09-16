@@ -28,8 +28,8 @@ pub(crate) trait KeyWrap: KeyAeadInPlace {
         Ok(buf)
     }
 
-    fn unwrap_key<K: KeyAeadInPlace + KeySecretBytes>(&self, cyphertext: &[u8]) -> Result<K> {
-        let mut buf = SecretBytes::from_slice(cyphertext);
+    fn unwrap_key<K: KeyAeadInPlace + KeySecretBytes>(&self, ciphertext: &[u8]) -> Result<K> {
+        let mut buf = SecretBytes::from_slice(ciphertext);
 
         self.decrypt_in_place(&mut buf, &[], &[])
             .kind(ErrorKind::Malformed, "Unable decrypt key")?;
