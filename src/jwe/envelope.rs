@@ -44,6 +44,7 @@ pub(crate) struct ProtectedHeader<'a> {
     pub skid: Option<&'a str>,
 
     /// BASE64URL("skid" header value),
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub apu: Option<&'a str>,
 
     /// BASE64URL(SHA256(CONCAT('.', SORT([recipients[0].kid, ..., recipients[n].kid])))))
