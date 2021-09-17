@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use super::Attachment;
 
 ///  Wrapper for plain message. Provides helpers for message building and packing/unpacking.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct Message {
     /// Message id. Must be unique to the sender.
     pub id: String,
@@ -14,6 +14,7 @@ pub struct Message {
     /// that when resolved gives human readable information about the message.
     /// The attribute’s value also informs the content of the message,
     /// or example the presence of other attributes and how they should be processed.
+    #[serde(rename="type")]
     pub type_: String,
 
     /// Message body.

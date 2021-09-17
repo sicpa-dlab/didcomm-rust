@@ -34,13 +34,13 @@ impl Message {
         _sign_by: &str,
         _did_resolver: &'dr (dyn DIDResolver + 'dr),
         _secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
-    ) -> Result<(String, SignMetadata)> {
+    ) -> Result<(String, PackSignedMetadata)> {
         todo!()
     }
 }
 
 /// Additional metadata about this `pack` method execution like used key identifiers.
-pub struct SignMetadata {
+pub struct PackSignedMetadata {
     /// Identifier (DID URL) of sign key.
     pub sign_by_kid: Option<String>,
 }

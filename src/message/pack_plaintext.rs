@@ -1,4 +1,7 @@
-use crate::{error::Result, Message};
+use crate::{
+    error::{ErrorKind, Result, ResultExt},
+    Message,
+};
 
 impl Message {
     /// Produces `DIDComm Plaintext Messages`
@@ -17,18 +20,17 @@ impl Message {
     /// # Errors
     /// - InvalidState
     pub fn pack_plaintext(&self) -> Result<String> {
-        todo!()
+        serde_json::to_string(self).kind(ErrorKind::InvalidState, "Unable serialize message")
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
+    use serde_json::{json, Value};
 
     use super::*;
 
     #[tokio::test]
-    #[ignore = "will be fixed after https://github.com/sicpa-dlab/didcomm-gemini/issues/71"]
     async fn pack_plaintext_works() {
         let msg = Message::build(
             "example-1".into(),
@@ -39,6 +41,21 @@ mod tests {
         .to("did:example:2".into())
         .finalize();
 
-        let _msg = msg.pack_plaintext().expect("plaintext is ok.");
+        let msg = msg.pack_plaintext().expect("Unable pack_plaintext");
+        println!("{}", msg);
+
+        let msg: Value = serde_json::from_str(&msg).expect("Unable from_str");
+        
+        assert_eq!(
+            msg,
+            json!({
+                "id":"example-1",
+                "type":"example/v1",
+                "body":"example-body",
+                "from":"did:example:1",
+                "to":[
+                    "did:example:2"
+                ]})
+        )
     }
 }

@@ -3,6 +3,7 @@ use askar_crypto::{
     encrypt::{KeyAeadInPlace, KeyAeadMeta},
     kdf::{FromKeyDerivation, KeyExchange},
     repr::{KeyGen, ToSecretBytes},
+    random,
 };
 
 use sha2::{Digest, Sha256};
@@ -32,7 +33,7 @@ where
         None => (None, None),
     };
 
-    let mut rng = crate::crypto::random::default_rng();
+    let mut rng = random::default_rng();
     let cek = CE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate cek")?;
 
     let apv = {
