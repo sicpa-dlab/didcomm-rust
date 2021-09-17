@@ -5,11 +5,15 @@ use crate::{
     secrets::{Secret, SecretsResolver},
 };
 
-pub struct ExampleSecretsResolver {}
+pub struct ExampleSecretsResolver {
+    _known_secrets: Vec<Secret>,
+}
 
 impl ExampleSecretsResolver {
-    pub fn new() -> Self {
-        ExampleSecretsResolver {}
+    pub fn new(known_secrets: Vec<Secret>) -> Self {
+        ExampleSecretsResolver {
+            _known_secrets: known_secrets,
+        }
     }
 }
 

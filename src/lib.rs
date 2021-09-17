@@ -1,13 +1,19 @@
+mod jwe;
+mod jwk;
+mod jws;
 mod message;
 mod pack_encrypted;
 mod pack_plaintext;
 mod pack_signed;
 mod unpack;
+mod utils;
 
 pub mod algorithms;
 pub mod did;
 pub mod error;
 pub mod secrets;
+
+pub(crate) use askar_crypto as crypto;
 
 pub use message::{
     Attachment, AttachmentBuilder, AttachmentData, Base64AttachmentData, JsonAttachmentData,
@@ -24,8 +30,7 @@ mod tests {
     };
 
     #[tokio::test]
-    #[ignore]
-    // will be fixed after https://github.com/sicpa-dlab/didcomm-gemini/issues/71
+    #[ignore = "will be fixed after https://github.com/sicpa-dlab/didcomm-gemini/issues/71"]
     async fn demo_works() {
         // --- Build message ---
 
@@ -43,8 +48,8 @@ mod tests {
 
         // --- Packing message ---
 
-        let sender_did_resolver = ExampleDIDResolver::new();
-        let sender_secrets_resolver = ExampleSecretsResolver::new();
+        let sender_did_resolver = ExampleDIDResolver::new(vec![]);
+        let sender_secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
         let (packed_msg, metadata) = msg
             .pack_encrypted(
@@ -71,8 +76,8 @@ mod tests {
 
         // --- Unpacking message ---
 
-        let recepient_did_resolver = ExampleDIDResolver::new();
-        let recepient_secrets_resolver = ExampleSecretsResolver::new();
+        let recepient_did_resolver = ExampleDIDResolver::new(vec![]);
+        let recepient_secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
         let (msg, metadata) = Message::unpack(
             &packed_msg,

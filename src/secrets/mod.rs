@@ -27,6 +27,7 @@ pub trait SecretsResolver {
 }
 
 /// Represents secret.
+#[derive(Clone, Debug)]
 pub struct Secret {
     /// A key ID identifying a secret (private key).
     pub id: String,
@@ -39,6 +40,7 @@ pub struct Secret {
 }
 
 /// Represents secret crypto material.
+#[derive(Clone, Debug)]
 pub enum PrivateKey {
     JWK(Value),
     Multibase(String),

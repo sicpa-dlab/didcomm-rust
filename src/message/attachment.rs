@@ -13,29 +13,36 @@ pub struct Attachment {
     ///  exist; if omitted, then there is no way to refer to the attachment later in the thread,
     ///  in error messages, and so forth. Because id is used to compose URIs, it is recommended
     ///  that this name be brief and avoid spaces and other characters that require URI escaping.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
     /// A human-readable description of the content.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 
     /// A hint about the name that might be used if this attachment is persisted as a file.
     /// It is not required, and need not be unique. If this field is present and mime-type is not,
     /// the extension on the filename may be used to infer a MIME type.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
 
     /// Describes the MIME type of the attached content.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub media_type: Option<String>,
 
     /// Describes the format of the attachment if the mime_type is not sufficient.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
 
     /// A hint about when the content in this attachment was last modified
     /// in UTC Epoch Seconds (seconds since 1970-01-01T00:00:00Z UTC).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lastmod_time: Option<u64>,
 
     /// Mostly relevant when content is included by reference instead of by value.
     /// Lets the receiver guess how expensive it will be, in time, bandwidth, and storage,
     /// to fully fetch the attachment.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub byte_count: Option<u64>,
 }
 
@@ -164,6 +171,7 @@ pub struct Base64AttachmentData {
     pub base64: String,
 
     /// A JSON Web Signature over the content of the attachment.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jws: Option<String>,
 }
 
@@ -173,6 +181,7 @@ pub struct JsonAttachmentData {
     pub json: Value,
 
     /// A JSON Web Signature over the content of the attachment.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jws: Option<String>,
 }
 
@@ -185,6 +194,7 @@ pub struct LinksAttachmentData {
     pub hash: String,
 
     /// A JSON Web Signature over the content of the attachment.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jws: Option<String>,
 }
 
