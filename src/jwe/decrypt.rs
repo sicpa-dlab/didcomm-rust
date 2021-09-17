@@ -735,6 +735,121 @@ mod tests {
     }
 
     #[test]
+    fn decrypt_works_changed_second_enc_key() {
+        decrypt_works_changed_second_enc_key::<
+            Chacha20Key<XC20P>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            None,
+            (BOB_KID_X25519_2, BOB_KEY_X25519_2),
+            MSG_ANONCRYPT_X25519_XC20P_CHANGED_ENC_KEY,
+            PAYLOAD,
+        );
+
+        decrypt_works_changed_second_enc_key::<
+            AesKey<A256CbcHs512>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            None,
+            (BOB_KID_X25519_2, BOB_KEY_X25519_2),
+            MSG_ANONCRYPT_X25519_A256CBC_CHANGED_ENC_KEY,
+            PAYLOAD,
+        );
+
+        decrypt_works_changed_second_enc_key::<
+            AesKey<A256Gcm>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            None,
+            (BOB_KID_X25519_2, BOB_KEY_X25519_2),
+            MSG_ANONCRYPT_X25519_A256GSM_CHANGED_ENC_KEY,
+            PAYLOAD,
+        );
+
+        decrypt_works_changed_second_enc_key::<
+            Chacha20Key<XC20P>,
+            EcdhEs<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            None,
+            (BOB_KID_P256_2, BOB_KEY_P256_2),
+            MSG_ANONCRYPT_P256_XC20P_CHANGED_ENC_KEY,
+            PAYLOAD,
+        );
+
+        decrypt_works_changed_second_enc_key::<
+            AesKey<A256CbcHs512>,
+            EcdhEs<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            None,
+            (BOB_KID_P256_2, BOB_KEY_P256_2),
+            MSG_ANONCRYPT_P256_A256CBC_CHANGED_ENC_KEY,
+            PAYLOAD,
+        );
+
+        decrypt_works_changed_second_enc_key::<
+            AesKey<A256Gcm>,
+            EcdhEs<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            None,
+            (BOB_KID_P256_2, BOB_KEY_P256_2),
+            MSG_ANONCRYPT_P256_A256GSM_CHANGED_ENC_KEY,
+            PAYLOAD,
+        );
+
+        decrypt_works_changed_second_enc_key::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            Some((ALICE_KID_X25519_1, ALICE_PKEY_X25519_1)),
+            (BOB_KID_X25519_2, BOB_KEY_X25519_2),
+            MSG_AUTHCRYPT_X25519_A256CBC_CHANGED_ENC_KEY,
+            PAYLOAD,
+        );
+
+        decrypt_works_changed_second_enc_key::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            Some((ALICE_KID_P256_1, ALICE_PKEY_P256_1)),
+            (BOB_KID_P256_2, BOB_KEY_P256_2),
+            MSG_AUTHCRYPT_P256_A256CBC_CHANGED_ENC_KEY,
+            PAYLOAD,
+        );
+
+        fn decrypt_works_changed_second_enc_key<CE, KDF, KE, KW>(
+            sender: Option<(&str, &str)>,
+            recepient: (&str, &str),
+            msg: &str,
+            payload: &str,
+        ) where
+            CE: KeyAeadInPlace + KeySecretBytes,
+            KDF: JoseKDF<KE, KW>,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KW: KeyWrap + FromKeyDerivation,
+        {
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recepient, msg);
+            let res = res.expect("res is err");
+            assert_eq!(&res, payload.as_bytes());
+        }
+    }
+
+    #[test]
     fn decrypt_works_changed_ciphertext() {
         _decrypt_works_changed_ciphertext::<
             Chacha20Key<XC20P>,
