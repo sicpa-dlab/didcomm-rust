@@ -10,6 +10,9 @@ pub struct Message {
     /// Message id. Must be unique to the sender.
     pub id: String,
 
+    /// Must be 
+    pub typ: String,
+
     /// Message type attribute value MUST be a valid Message Type URI,
     /// that when resolved gives human readable information about the message.
     /// The attribute’s value also informs the content of the message,
@@ -187,6 +190,7 @@ impl MessageBuilder {
     pub fn finalize(self) -> Message {
         Message {
             id: self.id,
+            typ: "application/didcomm-plain+json".to_owned(),
             type_: self.type_,
             body: self.body,
             to: self.to,
@@ -239,6 +243,7 @@ mod tests {
         .finalize();
 
         assert_eq!(message.id, "example-1");
+        assert_eq!(message.typ, "application/didcomm-plain+json");
         assert_eq!(message.type_, "example/v1");
         assert_eq!(message.body, json!("example-body"));
         assert_eq!(message.from, Some("did:example:4".into()));

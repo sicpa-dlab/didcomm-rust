@@ -4,6 +4,9 @@ mod jws;
 mod message;
 mod utils;
 
+#[cfg(test)]
+mod test_vectors;
+
 pub mod algorithms;
 pub mod did;
 pub mod error;

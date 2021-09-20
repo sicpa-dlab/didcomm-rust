@@ -26,36 +26,53 @@ impl Message {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::{json, Value};
+    use serde_json::Value;
 
-    use super::*;
+    use crate::{
+        test_vectors::{
+            message::{
+                message_attachment_base64, message_attachment_json, message_attachment_links,
+                message_attachment_multi_1, message_attachment_multi_2, message_minimal,
+                message_simple,
+            },
+            plaintext::{
+                PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
+                PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
+                PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
+            },
+        },
+        Message,
+    };
 
-    #[tokio::test]
-    async fn pack_plaintext_works() {
-        let msg = Message::build(
-            "example-1".into(),
-            "example/v1".into(),
-            json!("example-body"),
-        )
-        .from("did:example:1".into())
-        .to("did:example:2".into())
-        .finalize();
+    #[test]
+    fn pack_plaintext_works() {
+        _pack_plaintext_works(&message_simple(), PLAINTEXT_MSG_SIMPLE);
+        _pack_plaintext_works(&message_minimal(), PLAINTEXT_MSG_MINIMAL);
+       
+        _pack_plaintext_works(
+            &message_attachment_base64(),
+            PLAINTEXT_MSG_ATTACHMENT_BASE64,
+        );
+     
+        _pack_plaintext_works(&message_attachment_json(), PLAINTEXT_MSG_ATTACHMENT_JSON);
+        _pack_plaintext_works(&message_attachment_links(), PLAINTEXT_MSG_ATTACHMENT_LINKS);
+       
+        _pack_plaintext_works(
+            &message_attachment_multi_1(),
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
+        );
+      
+        _pack_plaintext_works(
+            &message_attachment_multi_2(),
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_2,
+        );
 
-        let msg = msg.pack_plaintext().expect("Unable pack_plaintext");
-        println!("{}", msg);
+        fn _pack_plaintext_works(msg: &Message, exp_msg: &str) {
+            let msg = msg.pack_plaintext().expect("Unable pack_plaintext");
 
-        let msg: Value = serde_json::from_str(&msg).expect("Unable from_str");
-        
-        assert_eq!(
-            msg,
-            json!({
-                "id":"example-1",
-                "type":"example/v1",
-                "body":"example-body",
-                "from":"did:example:1",
-                "to":[
-                    "did:example:2"
-                ]})
-        )
+            let msg: Value = serde_json::from_str(&msg).expect("Unable from_str");
+            let exp_msg: Value = serde_json::from_str(exp_msg).expect("Unable from_str");
+            assert_eq!(msg, exp_msg)
+        }
     }
 }
