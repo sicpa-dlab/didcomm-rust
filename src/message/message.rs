@@ -10,14 +10,14 @@ pub struct Message {
     /// Message id. Must be unique to the sender.
     pub id: String,
 
-    /// Must be 
+    /// Must be
     pub typ: String,
 
     /// Message type attribute value MUST be a valid Message Type URI,
     /// that when resolved gives human readable information about the message.
     /// The attribute’s value also informs the content of the message,
     /// or example the presence of other attributes and how they should be processed.
-    #[serde(rename="type")]
+    #[serde(rename = "type")]
     pub type_: String,
 
     /// Message body.

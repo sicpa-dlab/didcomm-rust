@@ -48,20 +48,20 @@ mod tests {
     fn pack_plaintext_works() {
         _pack_plaintext_works(&message_simple(), PLAINTEXT_MSG_SIMPLE);
         _pack_plaintext_works(&message_minimal(), PLAINTEXT_MSG_MINIMAL);
-       
+
         _pack_plaintext_works(
             &message_attachment_base64(),
             PLAINTEXT_MSG_ATTACHMENT_BASE64,
         );
-     
+
         _pack_plaintext_works(&message_attachment_json(), PLAINTEXT_MSG_ATTACHMENT_JSON);
         _pack_plaintext_works(&message_attachment_links(), PLAINTEXT_MSG_ATTACHMENT_LINKS);
-       
+
         _pack_plaintext_works(
             &message_attachment_multi_1(),
             PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
         );
-      
+
         _pack_plaintext_works(
             &message_attachment_multi_2(),
             PLAINTEXT_MSG_ATTACHMENT_MULTI_2,

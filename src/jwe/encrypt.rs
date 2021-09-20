@@ -2,8 +2,8 @@ use askar_crypto::{
     buffer::SecretBytes,
     encrypt::{KeyAeadInPlace, KeyAeadMeta},
     kdf::{FromKeyDerivation, KeyExchange},
-    repr::{KeyGen, ToSecretBytes},
     random,
+    repr::{KeyGen, ToSecretBytes},
 };
 
 use sha2::{Digest, Sha256};
