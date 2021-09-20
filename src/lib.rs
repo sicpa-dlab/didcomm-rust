@@ -2,22 +2,20 @@ mod jwe;
 mod jwk;
 mod jws;
 mod message;
-mod pack_encrypted;
-mod pack_plaintext;
-mod pack_signed;
-mod unpack;
 mod utils;
+
+#[cfg(test)]
+mod test_vectors;
 
 pub mod algorithms;
 pub mod did;
 pub mod error;
 pub mod secrets;
 
-pub(crate) use askar_crypto as crypto;
-
 pub use message::{
     Attachment, AttachmentBuilder, AttachmentData, Base64AttachmentData, JsonAttachmentData,
-    LinksAttachmentData, Message, MessageBuilder,
+    LinksAttachmentData, Message, MessageBuilder, PackEncryptedMetadata, PackEncryptedOptions,
+    PackSignedMetadata, UnpackMetadata, UnpackOptions,
 };
 
 #[cfg(test)]
@@ -25,8 +23,8 @@ mod tests {
     use serde_json::json;
 
     use crate::{
-        did::resolvers::ExampleDIDResolver, pack_encrypted::PackEncryptedOptions,
-        secrets::resolvers::ExampleSecretsResolver, unpack::UnpackOptions, Message,
+        did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver, Message,
+        PackEncryptedOptions, UnpackOptions,
     };
 
     #[tokio::test]

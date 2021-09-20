@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct Attachment {
     /// A JSON object that gives access to the actual content of the attachment.
     /// Can be based on base64, json or external links.
@@ -157,7 +157,7 @@ impl AttachmentBuilder {
 // It should work as we always have discrimination here.
 
 /// Represents attachment data in Base64, embedded Json or Links form.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 #[serde(untagged)]
 pub enum AttachmentData {
     Base64(Base64AttachmentData),
@@ -165,7 +165,7 @@ pub enum AttachmentData {
     Links(LinksAttachmentData),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct Base64AttachmentData {
     /// Base64-encoded data, when representing arbitrary content inline.
     pub base64: String,
@@ -175,7 +175,7 @@ pub struct Base64AttachmentData {
     pub jws: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct JsonAttachmentData {
     /// Directly embedded JSON data.
     pub json: Value,
@@ -185,7 +185,7 @@ pub struct JsonAttachmentData {
     pub jws: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct LinksAttachmentData {
     /// A list of one or more locations at which the content may be fetched.
     pub links: Vec<String>,
