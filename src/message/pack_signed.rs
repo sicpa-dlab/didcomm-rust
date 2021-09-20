@@ -1,4 +1,11 @@
-use crate::{did::DIDResolver, error::Result, secrets::SecretsResolver, Message};
+use crate::{
+    did::DIDResolver,
+    error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
+    jws::{self, Algorithm},
+    secrets::SecretsResolver,
+    utils::did::{did_or_url, ToSignKeyPair},
+    Message,
+};
 
 impl Message {
     /// Produces `DIDComm Signed Message`
@@ -31,18 +38,64 @@ impl Message {
     /// TODO: verify and update errors list
     pub async fn pack_signed<'dr, 'sr>(
         &self,
-        _sign_by: &str,
-        _did_resolver: &'dr (dyn DIDResolver + 'dr),
-        _secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+        sign_by: &str,
+        did_resolver: &'dr (dyn DIDResolver + 'dr),
+        secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
     ) -> Result<(String, PackSignedMetadata)> {
-        todo!()
+        let (did, key_id) = did_or_url(sign_by);
+
+        let did_doc = did_resolver
+            .resolve(did)
+            .await
+            .context("Unable resolve signer did")?
+            .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Signer did not found"))?;
+
+        let key_id = if let Some(key_id) = key_id {
+            key_id
+        } else {
+            did_doc.authentications().get(0).ok_or_else(|| {
+                err_msg(
+                    ErrorKind::DIDNotResolved,
+                    "No authentications for signed did",
+                )
+            })?
+        };
+
+        let secret = secrets_resolver
+            .resolve(key_id)
+            .await
+            .context("Unable resolve signer secret")?
+            .ok_or_else(|| err_msg(ErrorKind::SecretNotFound, "Signer secret not found"))?;
+
+        let sign_key = secret
+            .to_sign_key_pair()
+            .context("Unable instantiate sign key")?;
+
+        let payload = serde_json::to_string(self)
+            .kind(ErrorKind::InvalidState, "Unable serialize message")?;
+
+        let msg = match sign_key {
+            crate::utils::crypto::SignKeyPair::Ed25519KeyPair(ref key) => {
+                jws::sign(payload.as_bytes(), (did, key), Algorithm::EdDSA)
+            }
+            crate::utils::crypto::SignKeyPair::P256KeyPair(ref key) => {
+                jws::sign(payload.as_bytes(), (did, key), Algorithm::Es256)
+            }
+        }
+        .context("Unable produce signatire")?;
+
+        let metadata = PackSignedMetadata {
+            sign_by_kid: key_id.to_owned(),
+        };
+
+        Ok((msg, metadata))
     }
 }
 
 /// Additional metadata about this `pack` method execution like used key identifiers.
 pub struct PackSignedMetadata {
     /// Identifier (DID URL) of sign key.
-    pub sign_by_kid: Option<String>,
+    pub sign_by_kid: String,
 }
 
 #[cfg(test)]
