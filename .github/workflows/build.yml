@@ -3,8 +3,44 @@ name: build
 on:
   pull_request
 
+
+env:
+  PKG_NAME: didcomm
+
+
 jobs:
-  check:
+  check-version-bumped:
+    name: Check version bumped
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'stable'
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get current version
+        id: current_version
+        run: |
+          version="$(cargo -q metadata --no-deps \
+            | jq -r '.packages[] | select(.name == "${{ env.PKG_NAME }}") | .version')"
+          echo "$version"
+          echo "::set-output name=current_version::$version"
+        shell: bash
+
+      # TODO improve (DRY): copy-paste from release.yml
+      - name: Get release info
+        id: release_info
+        run: |
+          release_info="$(curl -s https://api.github.com/repos/${{ github.repository }}/releases \
+              | jq '.[] | select(.name == "v${{ steps.current_version.outputs.current_version }}")')"
+          echo "::set-output name=release_info::$release_info"
+          echo "$release_info"
+        shell: bash
+
+      - name: fail unless release not found
+        # TODO check if greater than latest tag / release (?)
+        if: steps.release_info.outputs.release_info
+        run: exit 1
+
+  build:
     name: Run Checks
     strategy:
       matrix:
