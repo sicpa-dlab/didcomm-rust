@@ -10,7 +10,7 @@ env:
 
 jobs:
   check-version-bumped:
-    name: Check version bumped
+    name: Check is ready for release
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'stable'
     steps:
@@ -35,10 +35,18 @@ jobs:
           echo "$release_info"
         shell: bash
 
-      - name: fail unless release not found
+      - name: check version bumped
         # TODO check if greater than latest tag / release (?)
         if: steps.release_info.outputs.release_info
         run: exit 1
+
+      - name: check it can be packaged
+        run: |
+          cargo package
+          # TODO verify that it's not more than crates.io limit (10 MB)
+          ls -la target/package
+          cargo package --list
+        shell: bash
 
   build:
     name: Run Checks
@@ -51,11 +59,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set rustup profile
-        run: rustup set profile minimal
-
-      - name: Install Rust toolchain
-        run: rustup toolchain install stable
+      - name: Set rustup profile & toolchain
+        run: |
+          rustup set profile minimal
+          rustup toolchain install stable
+        shell: bash
 
       - name: Get timestamp for cache
         id: date
