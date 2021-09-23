@@ -26,6 +26,9 @@ features = ['std']
 git = 'https://github.com/hyperledger/aries-askar'
 rev = '4f29d43d584c4a1f1f982c4511824421aeccd2db'
 
+[dev-dependencies]
+lazy_static = "1.4.0"
+
 [dev-dependencies.tokio]
 version = '1.9'
 features = [

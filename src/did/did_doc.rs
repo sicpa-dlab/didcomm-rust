@@ -3,25 +3,32 @@
 use serde_json::Value;
 
 /// Represents DID Document (https://www.w3.org/TR/did-core/)
-pub trait DIDDoc {
-    /// Returns a DID for the given DID Doc
-    fn did(&self) -> &str;
+#[derive(Debug, Clone)]
+pub struct DIDDoc {
+    /// DID for the given DID Doc
+    pub(crate) did: String,
 
-    /// Returns DID URLs of verification methods used for key agreement.
+    /// DID URLs of verification methods used for key agreement.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    fn key_agreements(&self) -> &[String];
+    // TODO: Remove allow
+    #[allow(dead_code)]
+    pub(crate) key_agreements: Vec<String>,
 
     /// Returns DID URLs of verification methods used for authentication.
     /// See https://www.w3.org/TR/did-core/#authentication
-    fn authentications(&self) -> &[String];
+    pub(crate) authentications: Vec<String>,
 
-    /// Returns all local verification methods including embedded to
+    /// All local verification methods including embedded to
     /// key agreement and authentication sections.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    fn verification_methods(&self) -> &[VerificationMethod];
+    // TODO: Remove allow
+    #[allow(dead_code)]
+    pub(crate) verification_methods: Vec<VerificationMethod>,
 
-    /// Returns all services (https://www.w3.org/TR/did-core/#services)
-    fn services(&self) -> &[Service];
+    /// All services (https://www.w3.org/TR/did-core/#services)
+    // TODO: Remove allow
+    #[allow(dead_code)]
+    pub(crate) services: Vec<Service>,
 }
 
 /// Represents verification method record in DID Document
@@ -29,9 +36,18 @@ pub trait DIDDoc {
 #[derive(Clone, Debug)]
 pub struct VerificationMethod {
     pub id: String,
-    pub type_: String,
+    pub type_: VerificationMethodType,
     pub controller: String,
     pub verification_material: VerificationMaterial,
+}
+
+#[derive(Clone, Debug)]
+pub enum VerificationMethodType {
+    JsonWebKey2020,
+    X25519KeyAgreementKey2019,
+    Ed25519VerificationKey2018,
+    EcdsaSecp256k1VerificationKey2019,
+    Other(String),
 }
 
 /// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)

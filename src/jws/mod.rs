@@ -16,7 +16,7 @@ mod verify;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use envelope::Algorithm;
+pub(crate) use envelope::{Algorithm, Header, ProtectedHeader, Signature, JWS};
 
 // TODO: Remove allow
 #[allow(unused_imports)]

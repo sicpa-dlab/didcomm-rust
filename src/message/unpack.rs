@@ -32,6 +32,7 @@ impl Message {
     /// - `DIDUrlNotResolved` DID doesn't contain mentioned DID Urls (for ex., key id)
     /// - `MessageMalformed` message doesn't correspond to DID Comm or has invalid encryption or signatures.
     /// - `UnsatisfiedConstraint` message doesn't satisfy checks requested by unpack options.
+    /// - `Unsupported` Used crypto or method is unsupported.
     /// - `SecretNotFound` No recipient secrets found.
     /// - `InvalidState` Indicates library error.
     /// - `IOError` IO error during DID or secrets resolving.

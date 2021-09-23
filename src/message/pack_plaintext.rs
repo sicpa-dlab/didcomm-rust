@@ -30,16 +30,11 @@ mod tests {
 
     use crate::{
         test_vectors::{
-            message::{
-                message_attachment_base64, message_attachment_json, message_attachment_links,
-                message_attachment_multi_1, message_attachment_multi_2, message_minimal,
-                message_simple,
-            },
-            plaintext::{
-                PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
-                PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
-                PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
-            },
+            message_attachment_base64, message_attachment_json, message_attachment_links,
+            message_attachment_multi_1, message_attachment_multi_2, message_minimal,
+            message_simple, PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
+            PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
         },
         Message,
     };

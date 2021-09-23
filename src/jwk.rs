@@ -1,5 +1,5 @@
 use askar_crypto::{
-    alg::{ed25519::Ed25519KeyPair, p256::P256KeyPair, x25519::X25519KeyPair},
+    alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair, x25519::X25519KeyPair},
     jwk::{FromJwk, ToJwk},
 };
 
@@ -33,6 +33,7 @@ pub(crate) trait ToJwkValue: ToJwk {
 impl FromJwkValue for Ed25519KeyPair {}
 impl FromJwkValue for P256KeyPair {}
 impl FromJwkValue for X25519KeyPair {}
+impl FromJwkValue for K256KeyPair {}
 
 impl ToJwkValue for Ed25519KeyPair {}
 impl ToJwkValue for P256KeyPair {}

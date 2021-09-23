@@ -1,4 +1,15 @@
-use askar_crypto::{alg::{aes::{A128Kw, A256Kw, AesKey}, ed25519::Ed25519KeyPair, p256::P256KeyPair}, buffer::SecretBytes, encrypt::KeyAeadInPlace, kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation, KeyExchange}, repr::{KeySecretBytes, ToSecretBytes}};
+use askar_crypto::{
+    alg::{
+        aes::{A128Kw, A256Kw, AesKey},
+        ed25519::Ed25519KeyPair,
+        k256::K256KeyPair,
+        p256::P256KeyPair,
+    },
+    buffer::SecretBytes,
+    encrypt::KeyAeadInPlace,
+    kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation, KeyExchange},
+    repr::{KeySecretBytes, ToSecretBytes},
+};
 
 use crate::error::{err_msg, ErrorKind, Result, ResultExt};
 
@@ -100,9 +111,8 @@ impl<Key: KeyExchange, KW: KeyWrap + FromKeyDerivation + Sized> JoseKDF<Key, KW>
     }
 }
 
-// TODO: Remove allow
-#[allow(dead_code)]
 pub(crate) enum SignKeyPair {
     Ed25519KeyPair(Ed25519KeyPair),
     P256KeyPair(P256KeyPair),
+    K256KeyPair(K256KeyPair),
 }
