@@ -6,29 +6,25 @@ use serde_json::Value;
 #[derive(Debug, Clone)]
 pub struct DIDDoc {
     /// DID for the given DID Doc
-    pub(crate) did: String,
+    pub did: String,
 
     /// DID URLs of verification methods used for key agreement.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    // TODO: Remove allow
-    #[allow(dead_code)]
-    pub(crate) key_agreements: Vec<String>,
+    pub key_agreements: Vec<String>,
 
     /// Returns DID URLs of verification methods used for authentication.
     /// See https://www.w3.org/TR/did-core/#authentication
-    pub(crate) authentications: Vec<String>,
+    pub authentications: Vec<String>,
 
     /// All local verification methods including embedded to
     /// key agreement and authentication sections.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
     // TODO: Remove allow
-    #[allow(dead_code)]
-    pub(crate) verification_methods: Vec<VerificationMethod>,
+    pub verification_methods: Vec<VerificationMethod>,
 
     /// All services (https://www.w3.org/TR/did-core/#services)
     // TODO: Remove allow
-    #[allow(dead_code)]
-    pub(crate) services: Vec<Service>,
+    pub services: Vec<Service>,
 }
 
 /// Represents verification method record in DID Document
