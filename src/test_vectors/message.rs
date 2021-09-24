@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use serde_json::json;
 
 use super::common::{ALICE_DID, BOB_DID};
-use crate::didcomm_rust::{Attachment, Message, MessageBuilder};
+use crate::didcomm::{Attachment, Message, MessageBuilder};
 
 lazy_static! {
     pub(crate) static ref MESSAGE_SIMPLE: Message = _message().finalize();

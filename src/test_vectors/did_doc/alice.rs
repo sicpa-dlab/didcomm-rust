@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use serde_json::json;
 
-use crate::didcomm_rust::did::{
+use crate::didcomm::did::{
     DIDDoc, VerificationMaterial, VerificationMethod, VerificationMethodType,
 };
 
