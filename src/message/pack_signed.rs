@@ -133,9 +133,8 @@ mod tests {
         jws::{self, Algorithm, Header, ProtectedHeader},
         secrets::{resolvers::ExampleSecretsResolver, SecretsResolver},
         test_vectors::{
-            message_simple, ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256,
-            ALICE_AUTH_METHOD_SECPP256K1, ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS,
-            PLAINTEXT_MSG_SIMPLE,
+            ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
+            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
         },
         Message, PackSignedMetadata,
     };
@@ -148,7 +147,7 @@ mod tests {
         _pack_signed_works::<Ed25519KeyPair>(
             &did_resolver,
             &secrets_resolver,
-            &message_simple(),
+            &MESSAGE_SIMPLE,
             ALICE_DID,
             &ALICE_AUTH_METHOD_25519.id,
             Algorithm::EdDSA,
@@ -160,7 +159,7 @@ mod tests {
         _pack_signed_works::<Ed25519KeyPair>(
             &did_resolver,
             &secrets_resolver,
-            &message_simple(),
+            &MESSAGE_SIMPLE,
             &ALICE_AUTH_METHOD_25519.id,
             &ALICE_AUTH_METHOD_25519.id,
             Algorithm::EdDSA,
@@ -172,7 +171,7 @@ mod tests {
         _pack_signed_works::<P256KeyPair>(
             &did_resolver,
             &secrets_resolver,
-            &message_simple(),
+            &MESSAGE_SIMPLE,
             &ALICE_AUTH_METHOD_P256.id,
             &ALICE_AUTH_METHOD_P256.id,
             Algorithm::Es256,
@@ -184,7 +183,7 @@ mod tests {
         _pack_signed_works::<K256KeyPair>(
             &did_resolver,
             &secrets_resolver,
-            &message_simple(),
+            &MESSAGE_SIMPLE,
             &ALICE_AUTH_METHOD_SECPP256K1.id,
             &ALICE_AUTH_METHOD_SECPP256K1.id,
             Algorithm::Es256K,

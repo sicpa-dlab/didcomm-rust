@@ -237,11 +237,11 @@ mod tests {
             let res = _sign::<K>(kid, key, alg.clone(), payload);
 
             let err = res.expect_err("res is ok");
-            assert_eq!(err.kind(), ErrorKind::NoCompatibleCrypto);
+            assert_eq!(err.kind(), ErrorKind::Unsupported);
 
             assert_eq!(
                 format!("{}", err),
-                "No compatible crypto: Unsuported signature type"
+                "Unsupported crypto or method: Unsuported signature type"
             );
         }
     }
