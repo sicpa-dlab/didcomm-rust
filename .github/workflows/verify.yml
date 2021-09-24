@@ -1,0 +1,88 @@
+name: build
+
+on:
+  pull_request
+
+
+env:
+  PKG_NAME: didcomm
+
+
+jobs:
+  check-version-bumped:
+    name: Check is ready for release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'stable'
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get current version
+        id: current_version
+        run: |
+          version="$(cargo -q metadata --no-deps \
+            | jq -r '.packages[] | select(.name == "${{ env.PKG_NAME }}") | .version')"
+          echo "$version"
+          echo "::set-output name=current_version::$version"
+        shell: bash
+
+      # TODO improve (DRY): copy-paste from release.yml
+      - name: Get release info
+        id: release_info
+        run: |
+          release_info="$(curl -s https://api.github.com/repos/${{ github.repository }}/releases \
+              | jq '.[] | select(.name == "v${{ steps.current_version.outputs.current_version }}")')"
+          echo "::set-output name=release_info::$release_info"
+          echo "$release_info"
+        shell: bash
+
+      - name: check version bumped
+        # TODO check if greater than latest tag / release (?)
+        if: steps.release_info.outputs.release_info
+        run: exit 1
+
+      - name: check it can be packaged
+        run: |
+          cargo package
+          # TODO verify that it's not more than crates.io limit (10 MB)
+          ls -la target/package
+          cargo package --list
+        shell: bash
+
+  build:
+    name: Run Checks
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set rustup profile & toolchain
+        run: |
+          rustup set profile minimal
+          rustup toolchain install stable
+        shell: bash
+
+      - name: Get timestamp for cache
+        id: date
+        run: echo ::set-output name=yearmo::$(date +%Y%m)
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{steps.date.outputs.yearmo}}
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Debug build
+        run: cargo build --verbose
+
+      - name: Test
+        run: cargo test --verbose

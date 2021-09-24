@@ -21,3 +21,7 @@ Cargo.lock
 
 #/target
 #Cargo.lock
+#
+
+# vim
+*.swp
