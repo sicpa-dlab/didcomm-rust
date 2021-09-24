@@ -9,8 +9,8 @@ use criterion::{async_executor::FuturesExecutor, criterion_group, criterion_main
 use didcomm::{did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver};
 
 use test_vectors::{
-    ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1, ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS,
-    MESSAGE_SIMPLE,
+    ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1, ALICE_DID_DOC,
+    ALICE_SECRETS, MESSAGE_SIMPLE,
 };
 
 // Here we have an async function to benchmark
@@ -26,7 +26,7 @@ async fn pack_signed(
 }
 
 fn benchmarks(c: &mut Criterion) {
-    let sign_by = ALICE_DID;
+    let sign_by = &ALICE_AUTH_METHOD_25519.id;
     let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
     let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
 
