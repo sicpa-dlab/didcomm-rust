@@ -1,37 +1,43 @@
 [package]
-name = 'didcomm-rust'
-version = '0.1.0'
-authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
-edition = '2018'
+name = "didcomm"
+version = "0.1.0"
+authors = ["Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>"]
+edition = "2018"
+description = "DIDComm for Rust"
+license = "Apache-2.0"
+homepage = "https://github.com/sicpa-dlab/didcomm-rust"
+documentation = "https://github.com/sicpa-dlab/didcomm-python"
+readme = "README.md"
+
 
 [dependencies]
-anyhow = '1.0'
-base64 = '0.13'
-async-trait = '0.1'
-thiserror = '1.0'
-serde_json = '1.0'
-serde-enum-str = '0.1'
-sha2 = '0.9'
+anyhow = "1.0"
+base64 = "0.13"
+async-trait = "0.1"
+thiserror = "1.0"
+serde_json = "1.0"
+serde-enum-str = "0.1"
+sha2 = "0.9"
 
 [dependencies.serde]
-version = '1.0'
-features = ['derive']
+version = "1.0"
+features = ["derive"]
 
 # TODO: switch to next release to get the following fixed
 # https://github.com/hyperledger/aries-askar/issues/26
 # https://github.com/hyperledger/aries-askar/issues/22
 [dependencies.askar-crypto]
-version = '0.2'
-features = ['std']
-git = 'https://github.com/hyperledger/aries-askar'
-rev = '4f29d43d584c4a1f1f982c4511824421aeccd2db'
+version = "0.2"
+features = ["std"]
+git = "https://github.com/hyperledger/aries-askar"
+rev = "4f29d43d584c4a1f1f982c4511824421aeccd2db"
 
 [dev-dependencies]
 lazy_static = "1.4.0"
 
 [dev-dependencies.tokio]
-version = '1.9'
+version = "1.9"
 features = [
-    'rt',
-    'macros',
+    "rt",
+    "macros",
 ]
