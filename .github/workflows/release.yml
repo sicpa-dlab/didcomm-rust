@@ -151,7 +151,7 @@ jobs:
 
       - name: set dev version
         run: |
-          sed -i -r "s~^version = (['\"])(.+)['\"]~version = \1\2-0.dev.${{ github.event.inputs.devN }}\1~" ./Cargo.toml
+          sed -i -r "0,/version/{s~^version = (['\"])(.+)['\"]~version = \1\2-0.dev.${{ github.event.inputs.devN }}\1~}" ./Cargo.toml
           grep version ./Cargo.toml
         shell: bash
 
