@@ -16,6 +16,10 @@ mod verify;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
+pub(crate) use envelope::{Algorithm, Header, ProtectedHeader, Signature, JWS};
+
+// TODO: Remove allow
+#[allow(unused_imports)]
 pub(crate) use sign::sign;
 
 // TODO: Remove allow
@@ -26,7 +30,7 @@ pub(crate) use parse::{parse, ParsedJWS};
 mod tests {
     use askar_crypto::{alg::ed25519::Ed25519KeyPair, jwk::FromJwk};
 
-    use crate::jws::{self, envelope::Algorithm};
+    use crate::jws::{self, Algorithm};
 
     #[test]
     fn demo_works() {

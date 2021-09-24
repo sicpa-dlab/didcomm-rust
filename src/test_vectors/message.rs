@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use serde_json::json;
 
 use crate::{
@@ -5,31 +6,31 @@ use crate::{
     Attachment, Message, MessageBuilder,
 };
 
-pub(crate) fn message_simple() -> Message {
-    _message().finalize()
+lazy_static! {
+    pub(crate) static ref MESSAGE_SIMPLE: Message = _message().finalize();
 }
 
-pub(crate) fn message_minimal() -> Message {
-    Message::build(
+lazy_static! {
+    pub(crate) static ref MESSAGE_MINIMAL: Message = Message::build(
         "1234567890".to_owned(),
         "http://example.com/protocols/lets_do_lunch/1.0/proposal".to_owned(),
         json!({}),
     )
-    .finalize()
+    .finalize();
 }
 
-pub(crate) fn message_attachment_base64() -> Message {
-    _message()
+lazy_static! {
+    pub(crate) static ref MESSAGE_ATTACHMENT_BASE64: Message = _message()
         .attachement(
             Attachment::base64("qwerty".to_owned())
                 .id("23".to_owned())
                 .finalize(),
         )
-        .finalize()
+        .finalize();
 }
 
-pub(crate) fn message_attachment_links() -> Message {
-    _message()
+lazy_static! {
+    pub(crate) static ref MESSAGE_ATTACHMENT_LINKS: Message = _message()
         .attachement(
             Attachment::links(
                 ["1".to_owned(), "2".to_owned(), "3".to_owned()].into(),
@@ -38,21 +39,21 @@ pub(crate) fn message_attachment_links() -> Message {
             .id("23".to_owned())
             .finalize(),
         )
-        .finalize()
+        .finalize();
 }
 
-pub(crate) fn message_attachment_json() -> Message {
-    _message()
+lazy_static! {
+    pub(crate) static ref MESSAGE_ATTACHMENT_JSON: Message = _message()
         .attachement(
             Attachment::json(json!({"foo": "bar", "links": [2, 3]}))
                 .id("23".to_owned())
                 .finalize(),
         )
-        .finalize()
+        .finalize();
 }
 
-pub(crate) fn message_attachment_multi_1() -> Message {
-    _message()
+lazy_static! {
+    pub(crate) static ref MESSAGE_ATTACHMENT_MULTI_1: Message = _message()
         .attachements(
             [
                 Attachment::json(json!({"foo": "bar", "links": [2, 3]}))
@@ -70,11 +71,11 @@ pub(crate) fn message_attachment_multi_1() -> Message {
             ]
             .into(),
         )
-        .finalize()
+        .finalize();
 }
 
-pub(crate) fn message_attachment_multi_2() -> Message {
-    _message()
+lazy_static! {
+    pub(crate) static ref MESSAGE_ATTACHMENT_MULTI_2: Message = _message()
         .attachements(
             [
                 Attachment::links(
@@ -101,7 +102,7 @@ pub(crate) fn message_attachment_multi_2() -> Message {
             ]
             .into(),
         )
-        .finalize()
+        .finalize();
 }
 
 fn _message() -> MessageBuilder {

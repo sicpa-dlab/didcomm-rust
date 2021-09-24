@@ -26,6 +26,9 @@ pub enum ErrorKind {
 
     #[error("No compatible crypto")]
     NoCompatibleCrypto,
+
+    #[error("Unsupported crypto or method")]
+    Unsupported,
 }
 
 #[derive(Debug, thiserror::Error)]

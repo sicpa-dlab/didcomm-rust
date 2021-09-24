@@ -18,5 +18,5 @@ pub trait DIDResolver {
     /// # Errors
     /// - `IoError` IO error during resolving
     /// - `InvalidState` indicates a bug in resolver code
-    async fn resolve(&self, did: &str) -> Result<Option<Box<dyn DIDDoc>>>;
+    async fn resolve(&self, did: &str) -> Result<Option<DIDDoc>>;
 }

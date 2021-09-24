@@ -58,6 +58,7 @@ impl Message {
     /// - `DIDUrlNotResolved` DID doesn't contain mentioned DID Urls (for ex., key id)
     /// - `SecretNotFound` Sender secret is not found.
     /// - `NoCompatibleCrypto` No compatible keys are found between sender and recipient.
+    /// - `Unsupported` Used crypto or method is unsupported.
     /// - `InvalidState` Indicates library error.
     /// - `IOError` IO error during DID or secrets resolving
     /// TODO: verify and update errors list

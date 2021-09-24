@@ -1,5 +1,10 @@
 use askar_crypto::{
-    alg::aes::{A128Kw, A256Kw, AesKey},
+    alg::{
+        aes::{A128Kw, A256Kw, AesKey},
+        ed25519::Ed25519KeyPair,
+        k256::K256KeyPair,
+        p256::P256KeyPair,
+    },
     buffer::SecretBytes,
     encrypt::KeyAeadInPlace,
     kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation, KeyExchange},
@@ -104,4 +109,10 @@ impl<Key: KeyExchange, KW: KeyWrap + FromKeyDerivation + Sized> JoseKDF<Key, KW>
 
         Ok(kw)
     }
+}
+
+pub(crate) enum SignKeyPair {
+    Ed25519KeyPair(Ed25519KeyPair),
+    P256KeyPair(P256KeyPair),
+    K256KeyPair(K256KeyPair),
 }

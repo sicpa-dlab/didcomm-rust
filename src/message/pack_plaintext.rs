@@ -30,40 +30,32 @@ mod tests {
 
     use crate::{
         test_vectors::{
-            message::{
-                message_attachment_base64, message_attachment_json, message_attachment_links,
-                message_attachment_multi_1, message_attachment_multi_2, message_minimal,
-                message_simple,
-            },
-            plaintext::{
-                PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
-                PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
-                PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
-            },
+            MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS,
+            MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_MINIMAL,
+            MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
+            PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
         },
         Message,
     };
 
     #[test]
     fn pack_plaintext_works() {
-        _pack_plaintext_works(&message_simple(), PLAINTEXT_MSG_SIMPLE);
-        _pack_plaintext_works(&message_minimal(), PLAINTEXT_MSG_MINIMAL);
+        _pack_plaintext_works(&MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE);
+        _pack_plaintext_works(&MESSAGE_MINIMAL, PLAINTEXT_MSG_MINIMAL);
+
+        _pack_plaintext_works(&MESSAGE_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_BASE64);
+
+        _pack_plaintext_works(&MESSAGE_ATTACHMENT_JSON, PLAINTEXT_MSG_ATTACHMENT_JSON);
+        _pack_plaintext_works(&MESSAGE_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_LINKS);
 
         _pack_plaintext_works(
-            &message_attachment_base64(),
-            PLAINTEXT_MSG_ATTACHMENT_BASE64,
-        );
-
-        _pack_plaintext_works(&message_attachment_json(), PLAINTEXT_MSG_ATTACHMENT_JSON);
-        _pack_plaintext_works(&message_attachment_links(), PLAINTEXT_MSG_ATTACHMENT_LINKS);
-
-        _pack_plaintext_works(
-            &message_attachment_multi_1(),
+            &MESSAGE_ATTACHMENT_MULTI_1,
             PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
         );
 
         _pack_plaintext_works(
-            &message_attachment_multi_2(),
+            &MESSAGE_ATTACHMENT_MULTI_2,
             PLAINTEXT_MSG_ATTACHMENT_MULTI_2,
         );
 
