@@ -1,8 +1,8 @@
 use lazy_static::lazy_static;
 use serde_json::json;
 
-use crate::did::{
-    did_doc::VerificationMethodType, DIDDoc, VerificationMaterial, VerificationMethod,
+use crate::didcomm::did::{
+    DIDDoc, VerificationMaterial, VerificationMethod, VerificationMethodType,
 };
 
 lazy_static! {

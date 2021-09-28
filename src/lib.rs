@@ -4,6 +4,10 @@ mod jws;
 mod message;
 mod utils;
 
+// Allows share test vectors between unit and integration tests
+#[cfg(test)]
+pub(crate) use crate as didcomm;
+
 #[cfg(test)]
 mod test_vectors;
 
