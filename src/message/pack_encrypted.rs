@@ -193,12 +193,11 @@ impl Message {
             ))?
         }
 
-        // Resolve materials for keys and determine key types
-
+        // Resolve materials for sender keys
         let from_keys = from_kids
             .into_iter()
             .map(|kid| {
-                to_ddoc
+                from_ddoc
                     .verification_methods
                     .iter()
                     .find(|vm| vm.id == kid)
