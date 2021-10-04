@@ -698,31 +698,36 @@ mod tests {
 
     use super::*;
 
+    use crate::test_vectors::{ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC};
     use crate::{did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver};
 
     #[tokio::test]
-    #[ignore = "will be fixed after https://github.com/sicpa-dlab/didcomm-gemini/issues/71"]
     async fn pack_encrypted_works() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
         let msg = Message::build(
             "example-1".into(),
             "example/v1".into(),
             json!("example-body"),
         )
-        .from("did:example:1".into())
-        .to("did:example:2".into())
+        .from(ALICE_DID.into())
+        .to(BOB_DID.into())
         .finalize();
-
-        let did_resolver = ExampleDIDResolver::new(vec![]);
-        let secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
         let (_msg, _metadata) = msg
             .pack_encrypted(
-                "did:example:2",
-                Some("example-1"),
+                BOB_DID,
+                Some(ALICE_DID),
                 None,
                 &did_resolver,
                 &secrets_resolver,
-                &PackEncryptedOptions::default(),
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
             )
             .await
             .expect("encrypt is ok.");

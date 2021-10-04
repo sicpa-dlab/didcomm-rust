@@ -60,7 +60,6 @@ pub enum VerificationMaterial {
 #[derive(Clone, Debug)]
 pub struct Service {
     pub id: String,
-    pub type_: String,
     pub kind: ServiceKind,
 }
 
