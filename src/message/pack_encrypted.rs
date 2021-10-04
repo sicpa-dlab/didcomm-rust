@@ -93,7 +93,7 @@ impl Message {
             ))?
         };
 
-        // TODO: Sync how to avoid resolving of did multiple times
+        // TODO: Think how to avoid resolving of did multiple times
         // and perform async operations in parallel
 
         let (msg, sign_by_kid) = if let Some(sign_by) = sign_by {
