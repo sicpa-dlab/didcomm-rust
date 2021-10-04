@@ -22,6 +22,10 @@ pub(crate) use encrypt::encrypt;
 #[allow(unused_imports)]
 pub(crate) use parse::{parse, ParsedJWE};
 
+// TODO: remove allow
+#[allow(unused_imports)]
+pub(crate) use envelope::{Algorithm, EncAlgorithm};
+
 #[cfg(test)]
 pub(crate) mod test_support {
     pub(crate) const ALICE_KID_X25519_1: &str = "did:example:alice#key-x25519-1";

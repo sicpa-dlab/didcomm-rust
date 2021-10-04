@@ -1,12 +1,13 @@
-use askar_crypto::alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair};
-use serde_json::Value;
+use askar_crypto::alg::{
+    ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair, x25519::X25519KeyPair,
+};
 
 use crate::{
     did::{did_doc::VerificationMethodType, VerificationMaterial, VerificationMethod},
     error::{err_msg, ErrorKind, Result, ResultExt},
     jwk::FromJwkValue,
     secrets::{Secret, SecretMaterial, SecretType},
-    utils::crypto::SignKeyPair,
+    utils::crypto::{AsKnownKeyPair, KnownKeyAlg, KnownKeyPair},
 };
 
 pub(crate) fn did_or_url(did_or_url: &str) -> (&str, Option<&str>) {
@@ -18,35 +19,30 @@ pub(crate) fn did_or_url(did_or_url: &str) -> (&str, Option<&str>) {
     }
 }
 
-pub(crate) trait ToSignKeyPair {
-    fn to_sign_key_pair(&self) -> Result<SignKeyPair>;
-}
-
-impl ToSignKeyPair for VerificationMethod {
-    fn to_sign_key_pair(&self) -> Result<SignKeyPair> {
+impl AsKnownKeyPair for VerificationMethod {
+    fn as_key_pair(&self) -> Result<KnownKeyPair> {
         match (&self.type_, &self.verification_material) {
             (VerificationMethodType::JsonWebKey2020, VerificationMaterial::JWK(ref jwk)) => {
-                match (&jwk["kty"], &jwk["crv"]) {
-                    (Value::String(ref kty), Value::String(ref crv))
-                        if kty == "EC" && crv == "P-256" =>
-                    {
+                match (jwk["kty"].as_str(), jwk["crv"].as_str()) {
+                    (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
                         P256KeyPair::from_jwk_value(jwk)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(SignKeyPair::P256KeyPair)
+                            .map(KnownKeyPair::P256)
                     }
-                    (Value::String(ref kty), Value::String(ref crv))
-                        if kty == "EC" && crv == "secp256k1" =>
-                    {
+                    (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
                         K256KeyPair::from_jwk_value(jwk)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(SignKeyPair::K256KeyPair)
+                            .map(KnownKeyPair::K256)
                     }
-                    (Value::String(ref kty), Value::String(ref crv))
-                        if kty == "OKP" && crv == "Ed25519" =>
-                    {
+                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
                         Ed25519KeyPair::from_jwk_value(jwk)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(SignKeyPair::Ed25519KeyPair)
+                            .map(KnownKeyPair::Ed25519)
+                    }
+                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
+                        X25519KeyPair::from_jwk_value(jwk)
+                            .kind(ErrorKind::Malformed, "Unable parse jwk")
+                            .map(KnownKeyPair::X25519)
                     }
                     _ => Err(err_msg(
                         ErrorKind::Unsupported,
@@ -60,33 +56,53 @@ impl ToSignKeyPair for VerificationMethod {
             )),
         }
     }
+
+    fn key_alg(&self) -> KnownKeyAlg {
+        match (&self.type_, &self.verification_material) {
+            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::JWK(ref jwk)) => {
+                match (jwk["kty"].as_str(), jwk["crv"].as_str()) {
+                    (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => KnownKeyAlg::P256,
+                    (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
+                        KnownKeyAlg::K256
+                    }
+                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
+                        KnownKeyAlg::Ed25519
+                    }
+                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
+                        KnownKeyAlg::X25519
+                    }
+                    _ => KnownKeyAlg::Unsupported,
+                }
+            }
+            _ => KnownKeyAlg::Unsupported,
+        }
+    }
 }
 
-impl ToSignKeyPair for Secret {
-    fn to_sign_key_pair(&self) -> Result<SignKeyPair> {
+impl AsKnownKeyPair for Secret {
+    fn as_key_pair(&self) -> Result<KnownKeyPair> {
         match (&self.type_, &self.secret_material) {
             (SecretType::JsonWebKey2020, SecretMaterial::JWK(ref jwk)) => {
-                match (&jwk["kty"], &jwk["crv"]) {
-                    (Value::String(ref kty), Value::String(ref crv))
-                        if kty == "EC" && crv == "P-256" =>
-                    {
+                match (jwk["kty"].as_str(), jwk["crv"].as_str()) {
+                    (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
                         P256KeyPair::from_jwk_value(jwk)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(SignKeyPair::P256KeyPair)
+                            .map(KnownKeyPair::P256)
                     }
-                    (Value::String(ref kty), Value::String(ref crv))
-                        if kty == "EC" && crv == "secp256k1" =>
-                    {
+                    (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
                         K256KeyPair::from_jwk_value(jwk)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(SignKeyPair::K256KeyPair)
+                            .map(KnownKeyPair::K256)
                     }
-                    (Value::String(ref kty), Value::String(ref crv))
-                        if kty == "OKP" && crv == "Ed25519" =>
-                    {
+                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
                         Ed25519KeyPair::from_jwk_value(jwk)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(SignKeyPair::Ed25519KeyPair)
+                            .map(KnownKeyPair::Ed25519)
+                    }
+                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
+                        X25519KeyPair::from_jwk_value(jwk)
+                            .kind(ErrorKind::Malformed, "Unable parse jwk")
+                            .map(KnownKeyPair::X25519)
                     }
                     _ => Err(err_msg(
                         ErrorKind::Unsupported,
@@ -96,8 +112,29 @@ impl ToSignKeyPair for Secret {
             }
             _ => Err(err_msg(
                 ErrorKind::Unsupported,
-                "Unsupported secret type and material",
+                "Unsupported verification method type and material combination",
             )),
+        }
+    }
+
+    fn key_alg(&self) -> KnownKeyAlg {
+        match (&self.type_, &self.secret_material) {
+            (SecretType::JsonWebKey2020, SecretMaterial::JWK(ref jwk)) => {
+                match (jwk["kty"].as_str(), jwk["crv"].as_str()) {
+                    (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => KnownKeyAlg::P256,
+                    (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
+                        KnownKeyAlg::K256
+                    }
+                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
+                        KnownKeyAlg::Ed25519
+                    }
+                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
+                        KnownKeyAlg::X25519
+                    }
+                    _ => KnownKeyAlg::Unsupported,
+                }
+            }
+            _ => KnownKeyAlg::Unsupported,
         }
     }
 }

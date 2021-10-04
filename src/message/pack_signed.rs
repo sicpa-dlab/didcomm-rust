@@ -4,8 +4,8 @@ use crate::{
     jws::{self, Algorithm},
     secrets::SecretsResolver,
     utils::{
-        crypto::SignKeyPair,
-        did::{did_or_url, ToSignKeyPair},
+        crypto::{AsKnownKeyPair, KnownKeyPair},
+        did::did_or_url,
     },
     Message,
 };
@@ -85,22 +85,23 @@ impl Message {
             .ok_or_else(|| err_msg(ErrorKind::SecretNotFound, "Signer secret not found"))?;
 
         let sign_key = secret
-            .to_sign_key_pair()
+            .as_key_pair()
             .context("Unable instantiate sign key")?;
 
         let payload = serde_json::to_string(self)
             .kind(ErrorKind::InvalidState, "Unable serialize message")?;
 
         let msg = match sign_key {
-            SignKeyPair::Ed25519KeyPair(ref key) => {
+            KnownKeyPair::Ed25519(ref key) => {
                 jws::sign(payload.as_bytes(), (key_id, key), Algorithm::EdDSA)
             }
-            SignKeyPair::P256KeyPair(ref key) => {
+            KnownKeyPair::P256(ref key) => {
                 jws::sign(payload.as_bytes(), (key_id, key), Algorithm::Es256)
             }
-            SignKeyPair::K256KeyPair(ref key) => {
+            KnownKeyPair::K256(ref key) => {
                 jws::sign(payload.as_bytes(), (key_id, key), Algorithm::Es256K)
             }
+            _ => Err(err_msg(ErrorKind::Unsupported, "Unsupported signature alg"))?,
         }
         .context("Unable produce signatire")?;
 

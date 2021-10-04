@@ -4,6 +4,7 @@ use askar_crypto::{
         ed25519::Ed25519KeyPair,
         k256::K256KeyPair,
         p256::P256KeyPair,
+        x25519::X25519KeyPair,
     },
     buffer::SecretBytes,
     encrypt::KeyAeadInPlace,
@@ -111,8 +112,68 @@ impl<Key: KeyExchange, KW: KeyWrap + FromKeyDerivation + Sized> JoseKDF<Key, KW>
     }
 }
 
-pub(crate) enum SignKeyPair {
-    Ed25519KeyPair(Ed25519KeyPair),
-    P256KeyPair(P256KeyPair),
-    K256KeyPair(K256KeyPair),
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum KnownKeyAlg {
+    Ed25519,
+    X25519,
+    P256,
+    K256,
+    Unsupported,
+}
+
+#[derive(Debug)]
+pub(crate) enum KnownKeyPair {
+    Ed25519(Ed25519KeyPair),
+    X25519(X25519KeyPair),
+    P256(P256KeyPair),
+    K256(K256KeyPair),
+}
+
+pub(crate) trait AsKnownKeyPair {
+    fn key_alg(&self) -> KnownKeyAlg;
+    fn as_key_pair(&self) -> Result<KnownKeyPair>;
+
+    fn as_ed25519(&self) -> Result<Ed25519KeyPair> {
+        if self.key_alg() != KnownKeyAlg::Ed25519 {
+            Err(err_msg(ErrorKind::InvalidState, "Unexpected key alg"))?
+        }
+
+        match self.as_key_pair()? {
+            KnownKeyPair::Ed25519(k) => Ok(k),
+            _ => Err(err_msg(ErrorKind::InvalidState, "Unexpected key pair type"))?,
+        }
+    }
+
+    fn as_x25519(&self) -> Result<X25519KeyPair> {
+        if self.key_alg() != KnownKeyAlg::X25519 {
+            Err(err_msg(ErrorKind::InvalidState, "Unexpected key alg"))?
+        }
+
+        match self.as_key_pair()? {
+            KnownKeyPair::X25519(k) => Ok(k),
+            _ => Err(err_msg(ErrorKind::InvalidState, "Unexpected key pair type"))?,
+        }
+    }
+
+    fn as_p256(&self) -> Result<P256KeyPair> {
+        if self.key_alg() != KnownKeyAlg::P256 {
+            Err(err_msg(ErrorKind::InvalidState, "Unexpected key alg"))?
+        }
+
+        match self.as_key_pair()? {
+            KnownKeyPair::P256(k) => Ok(k),
+            _ => Err(err_msg(ErrorKind::InvalidState, "Unexpected key pair type"))?,
+        }
+    }
+
+    fn as_k256(&self) -> Result<K256KeyPair> {
+        if self.key_alg() != KnownKeyAlg::K256 {
+            Err(err_msg(ErrorKind::InvalidState, "Unexpected key alg"))?
+        }
+
+        match self.as_key_pair()? {
+            KnownKeyPair::K256(k) => Ok(k),
+            _ => Err(err_msg(ErrorKind::InvalidState, "Unexpected key pair type"))?,
+        }
+    }
 }
