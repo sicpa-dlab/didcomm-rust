@@ -205,6 +205,7 @@ mod tests {
     use askar_crypto::{
         alg::{
             aes::{A256CbcHs512, A256Kw, AesKey},
+            p256::P256KeyPair,
             x25519::X25519KeyPair,
         },
         encrypt::KeyAeadInPlace,
@@ -219,10 +220,11 @@ mod tests {
         jwk::{FromJwkValue, ToJwkValue},
         secrets::{resolvers::ExampleSecretsResolver, Secret, SecretMaterial},
         test_vectors::{
-            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
-            BOB_DID, BOB_DID_DOC, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1,
-            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3,
-            MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
+            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+            ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519, BOB_DID, BOB_DID_DOC,
+            BOB_SECRET_KEY_AGREEMENT_KEY_P256_1, BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
         },
         utils::crypto::{JoseKDF, KeyWrap},
         PackEncryptedMetadata, PackEncryptedOptions,
@@ -230,106 +232,22 @@ mod tests {
 
     #[tokio::test]
     async fn pack_encrypted_works_authcrypt() {
-        let did_resolver =
-            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-
-        let from = BOB_DID;
-
-        let to = ALICE_DID;
-
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
-
-        let from_vm: &VerificationMethod = &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519;
-
-        let to_secrets: Vec<&Secret> = vec![
-            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1,
-            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
-            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3,
-        ];
-
-        let (msg, metadata) = MESSAGE_SIMPLE
-            .pack_encrypted(
-                from,
-                Some(to),
-                None,
-                &did_resolver,
-                &secrets_resolver,
-                &PackEncryptedOptions {
-                    forward: false,
-                    ..PackEncryptedOptions::default()
-                },
-            )
-            .await
-            .expect("encrypt is ok.");
-
-        assert_eq!(
-            metadata,
-            PackEncryptedMetadata {
-                messaging_service: None,
-                from_kid: Some(from_vm.id.clone()),
-                sign_by_kid: None,
-                to_kids: to_secrets.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
-            }
-        );
-
-        let mut buf = vec![];
-        let msg = jwe::parse(&msg, &mut buf).expect("Unable parse jwe");
-
-        assert_eq!(
-            msg.jwe
-                .recipients
-                .iter()
-                .map(|r| r.header.kid)
-                .collect::<Vec<_>>(),
-            to_secrets.iter().map(|s| s.id.clone()).collect::<Vec<_>>()
-        );
-
-        assert_eq!(
-            msg.protected.typ,
-            Some("application/didcomm-encrypted+json")
-        );
-
-        assert_eq!(msg.protected.alg, jwe::Algorithm::Ecdh1puA256kw);
-        assert_eq!(msg.protected.enc, jwe::EncAlgorithm::A256cbcHs512);
-        assert_eq!(msg.protected.skid, Some(from_vm.id.as_ref()));
-        assert_eq!(
-            msg.protected.apu,
-            Some("ZGlkOmV4YW1wbGU6YWxpY2Uja2V5LXgyNTUxOS0x")
-        );
-        assert_eq!(
-            msg.protected.apv,
-            "NcsuAnrRfPK69A-rkZ0L9XWUG4jMvNC3Zg74BPz53PA"
-        );
-
-        for to in to_secrets {
-            let from_key = match from_vm.verification_material {
-                VerificationMaterial::JWK(ref jwk) => {
-                    X25519KeyPair::from_jwk_value(jwk).expect("Unable from_jwk_value")
-                }
-                _ => panic!("Unexpected verification method"),
-            };
-
-            let to_key = match to.secret_material {
-                SecretMaterial::JWK(ref jwk) => {
-                    X25519KeyPair::from_jwk_value(jwk).expect("Unable from_jwk_value")
-                }
-                _ => panic!("Unexpected verification method"),
-            };
-
-            let msg = msg.decrypt::<
-                AesKey<A256CbcHs512>,
-                Ecdh1PU<'_, X25519KeyPair>,
-                X25519KeyPair,
-                AesKey<A256Kw>,
-            >(Some((&from_vm.id, &from_key)), (&to.id, &to_key)).expect("Unable decrypt msg");
-
-            let msg: Value = serde_json::from_slice(&msg).expect("Unable from_str");
-
-            let exp_msg: Value =
-                serde_json::from_str(PLAINTEXT_MSG_SIMPLE).expect("Unable from_str");
-
-            assert_eq!(msg, exp_msg)
-        }
+        _pack_encrypted_works_authcrypt::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
+            vec![
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3,
+            ],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
+        )
+        .await;
 
         _pack_encrypted_works_authcrypt::<
             AesKey<A256CbcHs512>,
@@ -337,22 +255,89 @@ mod tests {
             X25519KeyPair,
             AesKey<A256Kw>,
         >(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            vec![&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2],
             ALICE_DID,
-            BOB_DID,
             &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            vec![&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
             vec![
-                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1,
-                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
-                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
             ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            vec![&BOB_SECRET_KEY_AGREEMENT_KEY_P256_1],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            vec![&BOB_SECRET_KEY_AGREEMENT_KEY_P256_2],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
+            vec![
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
         )
         .await;
 
         async fn _pack_encrypted_works_authcrypt<CE, KDF, KE, KW>(
-            from: &str,
             to: &str,
-            from_vm: &VerificationMethod,
-            to_secrets: Vec<&Secret>,
+            to_keys: Vec<&Secret>,
+            from: &str,
+            from_key: &VerificationMethod,
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
@@ -366,8 +351,8 @@ mod tests {
 
             let (msg, metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
-                    from,
-                    Some(to),
+                    to,
+                    Some(from),
                     None,
                     &did_resolver,
                     &secrets_resolver,
@@ -383,9 +368,9 @@ mod tests {
                 metadata,
                 PackEncryptedMetadata {
                     messaging_service: None,
-                    from_kid: Some(from_vm.id.clone()),
+                    from_kid: Some(from_key.id.clone()),
                     sign_by_kid: None,
-                    to_kids: to_secrets.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
+                    to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
                 }
             );
 
@@ -398,7 +383,7 @@ mod tests {
                     .iter()
                     .map(|r| r.header.kid)
                     .collect::<Vec<_>>(),
-                to_secrets.iter().map(|s| s.id.clone()).collect::<Vec<_>>()
+                to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>()
             );
 
             assert_eq!(
@@ -408,37 +393,29 @@ mod tests {
 
             assert_eq!(msg.protected.alg, jwe::Algorithm::Ecdh1puA256kw);
             assert_eq!(msg.protected.enc, jwe::EncAlgorithm::A256cbcHs512);
-            assert_eq!(msg.protected.skid, Some(from_vm.id.as_ref()));
-            assert_eq!(
-                msg.protected.apu,
-                Some("ZGlkOmV4YW1wbGU6YWxpY2Uja2V5LXgyNTUxOS0x")
-            );
-            assert_eq!(
-                msg.protected.apv,
-                "NcsuAnrRfPK69A-rkZ0L9XWUG4jMvNC3Zg74BPz53PA"
-            );
+            assert_eq!(msg.protected.skid, Some(from_key.id.as_ref()));
 
-            for to in to_secrets {
-                let from_key = match from_vm.verification_material {
+            for to_key in to_keys {
+                let from_kid = &from_key.id;
+                let to_kid = &to_key.id;
+
+                let from_key = match from_key.verification_material {
                     VerificationMaterial::JWK(ref jwk) => {
-                        X25519KeyPair::from_jwk_value(jwk).expect("Unable from_jwk_value")
+                        KE::from_jwk_value(jwk).expect("Unable from_jwk_value")
                     }
                     _ => panic!("Unexpected verification method"),
                 };
 
-                let to_key = match to.secret_material {
+                let to_key = match to_key.secret_material {
                     SecretMaterial::JWK(ref jwk) => {
-                        X25519KeyPair::from_jwk_value(jwk).expect("Unable from_jwk_value")
+                        KE::from_jwk_value(jwk).expect("Unable from_jwk_value")
                     }
                     _ => panic!("Unexpected verification method"),
                 };
 
-                let msg = msg.decrypt::<
-                    AesKey<A256CbcHs512>,
-                    Ecdh1PU<'_, X25519KeyPair>,
-                    X25519KeyPair,
-                    AesKey<A256Kw>,
-                >(Some((&from_vm.id, &from_key)), (&to.id, &to_key)).expect("Unable decrypt msg");
+                let msg = msg
+                    .decrypt::<CE, KDF, KE, KW>(Some((from_kid, &from_key)), (to_kid, &to_key))
+                    .expect("Unable decrypt msg");
 
                 let msg: Value = serde_json::from_slice(&msg).expect("Unable from_str");
 
