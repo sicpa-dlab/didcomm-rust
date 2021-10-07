@@ -25,6 +25,12 @@ jobs:
           echo "::set-output name=current_version::$version"
         shell: bash
 
+      - name: Check version format
+        run: |
+          # verify the version has "MAJOR.MINOR.PATCH" parts only
+          echo "${{ steps.current_version.outputs.current_version }}" | grep -e '^[0-9]\+\.[0-9]\+\.[0-9]\+$'
+        shell: bash
+
       # TODO improve (DRY): copy-paste from release.yml
       - name: Get release info
         id: release_info
