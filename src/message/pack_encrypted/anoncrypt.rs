@@ -126,14 +126,14 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                 )
                 .context("Unable produce anoncrypt envelope")?,
                 AnonCryptAlg::A256gcmEcdhEsA256kw => jwe::encrypt::<
-                    AesKey<A256CbcHs512>,
+                    AesKey<A256Gcm>,
                     EcdhEs<'_, X25519KeyPair>,
                     X25519KeyPair,
                     AesKey<A256Kw>,
                 >(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
-                    jwe::EncAlgorithm::A256cbcHs512,
+                    jwe::EncAlgorithm::A256Gcm,
                     None,
                     &to_keys,
                 )
