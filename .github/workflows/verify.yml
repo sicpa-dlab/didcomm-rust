@@ -1,7 +1,7 @@
-name: build
+name: verify
 
 on:
-  pull_request
+  pull_request:
 
 
 env:
@@ -9,8 +9,8 @@ env:
 
 
 jobs:
-  check-version-bumped:
-    name: Check is ready for release
+
+  release-ready:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'stable'
     steps:
@@ -54,7 +54,7 @@ jobs:
           cargo package --list
         shell: bash
 
-  build:
+  verify:
     name: Run Checks
     strategy:
       matrix:
