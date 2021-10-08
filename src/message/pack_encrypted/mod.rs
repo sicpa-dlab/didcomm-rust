@@ -958,7 +958,7 @@ mod tests {
         msg: &str,
         to_keys: Vec<&Secret>,
         from_key: &VerificationMethod,
-    ) -> Vec<u8>
+    ) -> String
     where
         CE: KeyAeadInPlace + KeySecretBytes,
         KDF: JoseKDF<KE, KW>,
@@ -986,7 +986,7 @@ mod tests {
         assert_eq!(msg.protected.enc, jwe::EncAlgorithm::A256cbcHs512);
         assert_eq!(msg.protected.skid, Some(from_key.id.as_ref()));
 
-        let mut res: Option<Vec<u8>> = None;
+        let mut common_msg: Option<Vec<u8>> = None;
 
         for to_key in to_keys {
             let from_kid = &from_key.id;
@@ -1010,7 +1010,7 @@ mod tests {
                 .decrypt::<CE, KDF, KE, KW>(Some((from_kid, &from_key)), (to_kid, &to_key))
                 .expect("Unable decrypt msg");
 
-            res = if let Some(ref res) = res {
+            common_msg = if let Some(ref res) = common_msg {
                 assert_eq!(res, &msg);
                 Some(msg)
             } else {
@@ -1018,14 +1018,15 @@ mod tests {
             };
         }
 
-        res.expect("No result gotten")
+        let msg = common_msg.expect("No result gotten");
+        String::from_utf8(msg).expect("Unable from_utf8")
     }
 
     fn _verify_anoncrypt<CE, KDF, KE, KW>(
         msg: &str,
         to_keys: Vec<&Secret>,
         enc_alg: jwe::EncAlgorithm,
-    ) -> Vec<u8>
+    ) -> String
     where
         CE: KeyAeadInPlace + KeySecretBytes,
         KDF: JoseKDF<KE, KW>,
@@ -1053,7 +1054,7 @@ mod tests {
         assert_eq!(msg.protected.enc, enc_alg);
         assert_eq!(msg.protected.skid, None);
 
-        let mut res: Option<Vec<u8>> = None;
+        let mut common_msg: Option<Vec<u8>> = None;
 
         for to_key in to_keys {
             let to_kid = &to_key.id;
@@ -1069,7 +1070,7 @@ mod tests {
                 .decrypt::<CE, KDF, KE, KW>(None, (to_kid, &to_key))
                 .expect("Unable decrypt msg");
 
-            res = if let Some(ref res) = res {
+            common_msg = if let Some(ref res) = common_msg {
                 assert_eq!(res, &msg);
                 Some(msg)
             } else {
@@ -1077,16 +1078,15 @@ mod tests {
             };
         }
 
-        res.expect("No result gotten")
+        let msg = common_msg.expect("No result gotten");
+        String::from_utf8(msg).expect("Unable from_utf8")
     }
 
     fn _verify_signed<Key: KeySigVerify + FromJwkValue>(
-        msg: &[u8],
+        msg: &str,
         sign_key: &VerificationMethod,
         alg: jws::Algorithm,
-    ) -> Vec<u8> {
-        let msg = std::str::from_utf8(msg).expect("Uanble from_utf8");
-
+    ) -> String {
         let mut buf = vec![];
         let msg = jws::parse(&msg, &mut buf).expect("Unable parse");
 
@@ -1120,11 +1120,11 @@ mod tests {
         let payload = base64::decode_config(msg.jws.payload, base64::URL_SAFE_NO_PAD)
             .expect("Unable decode_config");
 
-        payload
+        String::from_utf8(payload).expect("Unable from_utf8")
     }
 
-    fn _verify_plaintext(msg: &[u8], exp_msg: &str) {
-        let msg: Value = serde_json::from_slice(msg).expect("Unable from_slice");
+    fn _verify_plaintext(msg: &str, exp_msg: &str) {
+        let msg: Value = serde_json::from_str(msg).expect("Unable from_str");
         let exp_msg: Value = serde_json::from_str(exp_msg).expect("Unable from_str");
         assert_eq!(msg, exp_msg)
     }
