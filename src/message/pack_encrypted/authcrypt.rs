@@ -216,7 +216,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     >(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
-                        jwe::EncAlgorithm::A256cbcHs512,
+                        jwe::EncAlgorithm::Xc20P,
                         None,
                         &to_keys,
                     )
@@ -229,7 +229,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     >(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
-                        jwe::EncAlgorithm::A256cbcHs512,
+                        jwe::EncAlgorithm::A256Gcm,
                         None,
                         &to_keys,
                     )
@@ -289,7 +289,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     >(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
-                        jwe::EncAlgorithm::A256cbcHs512,
+                        jwe::EncAlgorithm::Xc20P,
                         None,
                         &to_keys,
                     )
@@ -302,7 +302,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     >(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
-                        jwe::EncAlgorithm::A256cbcHs512,
+                        jwe::EncAlgorithm::A256Gcm,
                         None,
                         &to_keys,
                     )

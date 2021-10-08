@@ -403,6 +403,327 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn pack_encrypted_works_authcrypt_protected_sender() {
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+            AesKey<A256CbcHs512>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
+            vec![
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3,
+            ],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            jwe::EncAlgorithm::A256cbcHs512,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+            AesKey<A256Gcm>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
+            vec![
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3,
+            ],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
+            AnonCryptAlg::A256gcmEcdhEsA256kw,
+            jwe::EncAlgorithm::A256Gcm,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+            Chacha20Key<XC20P>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
+            vec![
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3,
+            ],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+            jwe::EncAlgorithm::Xc20P,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+            AesKey<A256CbcHs512>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            vec![&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            jwe::EncAlgorithm::A256cbcHs512,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+            AesKey<A256CbcHs512>,
+            EcdhEs<'_, X25519KeyPair>,
+            X25519KeyPair,
+            AesKey<A256Kw>,
+        >(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            vec![&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            jwe::EncAlgorithm::A256cbcHs512,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+            AesKey<A256CbcHs512>,
+            EcdhEs<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
+            vec![
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            jwe::EncAlgorithm::A256cbcHs512,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+            AesKey<A256Gcm>,
+            EcdhEs<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
+            vec![
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+            AnonCryptAlg::A256gcmEcdhEsA256kw,
+            jwe::EncAlgorithm::A256Gcm,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+            Chacha20Key<XC20P>,
+            EcdhEs<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
+            vec![
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+            jwe::EncAlgorithm::Xc20P,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+            AesKey<A256CbcHs512>,
+            EcdhEs<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            vec![&BOB_SECRET_KEY_AGREEMENT_KEY_P256_1],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            jwe::EncAlgorithm::A256cbcHs512,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+            AesKey<A256CbcHs512>,
+            EcdhEs<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            vec![&BOB_SECRET_KEY_AGREEMENT_KEY_P256_2],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            jwe::EncAlgorithm::A256cbcHs512,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+            AesKey<A256CbcHs512>,
+            EcdhEs<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
+            vec![
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            jwe::EncAlgorithm::A256cbcHs512,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypt_hidden_sender::<
+            AesKey<A256CbcHs512>,
+            Ecdh1PU<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+            AesKey<A256CbcHs512>,
+            EcdhEs<'_, P256KeyPair>,
+            P256KeyPair,
+            AesKey<A256Kw>,
+        >(
+            BOB_DID,
+            vec![
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            jwe::EncAlgorithm::A256cbcHs512,
+        )
+        .await;
+
+        async fn _pack_encrypted_works_authcrypt_hidden_sender<
+            CE,
+            KDF,
+            KE,
+            KW,
+            ACE,
+            AKDF,
+            AKE,
+            AKW,
+        >(
+            to: &str,
+            to_keys: Vec<&Secret>,
+            from: &str,
+            from_key: &VerificationMethod,
+            enc_alg_anon: AnonCryptAlg,
+            enc_alg_anon_jwe: jwe::EncAlgorithm,
+        ) where
+            CE: KeyAeadInPlace + KeySecretBytes,
+            KDF: JoseKDF<KE, KW>,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KW: KeyWrap + FromKeyDerivation,
+            ACE: KeyAeadInPlace + KeySecretBytes,
+            AKDF: JoseKDF<AKE, AKW>,
+            AKE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            AKW: KeyWrap + FromKeyDerivation,
+        {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let (msg, metadata) = MESSAGE_SIMPLE
+                .pack_encrypted(
+                    to,
+                    Some(from),
+                    None,
+                    &did_resolver,
+                    &secrets_resolver,
+                    &PackEncryptedOptions {
+                        forward: false,
+                        protect_sender: true,
+                        enc_alg_anon,
+                        ..PackEncryptedOptions::default()
+                    },
+                )
+                .await
+                .expect("encrypt is ok.");
+
+            assert_eq!(
+                metadata,
+                PackEncryptedMetadata {
+                    messaging_service: None,
+                    from_kid: Some(from_key.id.clone()),
+                    sign_by_kid: None,
+                    to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
+                }
+            );
+
+            let msg = _verify_anoncrypt::<ACE, AKDF, AKE, AKW>(&msg, to_keys.clone(), enc_alg_anon_jwe);
+            let msg = _verify_authcrypt::<CE, KDF, KE, KW>(&msg, to_keys, from_key);
+            _verify_plaintext(&msg, PLAINTEXT_MSG_SIMPLE);
+        }
+    }
+
+    #[tokio::test]
     async fn pack_encrypted_works_authcrypt_sign() {
         _pack_encrypted_works_authcrypt_sign::<
             AesKey<A256CbcHs512>,
