@@ -14,8 +14,8 @@ use didcomm::{
 
 use test_vectors::{
     ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1, ALICE_DID,
-    ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
-    MESSAGE_SIMPLE, BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
+    ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
+    BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2, MESSAGE_SIMPLE,
 };
 
 // Here we have an async function to benchmark
@@ -474,11 +474,14 @@ fn benchmarks(c: &mut Criterion) {
             ..PackEncryptedOptions::default()
         };
 
-        c.bench_function("pack_encrypted_authcrypt_ed25519_1key_sign_x25519", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
-        });
+        c.bench_function(
+            "pack_encrypted_authcrypt_ed25519_1key_sign_x25519",
+            move |b| {
+                b.to_async(FuturesExecutor).iter(|| {
+                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
+                });
+            },
+        );
     }
 
     {
@@ -496,11 +499,14 @@ fn benchmarks(c: &mut Criterion) {
             ..PackEncryptedOptions::default()
         };
 
-        c.bench_function("pack_encrypted_authcrypt_ed25519_1key_sign_p256", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
-        });
+        c.bench_function(
+            "pack_encrypted_authcrypt_ed25519_1key_sign_p256",
+            move |b| {
+                b.to_async(FuturesExecutor).iter(|| {
+                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
+                });
+            },
+        );
     }
 
     {
@@ -518,11 +524,14 @@ fn benchmarks(c: &mut Criterion) {
             ..PackEncryptedOptions::default()
         };
 
-        c.bench_function("pack_encrypted_authcrypt_ed25519_1key_sign_k256", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
-        });
+        c.bench_function(
+            "pack_encrypted_authcrypt_ed25519_1key_sign_k256",
+            move |b| {
+                b.to_async(FuturesExecutor).iter(|| {
+                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
+                });
+            },
+        );
     }
 
     {
