@@ -32,6 +32,8 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
 ) -> Result<(String, String, Vec<String>)> /* (msg, from_kid, to_kids) */ {
     let (to_did, to_kid) = did_or_url(to);
 
+    // TODO: Avoid resolving of same dids multiple times
+    // Now we resolve separately in authcrypt, anoncrypt and sign
     let to_ddoc = did_resolver
         .resolve(to_did)
         .await
@@ -46,7 +48,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         .context("Unable resolve sender did")?
         .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Sender did not found"))?;
 
-    // Initial list of sender keys is all key_agreements of did doc
+    // Initial list of sender keys is all key_agreements of sender did doc
     // or filtered to keep only provided key
     let from_kids: Vec<_> = from_ddoc
         .key_agreements
@@ -96,7 +98,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    // Initial list of recipient keys is all key_agreements of did doc
+    // Initial list of recipient keys is all key_agreements of recipient did doc
     // or filtered to keep only provided key
     let to_kids: Vec<_> = to_ddoc
         .key_agreements
@@ -112,7 +114,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         ))?
     }
 
-    // Resolve materials for keys
+    // Resolve materials for recipient keys
     let to_keys = to_kids
         .into_iter()
         .map(|kid| {
@@ -133,7 +135,8 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    // Looking for first sender key that has supported crypto and intersection with recipient keys
+    // Looking for first sender key that has supported crypto and intersects with recipient keys
+    // by key alg
     let from_key = from_keys
         .iter()
         .filter(|key| key.key_alg() != KnownKeyAlg::Unsupported)

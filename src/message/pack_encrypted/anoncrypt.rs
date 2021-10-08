@@ -27,14 +27,16 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
 ) -> Result<(String, Vec<String>)> /* (msg, to_kids) */ {
     let (to_did, to_kid) = did_or_url(to);
 
+    // TODO: Avoid resolving of same dids multiple times
+    // Now we resolve separately in authcrypt, anoncrypt and sign
     let to_ddoc = did_resolver
         .resolve(to_did)
         .await
         .context("Unable resolve recepient did")?
         .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Recepient did not found"))?;
 
-    // Initial list of recipient key ids is all key_agreements of did doc
-    // or one key if url was explicitly provided.
+    // Initial list of recipient key ids is all key_agreements of recipient did doc
+    // or one key if url was explicitly provided
     let to_kids: Vec<_> = to_ddoc
         .key_agreements
         .iter()
@@ -49,8 +51,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
         ))?
     }
 
-    // Resolve materials for keys and determine key types
-    // TODO: support external keys
+    // Resolve materials for recipient keys
     let to_keys = to_kids
         .into_iter()
         .map(|kid| {
@@ -59,6 +60,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                 .iter()
                 .find(|vm| vm.id == kid)
                 .ok_or_else(|| {
+                    // TODO: support external keys
                     err_msg(
                         ErrorKind::Unsupported,
                         "External keys are unsupported in this version",
@@ -67,7 +69,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    // Looking for first supported key to determine what key alg use
+    // Looking for first supported key to determine what key alg to use
     let key_alg = to_keys
         .iter()
         .filter(|key| key.key_alg() != KnownKeyAlg::Unsupported)
