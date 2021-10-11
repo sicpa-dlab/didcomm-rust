@@ -154,6 +154,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
             )
         })?;
 
+    // Resolve secret for found sender key
     let from_priv_key = secrets_resolver
         .get_secret(&from_key.id)
         .await

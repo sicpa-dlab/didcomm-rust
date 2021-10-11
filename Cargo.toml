@@ -45,3 +45,8 @@ features = ['async_futures']
 [[bench]]
 name = "pack_signed"
 harness = false
+
+[[bench]]
+name = "pack_encrypted"
+harness = false
+
