@@ -55,7 +55,6 @@ jobs:
         shell: bash
 
   verify:
-    name: Run Checks
     strategy:
       matrix:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
