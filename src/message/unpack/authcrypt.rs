@@ -15,7 +15,8 @@ use crate::{
     utils::{
         crypto::{AsKnownKeyPair, KnownKeyPair},
         did::did_or_url,
-    }, UnpackMetadata, UnpackOptions,
+    },
+    UnpackMetadata, UnpackOptions,
 };
 
 pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
