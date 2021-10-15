@@ -1,12 +1,11 @@
 [package]
 name = 'didcomm'
-version = '0.1.0'
+version = '0.2.0'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'DIDComm for Rust'
 license = 'Apache-2.0'
-homepage = 'https://github.com/sicpa-dlab/didcomm-rust'
-documentation = 'https://github.com/sicpa-dlab/didcomm-python'
+repository = 'https://github.com/sicpa-dlab/didcomm-rust'
 readme = 'README.md'
 
 [dependencies]

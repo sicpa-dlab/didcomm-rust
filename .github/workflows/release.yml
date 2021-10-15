@@ -2,6 +2,8 @@ name: release
 
 on:
   push:
+    branches:
+      - stable
   workflow_dispatch:
     inputs:
       devN:
@@ -60,7 +62,7 @@ jobs:
         id: check_in_crates_io
         run: |
           out="$(curl -s https://crates.io/api/v1/crates/${{ env.PKG_NAME }} | jq -r '.versions[] | .num' \
-            | grep ${{ steps.current_version.outputs.current_version }})"
+            | grep '^${{ steps.current_version.outputs.current_version }}$')"
           echo "in crates.io check: $out"
           echo "::set-output name=already_in_crates_io::$out"
         shell: bash {0}  # to opt-out of default fail-fast behavior
