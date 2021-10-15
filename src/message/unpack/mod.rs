@@ -1,10 +1,18 @@
+mod anoncrypt;
+mod authcrypt;
+mod sign;
+
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
-    error::Result,
+    error::{err_msg, ErrorKind, Result, ResultExt},
     secrets::SecretsResolver,
     Message,
 };
+
+use anoncrypt::_try_unpack_anoncrypt;
+use authcrypt::_try_unpack_authcrypt;
+use sign::_try_unapck_sign;
 
 impl Message {
     /// Unpacks the packed message by doing decryption and verifying the signatures.
@@ -38,51 +46,74 @@ impl Message {
     /// - `IOError` IO error during DID or secrets resolving.
     /// TODO: verify and update errors list
     pub async fn unpack<'dr, 'sr>(
-        _packed_msg: &str,
-        _did_resolver: &'dr (dyn DIDResolver + 'dr),
-        _secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
-        _options: &UnpackOptions,
+        msg: &str,
+        did_resolver: &'dr (dyn DIDResolver + 'dr),
+        secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+        options: &UnpackOptions,
     ) -> Result<(Self, UnpackMetadata)> {
-        todo!()
+        if options.unwrap_re_wrapping_forward {
+            Err(err_msg(
+                ErrorKind::Unsupported,
+                "Forward unwrapping is unsupported by this version",
+            ))?;
+        }
+
+        let mut metadata = UnpackMetadata {
+            encrypted: false,
+            authenticated: false,
+            non_repudiation: false,
+            anonymous_sender: false,
+            re_wrapped_in_forward: false,
+            encrypted_from_kid: None,
+            encrypted_to_kids: None,
+            sign_from: None,
+            enc_alg_auth: None,
+            enc_alg_anon: None,
+            sign_alg: None,
+            signed_plaintext: None,
+        };
+
+        let anoncryted =
+            _try_unpack_anoncrypt(msg, secrets_resolver, options, &mut metadata).await?;
+
+        let msg = anoncryted.as_deref().unwrap_or(msg);
+
+        let authcrypted =
+            _try_unpack_authcrypt(msg, did_resolver, secrets_resolver, options, &mut metadata)
+                .await?;
+
+        let msg = authcrypted.as_deref().unwrap_or(msg);
+
+        let signed = _try_unapck_sign(msg, did_resolver, options, &mut metadata).await?;
+
+        let msg = signed.as_deref().unwrap_or(msg);
+
+        let msg: Self =
+            serde_json::from_str(msg).kind(ErrorKind::Malformed, "Unable deserialize jwm")?;
+
+        Ok((msg, metadata))
     }
 }
 
 /// Allows fine customization of unpacking process
 pub struct UnpackOptions {
-    /// Whether the plaintext must be signed by the sender. Not expected by default.
-    pub expect_non_repudiation: bool,
-
-    /// Whether the plaintext must be encrypted by the sender. Not expected by default.
-    pub expect_encrypted: bool,
-
-    /// Whether the plaintext must be authenticated by the sender. Not expected by default.
-    pub expect_authenticated: bool,
-
-    /// Whether the sender ID must be protected. Not expected by default.
-    pub expect_protected_sender: bool,
-
-    /// Whether the same DID must be used for encryption and signing. True by default.
-    pub expect_signed_by_encrypter: bool,
-
     /// Whether the plaintext must be decryptable by all keys resolved by the secrets resolver. False by default.
     pub expect_decrypt_by_all_keys: bool,
 
-    /// If `true` (default), and the packed message is a `Forward`
+    /// If `true` and the packed message is a `Forward`
     /// wrapping a plaintext packed for the given recipient, then both Forward and packed plaintext are unpacked automatically,
     /// and the unpacked plaintext will be returned instead of unpacked Forward.
+    /// False by default.
     pub unwrap_re_wrapping_forward: bool,
 }
 
 impl Default for UnpackOptions {
     fn default() -> Self {
         UnpackOptions {
-            expect_non_repudiation: false,
-            expect_encrypted: false,
-            expect_authenticated: false,
-            expect_protected_sender: false,
-            expect_signed_by_encrypter: true,
             expect_decrypt_by_all_keys: false,
-            unwrap_re_wrapping_forward: true,
+
+            // TODO: make it true before first stable release
+            unwrap_re_wrapping_forward: false,
         }
     }
 }
