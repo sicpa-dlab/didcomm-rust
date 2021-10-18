@@ -59,13 +59,13 @@ pub(crate) async fn _try_unapck_sign<'dr>(
         Err(err_msg(
             ErrorKind::Malformed,
             "Signer key can't be resolved to key agreement",
-        ))?;
+        ))?
     }
 
     let signer_ddoc = did_resolver
         .resolve(signer_did)
         .await
-        .kind(ErrorKind::InvalidState, "Unable resolve signer did")?
+        .context("Unable resolve signer did")?
         .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Signer did not found"))?;
 
     let signer_kid = signer_ddoc

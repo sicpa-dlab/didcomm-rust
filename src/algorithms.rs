@@ -21,6 +21,7 @@ pub enum AuthCryptAlg {
     A256cbcHs512Ecdh1puA256kw,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum SignAlg {
     EdDSA,
     ES256,

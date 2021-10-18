@@ -118,6 +118,7 @@ impl Default for UnpackOptions {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct UnpackMetadata {
     /// Whether the plaintext has been encrypted
     pub encrypted: bool,
@@ -160,7 +161,72 @@ pub struct UnpackMetadata {
 mod test {
     use super::*;
 
-    use crate::{did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver};
+    use crate::{
+        did::resolvers::ExampleDIDResolver,
+        secrets::resolvers::ExampleSecretsResolver,
+        test_vectors::{
+            MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS,
+            MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_MINIMAL,
+            MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
+            PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
+        },
+    };
+
+    #[tokio::test]
+    async fn unpack_works_plaintext() {
+        _unpack_works_plaintext(PLAINTEXT_MSG_SIMPLE, &MESSAGE_SIMPLE).await;
+        _unpack_works_plaintext(PLAINTEXT_MSG_MINIMAL, &MESSAGE_MINIMAL).await;
+        _unpack_works_plaintext(PLAINTEXT_MSG_ATTACHMENT_BASE64, &MESSAGE_ATTACHMENT_BASE64).await;
+        _unpack_works_plaintext(PLAINTEXT_MSG_ATTACHMENT_JSON, &MESSAGE_ATTACHMENT_JSON).await;
+        _unpack_works_plaintext(PLAINTEXT_MSG_ATTACHMENT_LINKS, &MESSAGE_ATTACHMENT_LINKS).await;
+
+        _unpack_works_plaintext(
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
+            &MESSAGE_ATTACHMENT_MULTI_1,
+        )
+        .await;
+
+        _unpack_works_plaintext(
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_2,
+            &MESSAGE_ATTACHMENT_MULTI_2,
+        )
+        .await;
+
+        async fn _unpack_works_plaintext(msg: &str, exp_msg: &Message) {
+            let did_resolver = ExampleDIDResolver::new(vec![]);
+
+            let secrets_resolver = ExampleSecretsResolver::new(vec![]);
+
+            let (msg, metadata) = Message::unpack(
+                msg,
+                &did_resolver,
+                &secrets_resolver,
+                &UnpackOptions::default(),
+            )
+            .await
+            .expect("unpack is ok.");
+
+            assert_eq!(&msg, exp_msg);
+
+            let exp_metadata = UnpackMetadata {
+                anonymous_sender: false,
+                authenticated: false,
+                non_repudiation: false,
+                encrypted: false,
+                enc_alg_auth: None,
+                enc_alg_anon: None,
+                sign_alg: None,
+                encrypted_from_kid: None,
+                encrypted_to_kids: None,
+                sign_from: None,
+                signed_plaintext: None,
+                re_wrapped_in_forward: false,
+            };
+
+            assert_eq!(metadata, exp_metadata);
+        }
+    }
 
     #[tokio::test]
     #[ignore = "will be fixed after https://github.com/sicpa-dlab/didcomm-gemini/issues/71"]
