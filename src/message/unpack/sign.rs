@@ -1,6 +1,7 @@
 use askar_crypto::alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair};
 
 use crate::{
+    algorithms::SignAlg,
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
     jws,
@@ -14,6 +15,7 @@ pub(crate) async fn _try_unapck_sign<'dr>(
     _opts: &UnpackOptions,
     metadata: &mut UnpackMetadata,
 ) -> Result<Option<String>> {
+    let jws = msg;
     let mut buf = vec![];
 
     let msg = if let Ok(msg) = jws::parse(msg, &mut buf) {
@@ -69,7 +71,7 @@ pub(crate) async fn _try_unapck_sign<'dr>(
         .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Signer did not found"))?;
 
     let signer_kid = signer_ddoc
-        .key_agreements
+        .authentications
         .iter()
         .find(|&k| k.as_str() == signer_kid)
         .ok_or_else(|| err_msg(ErrorKind::DIDUrlNotFound, "Signer kid not found in did"))?
@@ -88,6 +90,8 @@ pub(crate) async fn _try_unapck_sign<'dr>(
 
     let valid = match alg {
         jws::Algorithm::EdDSA => {
+            metadata.sign_alg = Some(SignAlg::EdDSA);
+
             let signer_key = signer_key
                 .as_ed25519()
                 .context("Unable instantiate signer key")?;
@@ -96,6 +100,8 @@ pub(crate) async fn _try_unapck_sign<'dr>(
                 .context("Unable verify sign envelope")?
         }
         jws::Algorithm::Es256 => {
+            metadata.sign_alg = Some(SignAlg::ES256);
+
             let signer_key = signer_key
                 .as_p256()
                 .context("Unable instantiate signer key")?;
@@ -104,6 +110,8 @@ pub(crate) async fn _try_unapck_sign<'dr>(
                 .context("Unable verify sign envelope")?
         }
         jws::Algorithm::Es256K => {
+            metadata.sign_alg = Some(SignAlg::ES256K);
+
             let signer_key = signer_key
                 .as_k256()
                 .context("Unable instantiate signer key")?;
@@ -130,6 +138,7 @@ pub(crate) async fn _try_unapck_sign<'dr>(
 
     metadata.non_repudiation = true;
     metadata.sign_from = Some(signer_kid.into());
+    metadata.signed_plaintext = Some(jws.into());
 
     Ok(Some(payload))
 }

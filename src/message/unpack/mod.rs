@@ -118,7 +118,7 @@ impl Default for UnpackOptions {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct UnpackMetadata {
     /// Whether the plaintext has been encrypted
     pub encrypted: bool,
@@ -165,67 +165,144 @@ mod test {
         did::resolvers::ExampleDIDResolver,
         secrets::resolvers::ExampleSecretsResolver,
         test_vectors::{
-            MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS,
-            MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_MINIMAL,
-            MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
+            ALICE_DID_DOC, ALICE_SECRETS, BOB_DID_DOC, MESSAGE_ATTACHMENT_BASE64,
+            MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1,
+            MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_MINIMAL, MESSAGE_SIMPLE,
+            PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
             PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
             PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
+            SIGNED_MSG_ALICE_KEY_1, SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
         },
     };
 
     #[tokio::test]
     async fn unpack_works_plaintext() {
-        _unpack_works_plaintext(PLAINTEXT_MSG_SIMPLE, &MESSAGE_SIMPLE).await;
-        _unpack_works_plaintext(PLAINTEXT_MSG_MINIMAL, &MESSAGE_MINIMAL).await;
-        _unpack_works_plaintext(PLAINTEXT_MSG_ATTACHMENT_BASE64, &MESSAGE_ATTACHMENT_BASE64).await;
-        _unpack_works_plaintext(PLAINTEXT_MSG_ATTACHMENT_JSON, &MESSAGE_ATTACHMENT_JSON).await;
-        _unpack_works_plaintext(PLAINTEXT_MSG_ATTACHMENT_LINKS, &MESSAGE_ATTACHMENT_LINKS).await;
+        let plaintext_metadata = UnpackMetadata {
+            anonymous_sender: false,
+            authenticated: false,
+            non_repudiation: false,
+            encrypted: false,
+            enc_alg_auth: None,
+            enc_alg_anon: None,
+            sign_alg: None,
+            encrypted_from_kid: None,
+            encrypted_to_kids: None,
+            sign_from: None,
+            signed_plaintext: None,
+            re_wrapped_in_forward: false,
+        };
 
-        _unpack_works_plaintext(
+        _verify_unpack(PLAINTEXT_MSG_SIMPLE, &MESSAGE_SIMPLE, &plaintext_metadata).await;
+
+        _verify_unpack(PLAINTEXT_MSG_MINIMAL, &MESSAGE_MINIMAL, &plaintext_metadata).await;
+
+        _verify_unpack(
+            PLAINTEXT_MSG_ATTACHMENT_BASE64,
+            &MESSAGE_ATTACHMENT_BASE64,
+            &plaintext_metadata,
+        )
+        .await;
+
+        _verify_unpack(
+            PLAINTEXT_MSG_ATTACHMENT_JSON,
+            &MESSAGE_ATTACHMENT_JSON,
+            &plaintext_metadata,
+        )
+        .await;
+
+        _verify_unpack(
+            PLAINTEXT_MSG_ATTACHMENT_LINKS,
+            &MESSAGE_ATTACHMENT_LINKS,
+            &plaintext_metadata,
+        )
+        .await;
+
+        _verify_unpack(
             PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
             &MESSAGE_ATTACHMENT_MULTI_1,
+            &plaintext_metadata,
         )
         .await;
 
-        _unpack_works_plaintext(
+        _verify_unpack(
             PLAINTEXT_MSG_ATTACHMENT_MULTI_2,
             &MESSAGE_ATTACHMENT_MULTI_2,
+            &plaintext_metadata,
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_signed() {
+        let sign_metadata = UnpackMetadata {
+            anonymous_sender: false,
+            authenticated: false,
+            non_repudiation: true,
+            encrypted: false,
+            enc_alg_auth: None,
+            enc_alg_anon: None,
+            sign_alg: None,
+            encrypted_from_kid: None,
+            encrypted_to_kids: None,
+            sign_from: None,
+            signed_plaintext: None,
+            re_wrapped_in_forward: false,
+        };
+
+        _verify_unpack(
+            SIGNED_MSG_ALICE_KEY_1,
+            &MESSAGE_SIMPLE,
+            &UnpackMetadata {
+                sign_from: Some("did:example:alice#key-1".into()),
+                sign_alg: Some(SignAlg::EdDSA),
+                signed_plaintext: Some(SIGNED_MSG_ALICE_KEY_1.into()),
+                ..sign_metadata.clone()
+            },
         )
         .await;
 
-        async fn _unpack_works_plaintext(msg: &str, exp_msg: &Message) {
-            let did_resolver = ExampleDIDResolver::new(vec![]);
+        _verify_unpack(
+            SIGNED_MSG_ALICE_KEY_2,
+            &MESSAGE_SIMPLE,
+            &UnpackMetadata {
+                sign_from: Some("did:example:alice#key-2".into()),
+                sign_alg: Some(SignAlg::ES256),
+                signed_plaintext: Some(SIGNED_MSG_ALICE_KEY_2.into()),
+                ..sign_metadata.clone()
+            },
+        )
+        .await;
 
-            let secrets_resolver = ExampleSecretsResolver::new(vec![]);
+        _verify_unpack(
+            SIGNED_MSG_ALICE_KEY_3,
+            &MESSAGE_SIMPLE,
+            &UnpackMetadata {
+                sign_from: Some("did:example:alice#key-3".into()),
+                sign_alg: Some(SignAlg::ES256K),
+                signed_plaintext: Some(SIGNED_MSG_ALICE_KEY_3.into()),
+                ..sign_metadata.clone()
+            },
+        )
+        .await;
+    }
 
-            let (msg, metadata) = Message::unpack(
-                msg,
-                &did_resolver,
-                &secrets_resolver,
-                &UnpackOptions::default(),
-            )
-            .await
-            .expect("unpack is ok.");
+    async fn _verify_unpack(msg: &str, exp_msg: &Message, exp_metadata: &UnpackMetadata) {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            assert_eq!(&msg, exp_msg);
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
 
-            let exp_metadata = UnpackMetadata {
-                anonymous_sender: false,
-                authenticated: false,
-                non_repudiation: false,
-                encrypted: false,
-                enc_alg_auth: None,
-                enc_alg_anon: None,
-                sign_alg: None,
-                encrypted_from_kid: None,
-                encrypted_to_kids: None,
-                sign_from: None,
-                signed_plaintext: None,
-                re_wrapped_in_forward: false,
-            };
+        let (msg, metadata) = Message::unpack(
+            msg,
+            &did_resolver,
+            &secrets_resolver,
+            &UnpackOptions::default(),
+        )
+        .await
+        .expect("unpack is ok.");
 
-            assert_eq!(metadata, exp_metadata);
-        }
+        assert_eq!(&msg, exp_msg);
+        assert_eq!(&metadata, exp_metadata);
     }
 
     #[tokio::test]
