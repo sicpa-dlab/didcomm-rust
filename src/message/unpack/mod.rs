@@ -165,13 +165,14 @@ mod test {
         did::resolvers::ExampleDIDResolver,
         secrets::resolvers::ExampleSecretsResolver,
         test_vectors::{
-            ALICE_DID_DOC, ALICE_SECRETS, BOB_DID_DOC, MESSAGE_ATTACHMENT_BASE64,
-            MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1,
-            MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_MINIMAL, MESSAGE_SIMPLE,
-            PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
-            PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
-            PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
-            SIGNED_MSG_ALICE_KEY_1, SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
+            ALICE_DID_DOC, BOB_DID_DOC, BOB_SECRETS, ENCRYPTED_MSG_ANON_XC20P_1,
+            ENCRYPTED_MSG_ANON_XC20P_2, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
+            MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2,
+            MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64,
+            PLAINTEXT_MSG_ATTACHMENT_JSON, PLAINTEXT_MSG_ATTACHMENT_LINKS,
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_1, PLAINTEXT_MSG_ATTACHMENT_MULTI_2,
+            PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE, SIGNED_MSG_ALICE_KEY_1,
+            SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
         },
     };
 
@@ -286,11 +287,58 @@ mod test {
         .await;
     }
 
+    #[tokio::test]
+    async fn unpack_works_anoncrypt() {
+        let metadata = UnpackMetadata {
+            anonymous_sender: true,
+            authenticated: false,
+            non_repudiation: false,
+            encrypted: true,
+            enc_alg_auth: None,
+            enc_alg_anon: None,
+            sign_alg: None,
+            encrypted_from_kid: None,
+            encrypted_to_kids: None,
+            sign_from: None,
+            signed_plaintext: None,
+            re_wrapped_in_forward: false,
+        };
+
+        _verify_unpack(
+            ENCRYPTED_MSG_ANON_XC20P_1,
+            &MESSAGE_SIMPLE,
+            &UnpackMetadata {
+                enc_alg_anon: Some(AnonCryptAlg::Xc20pEcdhEsA256kw),
+                encrypted_to_kids: Some(vec![
+                    "did:example:bob#key-x25519-1".into(),
+                    "did:example:bob#key-x25519-2".into(),
+                    "did:example:bob#key-x25519-3".into(),
+                ]),
+                ..metadata.clone()
+            },
+        )
+        .await;
+
+        _verify_unpack(
+            ENCRYPTED_MSG_ANON_XC20P_2,
+            &MESSAGE_SIMPLE,
+            &UnpackMetadata {
+                enc_alg_anon: Some(AnonCryptAlg::Xc20pEcdhEsA256kw),
+                encrypted_to_kids: Some(vec![
+                    "did:example:bob#key-p256-1".into(),
+                    "did:example:bob#key-p256-2".into(),
+                ]),
+                ..metadata.clone()
+            },
+        )
+        .await;
+    }
+
     async fn _verify_unpack(msg: &str, exp_msg: &Message, exp_metadata: &UnpackMetadata) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
 
         let (msg, metadata) = Message::unpack(
             msg,
@@ -303,23 +351,5 @@ mod test {
 
         assert_eq!(&msg, exp_msg);
         assert_eq!(&metadata, exp_metadata);
-    }
-
-    #[tokio::test]
-    #[ignore = "will be fixed after https://github.com/sicpa-dlab/didcomm-gemini/issues/71"]
-    async fn unpack_works() {
-        let msg = "{}"; // TODO: use test vector from DID Comm specification.
-
-        let did_resolver = ExampleDIDResolver::new(vec![]);
-        let secrets_resolver = ExampleSecretsResolver::new(vec![]);
-
-        let (_msg, _metadata) = Message::unpack(
-            msg,
-            &did_resolver,
-            &secrets_resolver,
-            &UnpackOptions::default(),
-        )
-        .await
-        .expect("unpack is ok.");
     }
 }

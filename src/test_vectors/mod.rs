@@ -4,6 +4,7 @@ mod message;
 mod plaintext;
 mod secrets;
 mod signed;
+mod encrypted;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
@@ -21,3 +22,5 @@ pub(crate) use plaintext::*;
 pub(crate) use secrets::*;
 
 pub(crate) use signed::*;
+
+pub(crate) use encrypted::*;

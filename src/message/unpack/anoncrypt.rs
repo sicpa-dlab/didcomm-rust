@@ -9,6 +9,7 @@ use askar_crypto::{
 };
 
 use crate::{
+    algorithms::AnonCryptAlg,
     error::{err_msg, ErrorKind, Result, ResultExt},
     jwe,
     secrets::SecretsResolver,
@@ -86,59 +87,71 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
             .as_key_pair()?;
 
         let _payload = match (to_key, &msg.protected.enc) {
-                (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::A256cbcHs512) => {
-                    msg.decrypt::<
+            (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::A256cbcHs512) => {
+                metadata.enc_alg_anon = Some(AnonCryptAlg::A256cbcHs512EcdhEsA256kw);
+
+                msg.decrypt::<
                         AesKey<A256CbcHs512>,
                         EcdhEs<'_, X25519KeyPair>,
                         X25519KeyPair,
                         AesKey<A256Kw>,
                     >(None, (to_kid, to_key))?
-                }
-                (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::Xc20P) => {
-                    msg.decrypt::<
+            }
+            (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::Xc20P) => {
+                metadata.enc_alg_anon = Some(AnonCryptAlg::Xc20pEcdhEsA256kw);
+
+                msg.decrypt::<
                         Chacha20Key<XC20P>,
                         EcdhEs<'_, X25519KeyPair>,
                         X25519KeyPair,
                         AesKey<A256Kw>,
                     >(None, (to_kid, to_key))?
-                },
-                (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::A256Gcm) => {
-                    msg.decrypt::<
+            }
+            (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::A256Gcm) => {
+                metadata.enc_alg_anon = Some(AnonCryptAlg::A256gcmEcdhEsA256kw);
+
+                msg.decrypt::<
                         AesKey<A256Gcm>,
                         EcdhEs<'_, X25519KeyPair>,
                         X25519KeyPair,
                         AesKey<A256Kw>,
                     >(None, (to_kid, to_key))?
-                },
-                (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::A256cbcHs512) => {
-                    msg.decrypt::<
+            }
+            (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::A256cbcHs512) => {
+                metadata.enc_alg_anon = Some(AnonCryptAlg::A256cbcHs512EcdhEsA256kw);
+
+                msg.decrypt::<
                         AesKey<A256CbcHs512>,
                         EcdhEs<'_, P256KeyPair>,
                         P256KeyPair,
                         AesKey<A256Kw>,
                     >(None, (to_kid, to_key))?
-                }
-                (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::Xc20P) => {
-                    msg.decrypt::<
+            }
+            (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::Xc20P) => {
+                metadata.enc_alg_anon = Some(AnonCryptAlg::Xc20pEcdhEsA256kw);
+
+                msg.decrypt::<
                         Chacha20Key<XC20P>,
                         EcdhEs<'_, P256KeyPair>,
                         P256KeyPair,
                         AesKey<A256Kw>,
                     >(None, (to_kid, to_key))?
-                },
-                (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::A256Gcm) => {
-                    msg.decrypt::<
+            }
+            (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::A256Gcm) => {
+                metadata.enc_alg_anon = Some(AnonCryptAlg::A256gcmEcdhEsA256kw);
+
+                msg.decrypt::<
                         AesKey<A256Gcm>,
                         EcdhEs<'_, P256KeyPair>,
                         P256KeyPair,
                         AesKey<A256Kw>,
                     >(None, (to_kid, to_key))?
-                },
-                _ => Err(err_msg(
-                    ErrorKind::Unsupported,
-                    "Unsupported recepient key agreement method",
-                ))?,
-            };
+            }
+            _ => Err(err_msg(
+                ErrorKind::Unsupported,
+                "Unsupported recepient key agreement method",
+            ))?,
+        };
 
         payload = Some(_payload);
 
