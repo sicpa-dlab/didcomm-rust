@@ -166,7 +166,8 @@ mod test {
         secrets::resolvers::ExampleSecretsResolver,
         test_vectors::{
             ALICE_DID_DOC, BOB_DID_DOC, BOB_SECRETS, ENCRYPTED_MSG_ANON_XC20P_1,
-            ENCRYPTED_MSG_ANON_XC20P_2, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
+            ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256, ENCRYPTED_MSG_AUTH_P256_SIGNED,
+            ENCRYPTED_MSG_AUTH_X25519, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
             MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2,
             MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64,
             PLAINTEXT_MSG_ATTACHMENT_JSON, PLAINTEXT_MSG_ATTACHMENT_LINKS,
@@ -332,6 +333,66 @@ mod test {
             },
         )
         .await;
+
+        // TODO: Check P-384 curve support
+        // TODO: Check P-521 curve support
+    }
+
+    #[tokio::test]
+    async fn unpack_works_authcrypt() {
+        let metadata = UnpackMetadata {
+            anonymous_sender: false,
+            authenticated: false,
+            non_repudiation: false,
+            encrypted: true,
+            enc_alg_auth: None,
+            enc_alg_anon: None,
+            sign_alg: None,
+            encrypted_from_kid: None,
+            encrypted_to_kids: None,
+            sign_from: None,
+            signed_plaintext: None,
+            re_wrapped_in_forward: false,
+        };
+
+        _verify_unpack(
+            ENCRYPTED_MSG_AUTH_X25519,
+            &MESSAGE_SIMPLE,
+            &UnpackMetadata {
+                enc_alg_auth: Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw),
+                encrypted_from_kid: Some("did:example:alice#key-x25519-1".into()),
+                encrypted_to_kids: Some(vec![
+                    "did:example:bob#key-x25519-1".into(),
+                    "did:example:bob#key-x25519-2".into(),
+                    "did:example:bob#key-x25519-3".into(),
+                ]),
+                ..metadata.clone()
+            },
+        )
+        .await;
+
+        _verify_unpack(
+            ENCRYPTED_MSG_AUTH_P256,
+            &MESSAGE_SIMPLE,
+            &UnpackMetadata {
+                enc_alg_auth: Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw),
+                encrypted_from_kid: Some("did:example:alice#key-p256-1".into()),
+                encrypted_to_kids: Some(vec![
+                    "did:example:bob#key-p256-1".into(),
+                    "did:example:bob#key-p256-2".into(),
+                ]),
+                non_repudiation: true,
+                sign_from: Some("did:example:alice#key-1".into()),
+                sign_alg: Some(SignAlg::EdDSA),
+                signed_plaintext: Some(ENCRYPTED_MSG_AUTH_P256_SIGNED.into()),
+                ..metadata.clone()
+            },
+        )
+        .await;
+
+        // TODO: Check hidden sender case
+        // TODO: Check P-384 curve support
+        // TODO: Check P-521 curve support
     }
 
     async fn _verify_unpack(msg: &str, exp_msg: &Message, exp_metadata: &UnpackMetadata) {

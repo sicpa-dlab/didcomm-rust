@@ -4,10 +4,11 @@ use askar_crypto::{
         p256::P256KeyPair,
         x25519::X25519KeyPair,
     },
-    kdf::ecdh_es::EcdhEs,
+    kdf::ecdh_1pu::Ecdh1PU,
 };
 
 use crate::{
+    algorithms::AuthCryptAlg,
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultExt},
     jwe,
@@ -106,6 +107,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     }
 
     metadata.encrypted = true;
+    metadata.encrypted_from_kid = Some(from_kid.into());
 
     let to_kids_found = secrets_resolver.find_secrets(&to_kids).await?;
 
@@ -131,37 +133,47 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
             .as_key_pair()?;
 
         let _payload = match (&from_key, &to_key, &msg.protected.enc) {
-                (KnownKeyPair::X25519(ref from_key), KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::A256cbcHs512) => {
-                    msg.decrypt::<
+            (
+                KnownKeyPair::X25519(ref from_key),
+                KnownKeyPair::X25519(ref to_key),
+                jwe::EncAlgorithm::A256cbcHs512,
+            ) => {
+                metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
+
+                msg.decrypt::<
                         AesKey<A256CbcHs512>,
-                        EcdhEs<'_, X25519KeyPair>,
+                        Ecdh1PU<'_, X25519KeyPair>,
                         X25519KeyPair,
                         AesKey<A256Kw>,
                     >(Some((from_kid, from_key)), (to_kid, to_key))?
-                },
-                (KnownKeyPair::P256(ref from_key), KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::A256cbcHs512) => {
-                    msg.decrypt::<
+            }
+            (
+                KnownKeyPair::P256(ref from_key),
+                KnownKeyPair::P256(ref to_key),
+                jwe::EncAlgorithm::A256cbcHs512,
+            ) => {
+                metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
+
+                msg.decrypt::<
                         AesKey<A256CbcHs512>,
-                        EcdhEs<'_, P256KeyPair>,
+                        Ecdh1PU<'_, P256KeyPair>,
                         P256KeyPair,
                         AesKey<A256Kw>,
                     >(Some((from_kid, from_key)), (to_kid, to_key))?
-                },
-                (KnownKeyPair::X25519(_), KnownKeyPair::P256(_), _) =>
-                    Err(err_msg(
-                        ErrorKind::Malformed,
-                        "Incompatible sender and recepient key agreement curves",
-                    ))?,
-                (KnownKeyPair::P256(_), KnownKeyPair::X25519(_), _) =>
-                    Err(err_msg(
-                        ErrorKind::Malformed,
-                        "Incompatible sender and recepient key agreement curves",
-                    ))?,
-                _ => Err(err_msg(
-                    ErrorKind::Unsupported,
-                    "Unsupported key agreement method",
-                ))?,
-            };
+            }
+            (KnownKeyPair::X25519(_), KnownKeyPair::P256(_), _) => Err(err_msg(
+                ErrorKind::Malformed,
+                "Incompatible sender and recepient key agreement curves",
+            ))?,
+            (KnownKeyPair::P256(_), KnownKeyPair::X25519(_), _) => Err(err_msg(
+                ErrorKind::Malformed,
+                "Incompatible sender and recepient key agreement curves",
+            ))?,
+            _ => Err(err_msg(
+                ErrorKind::Unsupported,
+                "Unsupported key agreement method",
+            ))?,
+        };
 
         payload = Some(_payload);
 

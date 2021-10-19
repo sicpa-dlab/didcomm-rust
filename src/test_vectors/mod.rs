@@ -1,10 +1,10 @@
 mod common;
 mod did_doc;
+mod encrypted;
 mod message;
 mod plaintext;
 mod secrets;
 mod signed;
-mod encrypted;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
