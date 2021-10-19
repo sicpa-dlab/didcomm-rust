@@ -2,7 +2,7 @@ use askar_crypto::sign::KeySigVerify;
 
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
-    jws::ParsedJWS,
+    jws::{ParsedJWS, ParsedCompactJWS},
 };
 
 impl<'a, 'b> ParsedJWS<'a, 'b> {
@@ -26,6 +26,22 @@ impl<'a, 'b> ParsedJWS<'a, 'b> {
         let sign_input = format!("{}.{}", signature.protected, self.jws.payload);
 
         let signature = base64::decode_config(&signature.signature, base64::URL_SAFE_NO_PAD)
+            .kind(ErrorKind::Malformed, "Unable decode signature")?;
+
+        let valid = key
+            .verify_signature(sign_input.as_bytes(), &signature, Some(sig_type))
+            .kind(ErrorKind::Malformed, "Unable verify signature")?;
+
+        Ok(valid)
+    }
+}
+
+impl<'a> ParsedCompactJWS<'a> {
+    pub(crate) fn verify_compact<Key: KeySigVerify>(&self, key: &Key) -> Result<bool> {
+        let sig_type = self.parsed_header.alg.sig_type()?;
+        let sign_input = format!("{}.{}", self.header, self.payload);
+
+        let signature = base64::decode_config(self.signature, base64::URL_SAFE_NO_PAD)
             .kind(ErrorKind::Malformed, "Unable decode signature")?;
 
         let valid = key

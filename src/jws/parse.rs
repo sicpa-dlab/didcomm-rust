@@ -1,6 +1,6 @@
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
-    jws::envelope::{ProtectedHeader, JWS},
+    jws::envelope::{ProtectedHeader, CompactHeader, JWS},
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -36,6 +36,33 @@ pub(crate) fn parse<'a, 'b>(jws: &'a str, buf: &'b mut Vec<Vec<u8>>) -> Result<P
     };
 
     Ok(ParsedJWS { jws, protected })
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct ParsedCompactJWS<'a> {
+    pub(crate) header: &'a str,
+    pub(crate) parsed_header: CompactHeader<'a>,
+    pub(crate) payload: &'a str,
+    pub(crate) signature: &'a str,
+}
+
+pub(crate) fn parse_compact<'a>(compact_jws: &'a str, buf: &'a mut Vec<u8>) -> Result<ParsedCompactJWS<'a>> {
+    let segments: Vec<&str> = compact_jws.split('.').collect();
+    if segments.len() != 3 {
+        return Err(err_msg(ErrorKind::InvalidState, "Unable to parse compactly serialized JWS"));
+    }
+
+    let header = segments[0];
+    let payload = segments[1];
+    let signature = segments[2];
+
+    base64::decode_config_buf(header, base64::URL_SAFE_NO_PAD, buf)
+        .kind(ErrorKind::Malformed, "Unable decode protected header")?;
+
+    let parsed_header: CompactHeader = serde_json::from_slice(buf)
+        .kind(ErrorKind::Malformed, "Unable parse protected header")?;
+
+    Ok(ParsedCompactJWS { header, parsed_header, payload, signature })
 }
 
 #[cfg(test)]

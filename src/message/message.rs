@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use super::Attachment;
+use super::FromPrior;
 
 ///  Wrapper for plain message. Provides helpers for message building and packing/unpacking.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
@@ -63,6 +64,14 @@ pub struct Message {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_time: Option<u64>,
 
+    /// from_prior is used for DID rotation
+    #[serde(skip_serializing, skip_deserializing)]
+    pub from_prior: Option<FromPrior>,
+
+    /// from_prior_jwt is a compactly serialized signed JWT containing from_prior value
+    #[serde(rename = "from_prior", skip_serializing_if = "Option::is_none")]
+    pub from_prior_jwt: Option<String>,
+
     /// Message attachments
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attachments: Option<Vec<Attachment>>,
@@ -85,6 +94,8 @@ pub struct MessageBuilder {
     extra_headers: HashMap<String, Value>,
     created_time: Option<u64>,
     expires_time: Option<u64>,
+    from_prior: Option<FromPrior>,
+    from_prior_jwt: Option<String>,
     attachments: Option<Vec<Attachment>>,
 }
 
@@ -101,6 +112,8 @@ impl MessageBuilder {
             extra_headers: HashMap::new(),
             created_time: None,
             expires_time: None,
+            from_prior: None,
+            from_prior_jwt: None,
             attachments: None,
         }
     }
@@ -156,6 +169,16 @@ impl MessageBuilder {
         self
     }
 
+    pub fn from_prior(mut self, from_prior: Option<FromPrior>) -> Self {
+        self.from_prior = from_prior;
+        self
+    }
+
+    pub fn from_prior_jwt(mut self, from_prior_jwt: Option<String>) -> Self {
+        self.from_prior_jwt = from_prior_jwt;
+        self
+    }
+
     pub fn attachement(mut self, attachement: Attachment) -> Self {
         if let Some(ref mut attachments) = self.attachments {
             attachments.push(attachement);
@@ -190,6 +213,8 @@ impl MessageBuilder {
             extra_headers: self.extra_headers,
             created_time: self.created_time,
             expires_time: self.expires_time,
+            from_prior: self.from_prior,
+            from_prior_jwt: self.from_prior_jwt,
             attachments: self.attachments,
         }
     }
