@@ -166,16 +166,20 @@ mod test {
         secrets::resolvers::ExampleSecretsResolver,
         test_vectors::{
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
-            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID_DOC, BOB_SECRETS,
-            ENCRYPTED_MSG_ANON_XC20P_1, ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256,
-            ENCRYPTED_MSG_AUTH_P256_SIGNED, ENCRYPTED_MSG_AUTH_X25519, MESSAGE_ATTACHMENT_BASE64,
-            MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1,
-            MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_MINIMAL, MESSAGE_SIMPLE,
-            PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
-            PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
-            PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
-            SIGNED_MSG_ALICE_KEY_1, SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
+            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRETS,
+            BOB_SECRET_KEY_AGREEMENT_KEY_P256_1, BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, ENCRYPTED_MSG_ANON_XC20P_1,
+            ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256, ENCRYPTED_MSG_AUTH_P256_SIGNED,
+            ENCRYPTED_MSG_AUTH_X25519, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
+            MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2,
+            MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64,
+            PLAINTEXT_MSG_ATTACHMENT_JSON, PLAINTEXT_MSG_ATTACHMENT_LINKS,
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_1, PLAINTEXT_MSG_ATTACHMENT_MULTI_2,
+            PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE, SIGNED_MSG_ALICE_KEY_1,
+            SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
         },
+        PackEncryptedOptions,
     };
 
     #[tokio::test]
@@ -442,6 +446,177 @@ mod test {
 
         // TODO: Check P-384 curve support
         // TODO: Check P-521 curve support
+    }
+
+    #[tokio::test]
+    async fn unpack_works_anoncrypted_2way() {
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3.id,
+            ],
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3.id,
+            ],
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
+            AnonCryptAlg::A256gcmEcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
+            AnonCryptAlg::A256gcmEcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id],
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id],
+            AnonCryptAlg::A256gcmEcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id],
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id],
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id],
+            AnonCryptAlg::A256gcmEcdhEsA256kw,
+        )
+        .await;
+
+        _unpack_works_anoncrypted_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id],
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+        )
+        .await;
+
+        async fn _unpack_works_anoncrypted_2way(
+            msg: &Message,
+            to: &str,
+            to_kids: &[&str],
+            enc_alg: AnonCryptAlg,
+        ) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let (packed, _) = msg
+                .pack_encrypted(
+                    to,
+                    None,
+                    None,
+                    &did_resolver,
+                    &secrets_resolver,
+                    &PackEncryptedOptions {
+                        forward: false,
+                        enc_alg_anon: enc_alg.clone(),
+                        ..PackEncryptedOptions::default()
+                    },
+                )
+                .await
+                .expect("Unable pack_encrypted");
+
+            _verify_unpack(
+                &packed,
+                msg,
+                &UnpackMetadata {
+                    sign_from: None,
+                    sign_alg: None,
+                    signed_plaintext: None,
+                    anonymous_sender: true,
+                    authenticated: false,
+                    non_repudiation: false,
+                    encrypted: true,
+                    enc_alg_auth: None,
+                    enc_alg_anon: Some(enc_alg),
+                    encrypted_from_kid: None,
+                    encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    re_wrapped_in_forward: false,
+                },
+            )
+            .await;
+        }
     }
 
     #[tokio::test]
