@@ -236,6 +236,41 @@ mod test {
     }
 
     #[tokio::test]
+    async fn unpack_works_plaintext_2way() {
+        _unpack_works_plaintext_2way(&MESSAGE_SIMPLE).await;
+        _unpack_works_plaintext_2way(&MESSAGE_MINIMAL).await;
+        _unpack_works_plaintext_2way(&MESSAGE_ATTACHMENT_BASE64).await;
+        _unpack_works_plaintext_2way(&MESSAGE_ATTACHMENT_JSON).await;
+        _unpack_works_plaintext_2way(&MESSAGE_ATTACHMENT_LINKS).await;
+        _unpack_works_plaintext_2way(&MESSAGE_ATTACHMENT_MULTI_1).await;
+        _unpack_works_plaintext_2way(&MESSAGE_ATTACHMENT_MULTI_2).await;
+
+        async fn _unpack_works_plaintext_2way(msg: &Message) {
+            let packed = msg.pack_plaintext().expect("Unable pack_plaintext");
+
+            _verify_unpack(
+                &packed,
+                msg,
+                &UnpackMetadata {
+                    anonymous_sender: false,
+                    authenticated: false,
+                    non_repudiation: false,
+                    encrypted: false,
+                    enc_alg_auth: None,
+                    enc_alg_anon: None,
+                    sign_alg: None,
+                    encrypted_from_kid: None,
+                    encrypted_to_kids: None,
+                    sign_from: None,
+                    signed_plaintext: None,
+                    re_wrapped_in_forward: false,
+                },
+            )
+            .await;
+        }
+    }
+
+    #[tokio::test]
     async fn unpack_works_signed() {
         let sign_metadata = UnpackMetadata {
             anonymous_sender: false,
