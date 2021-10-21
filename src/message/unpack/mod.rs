@@ -620,6 +620,138 @@ mod test {
     }
 
     #[tokio::test]
+    async fn pack_encrypted_works_anoncrypted_signed() {
+        _pack_encrypted_works_anoncrypted_signed(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3.id,
+            ],
+            ALICE_DID,
+            &ALICE_AUTH_METHOD_25519.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            SignAlg::EdDSA,
+        )
+        .await;
+
+        _pack_encrypted_works_anoncrypted_signed(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3.id,
+            ],
+            ALICE_DID,
+            &ALICE_AUTH_METHOD_25519.id,
+            AnonCryptAlg::A256gcmEcdhEsA256kw,
+            SignAlg::EdDSA,
+        )
+        .await;
+
+        _pack_encrypted_works_anoncrypted_signed(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3.id,
+            ],
+            ALICE_DID,
+            &ALICE_AUTH_METHOD_25519.id,
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+            SignAlg::EdDSA,
+        )
+        .await;
+
+        _pack_encrypted_works_anoncrypted_signed(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
+            &ALICE_AUTH_METHOD_25519.id,
+            &ALICE_AUTH_METHOD_25519.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            SignAlg::EdDSA,
+        )
+        .await;
+
+        _pack_encrypted_works_anoncrypted_signed(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id],
+            &ALICE_AUTH_METHOD_P256.id,
+            &ALICE_AUTH_METHOD_P256.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            SignAlg::ES256,
+        )
+        .await;
+
+        _pack_encrypted_works_anoncrypted_signed(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id],
+            &ALICE_AUTH_METHOD_SECPP256K1.id,
+            &ALICE_AUTH_METHOD_SECPP256K1.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            SignAlg::ES256K,
+        )
+        .await;
+
+        async fn _pack_encrypted_works_anoncrypted_signed(
+            msg: &Message,
+            to: &str,
+            to_kids: &[&str],
+            sign_by: &str,
+            sign_by_kid: &str,
+            enc_alg: AnonCryptAlg,
+            sign_alg: SignAlg,
+        ) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let (packed, _) = msg
+                .pack_encrypted(
+                    to,
+                    None,
+                    Some(sign_by),
+                    &did_resolver,
+                    &secrets_resolver,
+                    &PackEncryptedOptions {
+                        forward: false,
+                        enc_alg_anon: enc_alg.clone(),
+                        ..PackEncryptedOptions::default()
+                    },
+                )
+                .await
+                .expect("Unable pack_encrypted");
+
+            _verify_unpack_undeterministic(
+                &packed,
+                msg,
+                &UnpackMetadata {
+                    sign_from: Some(sign_by_kid.into()),
+                    sign_alg: Some(sign_alg),
+                    signed_plaintext: None,
+                    anonymous_sender: true,
+                    authenticated: false,
+                    non_repudiation: true,
+                    encrypted: true,
+                    enc_alg_auth: None,
+                    enc_alg_anon: Some(enc_alg),
+                    encrypted_from_kid: None,
+                    encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    re_wrapped_in_forward: false,
+                },
+            )
+            .await;
+        }
+    }
+
+    #[tokio::test]
     async fn unpack_works_authcrypt() {
         let metadata = UnpackMetadata {
             anonymous_sender: false,
@@ -692,6 +824,32 @@ mod test {
         .expect("unpack is ok.");
 
         assert_eq!(&msg, exp_msg);
+        assert_eq!(&metadata, exp_metadata);
+    }
+
+    // Same as `_verify_unpack`, but skips indeterministic values from metadata checking
+    async fn _verify_unpack_undeterministic(
+        msg: &str,
+        exp_msg: &Message,
+        exp_metadata: &UnpackMetadata,
+    ) {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+
+        let (msg, mut metadata) = Message::unpack(
+            msg,
+            &did_resolver,
+            &secrets_resolver,
+            &UnpackOptions::default(),
+        )
+        .await
+        .expect("unpack is ok.");
+
+        assert_eq!(&msg, exp_msg);
+
+        metadata.signed_plaintext = exp_metadata.signed_plaintext.clone();
         assert_eq!(&metadata, exp_metadata);
     }
 }
