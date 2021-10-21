@@ -165,15 +165,16 @@ mod test {
         did::resolvers::ExampleDIDResolver,
         secrets::resolvers::ExampleSecretsResolver,
         test_vectors::{
-            ALICE_DID_DOC, BOB_DID_DOC, BOB_SECRETS, ENCRYPTED_MSG_ANON_XC20P_1,
-            ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256, ENCRYPTED_MSG_AUTH_P256_SIGNED,
-            ENCRYPTED_MSG_AUTH_X25519, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
-            MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2,
-            MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64,
-            PLAINTEXT_MSG_ATTACHMENT_JSON, PLAINTEXT_MSG_ATTACHMENT_LINKS,
-            PLAINTEXT_MSG_ATTACHMENT_MULTI_1, PLAINTEXT_MSG_ATTACHMENT_MULTI_2,
-            PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE, SIGNED_MSG_ALICE_KEY_1,
-            SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
+            ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
+            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID_DOC, BOB_SECRETS,
+            ENCRYPTED_MSG_ANON_XC20P_1, ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256,
+            ENCRYPTED_MSG_AUTH_P256_SIGNED, ENCRYPTED_MSG_AUTH_X25519, MESSAGE_ATTACHMENT_BASE64,
+            MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1,
+            MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_MINIMAL, MESSAGE_SIMPLE,
+            PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
+            PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
+            SIGNED_MSG_ALICE_KEY_1, SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
         },
     };
 
@@ -286,6 +287,76 @@ mod test {
             },
         )
         .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_signed_2way() {
+        _unpack_works_signed_2way(
+            &MESSAGE_SIMPLE,
+            ALICE_DID,
+            &ALICE_AUTH_METHOD_25519.id,
+            SignAlg::EdDSA,
+        )
+        .await;
+
+        _unpack_works_signed_2way(
+            &MESSAGE_SIMPLE,
+            &ALICE_AUTH_METHOD_25519.id,
+            &ALICE_AUTH_METHOD_25519.id,
+            SignAlg::EdDSA,
+        )
+        .await;
+
+        _unpack_works_signed_2way(
+            &MESSAGE_SIMPLE,
+            &ALICE_AUTH_METHOD_P256.id,
+            &ALICE_AUTH_METHOD_P256.id,
+            SignAlg::ES256,
+        )
+        .await;
+
+        _unpack_works_signed_2way(
+            &MESSAGE_SIMPLE,
+            &ALICE_AUTH_METHOD_SECPP256K1.id,
+            &ALICE_AUTH_METHOD_SECPP256K1.id,
+            SignAlg::ES256K,
+        )
+        .await;
+
+        async fn _unpack_works_signed_2way(
+            message: &Message,
+            sign_by: &str,
+            sign_by_kid: &str,
+            sign_alg: SignAlg,
+        ) {
+            let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
+            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let (msg, _) = message
+                .pack_signed(sign_by, &did_resolver, &secrets_resolver)
+                .await
+                .expect("Unable pack_signed");
+
+            _verify_unpack(
+                &msg,
+                &MESSAGE_SIMPLE,
+                &UnpackMetadata {
+                    sign_from: Some(sign_by_kid.into()),
+                    sign_alg: Some(sign_alg),
+                    signed_plaintext: Some(msg.clone()),
+                    anonymous_sender: false,
+                    authenticated: false,
+                    non_repudiation: true,
+                    encrypted: false,
+                    enc_alg_auth: None,
+                    enc_alg_anon: None,
+                    encrypted_from_kid: None,
+                    encrypted_to_kids: None,
+                    re_wrapped_in_forward: false,
+                },
+            )
+            .await;
+        }
     }
 
     #[tokio::test]
