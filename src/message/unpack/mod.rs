@@ -1114,8 +1114,8 @@ mod test {
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_authcrypted_protected_sender_signed_2way() {
-        _pack_encrypted_works_authcrypted_protected_sender_signed_2way(
+    async fn unpack_works_authcrypted_protected_sender_signed_2way() {
+        _unpack_works_authcrypted_protected_sender_signed_2way(
             &MESSAGE_SIMPLE,
             BOB_DID,
             &[
@@ -1133,7 +1133,7 @@ mod test {
         )
         .await;
 
-        _pack_encrypted_works_authcrypted_protected_sender_signed_2way(
+        _unpack_works_authcrypted_protected_sender_signed_2way(
             &MESSAGE_SIMPLE,
             BOB_DID,
             &[
@@ -1150,7 +1150,7 @@ mod test {
         )
         .await;
 
-        _pack_encrypted_works_authcrypted_protected_sender_signed_2way(
+        _unpack_works_authcrypted_protected_sender_signed_2way(
             &MESSAGE_SIMPLE,
             BOB_DID,
             &[
@@ -1167,7 +1167,7 @@ mod test {
         )
         .await;
 
-        async fn _pack_encrypted_works_authcrypted_protected_sender_signed_2way(
+        async fn _unpack_works_authcrypted_protected_sender_signed_2way(
             msg: &Message,
             to: &str,
             to_kids: &[&str],
@@ -1220,6 +1220,120 @@ mod test {
                 },
             )
             .await;
+        }
+    }
+
+    #[tokio::test]
+    async fn unpack_works_authcrypted_signed_2way() {
+        _unpack_works_authcrypted_signed_2way(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3.id,
+            ],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.id,
+            ALICE_DID,
+            &ALICE_AUTH_METHOD_25519.id,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+            SignAlg::EdDSA,
+        )
+        .await;
+
+        _unpack_works_authcrypted_signed_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.id,
+            &ALICE_AUTH_METHOD_25519.id,
+            &ALICE_AUTH_METHOD_25519.id,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+            SignAlg::EdDSA,
+        )
+        .await;
+
+        _unpack_works_authcrypted_signed_2way(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.id,
+            &ALICE_AUTH_METHOD_P256.id,
+            &ALICE_AUTH_METHOD_P256.id,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+            SignAlg::ES256,
+        )
+        .await;
+
+        _unpack_works_authcrypted_signed_2way(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_AUTH_METHOD_SECPP256K1.id,
+            &ALICE_AUTH_METHOD_SECPP256K1.id,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+            SignAlg::ES256K,
+        )
+        .await;
+
+        async fn _unpack_works_authcrypted_signed_2way(
+            msg: &Message,
+            to: &str,
+            to_kids: &[&str],
+            from: &str,
+            from_kid: &str,
+            sign_by: &str,
+            sign_by_kid: &str,
+            enc_alg: AuthCryptAlg,
+            sign_alg: SignAlg,
+        ) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let (packed, _) = msg
+                .pack_encrypted(
+                    to,
+                    Some(from),
+                    Some(sign_by),
+                    &did_resolver,
+                    &secrets_resolver,
+                    &PackEncryptedOptions {
+                        forward: false,
+                        ..PackEncryptedOptions::default()
+                    },
+                )
+                .await
+                .expect("encrypt is ok.");
+
+                _verify_unpack_undeterministic(
+                    &packed,
+                    msg,
+                    &UnpackMetadata {
+                        sign_from: Some(sign_by_kid.into()),
+                        sign_alg: Some(sign_alg),
+                        signed_plaintext: Some("nondeterministic".into()),
+                        anonymous_sender: false,
+                        authenticated: true,
+                        non_repudiation: true,
+                        encrypted: true,
+                        enc_alg_auth: Some(enc_alg),
+                        enc_alg_anon: None,
+                        encrypted_from_kid: Some(from_kid.into()),
+                        encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                        re_wrapped_in_forward: false,
+                    },
+                )
+                .await;
         }
     }
 
