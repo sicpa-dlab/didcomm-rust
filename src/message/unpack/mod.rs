@@ -939,8 +939,8 @@ mod test {
     }
 
     #[tokio::test]
-    async fn unpack_works_authcrypted_protected_sender() {
-        _unpack_works_authcrypted_protected_sender(
+    async fn unpack_works_authcrypted_protected_sender_2way() {
+        _unpack_works_authcrypted_protected_sender_2way(
             &MESSAGE_SIMPLE,
             BOB_DID,
             &[
@@ -955,7 +955,7 @@ mod test {
         )
         .await;
 
-        _unpack_works_authcrypted_protected_sender(
+        _unpack_works_authcrypted_protected_sender_2way(
             &MESSAGE_SIMPLE,
             BOB_DID,
             &[
@@ -970,7 +970,7 @@ mod test {
         )
         .await;
 
-        _unpack_works_authcrypted_protected_sender(
+        _unpack_works_authcrypted_protected_sender_2way(
             &MESSAGE_SIMPLE,
             BOB_DID,
             &[
@@ -985,7 +985,7 @@ mod test {
         )
         .await;
 
-        _unpack_works_authcrypted_protected_sender(
+        _unpack_works_authcrypted_protected_sender_2way(
             &MESSAGE_SIMPLE,
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
@@ -996,7 +996,7 @@ mod test {
         )
         .await;
 
-        _unpack_works_authcrypted_protected_sender(
+        _unpack_works_authcrypted_protected_sender_2way(
             &MESSAGE_SIMPLE,
             BOB_DID,
             &[
@@ -1010,7 +1010,7 @@ mod test {
         )
         .await;
 
-        _unpack_works_authcrypted_protected_sender(
+        _unpack_works_authcrypted_protected_sender_2way(
             &MESSAGE_SIMPLE,
             BOB_DID,
             &[
@@ -1024,7 +1024,7 @@ mod test {
         )
         .await;
 
-        _unpack_works_authcrypted_protected_sender(
+        _unpack_works_authcrypted_protected_sender_2way(
             &MESSAGE_SIMPLE,
             BOB_DID,
             &[
@@ -1038,12 +1038,10 @@ mod test {
         )
         .await;
 
-        _unpack_works_authcrypted_protected_sender(
+        _unpack_works_authcrypted_protected_sender_2way(
             &MESSAGE_SIMPLE,
             &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
-            &[
-                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
-            ],
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id],
             ALICE_DID,
             &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
             AnonCryptAlg::Xc20pEcdhEsA256kw,
@@ -1051,7 +1049,7 @@ mod test {
         )
         .await;
 
-        _unpack_works_authcrypted_protected_sender(
+        _unpack_works_authcrypted_protected_sender_2way(
             &MESSAGE_SIMPLE,
             &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
             &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id],
@@ -1062,7 +1060,7 @@ mod test {
         )
         .await;
 
-        async fn _unpack_works_authcrypted_protected_sender(
+        async fn _unpack_works_authcrypted_protected_sender_2way(
             msg: &Message,
             to: &str,
             to_kids: &[&str],
@@ -1103,6 +1101,116 @@ mod test {
                     anonymous_sender: true,
                     authenticated: true,
                     non_repudiation: false,
+                    encrypted: true,
+                    enc_alg_auth: Some(enc_alg_auth),
+                    enc_alg_anon: Some(enc_alg_anon),
+                    encrypted_from_kid: Some(from_kid.into()),
+                    encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    re_wrapped_in_forward: false,
+                },
+            )
+            .await;
+        }
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_authcrypted_protected_sender_signed_2way() {
+        _pack_encrypted_works_authcrypted_protected_sender_signed_2way(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3.id,
+            ],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.id,
+            &ALICE_AUTH_METHOD_P256.id,
+            &ALICE_AUTH_METHOD_P256.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+            SignAlg::ES256,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypted_protected_sender_signed_2way(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_AUTH_METHOD_25519.id,
+            &ALICE_AUTH_METHOD_25519.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+            SignAlg::EdDSA,
+        )
+        .await;
+
+        _pack_encrypted_works_authcrypted_protected_sender_signed_2way(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_AUTH_METHOD_SECPP256K1.id,
+            &ALICE_AUTH_METHOD_SECPP256K1.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+            SignAlg::ES256K,
+        )
+        .await;
+
+        async fn _pack_encrypted_works_authcrypted_protected_sender_signed_2way(
+            msg: &Message,
+            to: &str,
+            to_kids: &[&str],
+            from: &str,
+            from_kid: &str,
+            sign_by: &str,
+            sign_by_kid: &str,
+            enc_alg_anon: AnonCryptAlg,
+            enc_alg_auth: AuthCryptAlg,
+            sign_alg: SignAlg,
+        ) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let (packed, _) = msg
+                .pack_encrypted(
+                    to,
+                    Some(from),
+                    Some(sign_by),
+                    &did_resolver,
+                    &secrets_resolver,
+                    &PackEncryptedOptions {
+                        forward: false,
+                        protect_sender: true,
+                        enc_alg_anon: enc_alg_anon.clone(),
+                        ..PackEncryptedOptions::default()
+                    },
+                )
+                .await
+                .expect("Unable pack_encrypted");
+
+            _verify_unpack_undeterministic(
+                &packed,
+                msg,
+                &UnpackMetadata {
+                    sign_from: Some(sign_by_kid.into()),
+                    sign_alg: Some(sign_alg),
+                    signed_plaintext: Some("nondeterministic".into()),
+                    anonymous_sender: true,
+                    authenticated: true,
+                    non_repudiation: true,
                     encrypted: true,
                     enc_alg_auth: Some(enc_alg_auth),
                     enc_alg_anon: Some(enc_alg_anon),
