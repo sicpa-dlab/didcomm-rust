@@ -1315,25 +1315,25 @@ mod test {
                 .await
                 .expect("encrypt is ok.");
 
-                _verify_unpack_undeterministic(
-                    &packed,
-                    msg,
-                    &UnpackMetadata {
-                        sign_from: Some(sign_by_kid.into()),
-                        sign_alg: Some(sign_alg),
-                        signed_plaintext: Some("nondeterministic".into()),
-                        anonymous_sender: false,
-                        authenticated: true,
-                        non_repudiation: true,
-                        encrypted: true,
-                        enc_alg_auth: Some(enc_alg),
-                        enc_alg_anon: None,
-                        encrypted_from_kid: Some(from_kid.into()),
-                        encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
-                        re_wrapped_in_forward: false,
-                    },
-                )
-                .await;
+            _verify_unpack_undeterministic(
+                &packed,
+                msg,
+                &UnpackMetadata {
+                    sign_from: Some(sign_by_kid.into()),
+                    sign_alg: Some(sign_alg),
+                    signed_plaintext: Some("nondeterministic".into()),
+                    anonymous_sender: false,
+                    authenticated: true,
+                    non_repudiation: true,
+                    encrypted: true,
+                    enc_alg_auth: Some(enc_alg),
+                    enc_alg_anon: None,
+                    encrypted_from_kid: Some(from_kid.into()),
+                    encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    re_wrapped_in_forward: false,
+                },
+            )
+            .await;
         }
     }
 
