@@ -938,6 +938,183 @@ mod test {
         }
     }
 
+    #[tokio::test]
+    async fn unpack_works_authcrypted_protected_sender() {
+        _unpack_works_authcrypted_protected_sender(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3.id,
+            ],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+        )
+        .await;
+
+        _unpack_works_authcrypted_protected_sender(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3.id,
+            ],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.id,
+            AnonCryptAlg::A256gcmEcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+        )
+        .await;
+
+        _unpack_works_authcrypted_protected_sender(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3.id,
+            ],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.id,
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+        )
+        .await;
+
+        _unpack_works_authcrypted_protected_sender(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+        )
+        .await;
+
+        _unpack_works_authcrypted_protected_sender(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+        )
+        .await;
+
+        _unpack_works_authcrypted_protected_sender(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            AnonCryptAlg::A256gcmEcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+        )
+        .await;
+
+        _unpack_works_authcrypted_protected_sender(
+            &MESSAGE_SIMPLE,
+            BOB_DID,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            ],
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+        )
+        .await;
+
+        _unpack_works_authcrypted_protected_sender(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            &[
+                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            ],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            AnonCryptAlg::Xc20pEcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+        )
+        .await;
+
+        _unpack_works_authcrypted_protected_sender(
+            &MESSAGE_SIMPLE,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id,
+            &[&BOB_SECRET_KEY_AGREEMENT_KEY_P256_2.id],
+            ALICE_DID,
+            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            AnonCryptAlg::A256cbcHs512EcdhEsA256kw,
+            AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+        )
+        .await;
+
+        async fn _unpack_works_authcrypted_protected_sender(
+            msg: &Message,
+            to: &str,
+            to_kids: &[&str],
+            from: &str,
+            from_kid: &str,
+            enc_alg_anon: AnonCryptAlg,
+            enc_alg_auth: AuthCryptAlg,
+        ) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let (packed, _) = msg
+                .pack_encrypted(
+                    to,
+                    Some(from),
+                    None,
+                    &did_resolver,
+                    &secrets_resolver,
+                    &PackEncryptedOptions {
+                        forward: false,
+                        protect_sender: true,
+                        enc_alg_anon: enc_alg_anon.clone(),
+                        ..PackEncryptedOptions::default()
+                    },
+                )
+                .await
+                .expect("Unable pack_encrypted");
+
+            _verify_unpack(
+                &packed,
+                msg,
+                &UnpackMetadata {
+                    sign_from: None,
+                    sign_alg: None,
+                    signed_plaintext: None,
+                    anonymous_sender: true,
+                    authenticated: true,
+                    non_repudiation: false,
+                    encrypted: true,
+                    enc_alg_auth: Some(enc_alg_auth),
+                    enc_alg_anon: Some(enc_alg_anon),
+                    encrypted_from_kid: Some(from_kid.into()),
+                    encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    re_wrapped_in_forward: false,
+                },
+            )
+            .await;
+        }
+    }
+
     async fn _verify_unpack(msg: &str, exp_msg: &Message, exp_metadata: &UnpackMetadata) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
