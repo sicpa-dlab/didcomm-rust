@@ -106,6 +106,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
         // TODO: Verify that same keys used for authcrypt as for anoncrypt envelope
     }
 
+    metadata.authenticated = true;
     metadata.encrypted = true;
     metadata.encrypted_from_kid = Some(from_kid.into());
 
