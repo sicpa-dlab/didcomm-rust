@@ -15,9 +15,6 @@ pub enum ErrorKind {
     #[error("Malformed")]
     Malformed,
 
-    #[error("Message doesn't meet trust requrements")]
-    UnsatisfiedConstraint,
-
     #[error("IO error")]
     IoError,
 

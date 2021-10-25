@@ -346,12 +346,9 @@ mod tests {
             P256KeyPair,
             AesKey<A256Kw>,
         >(
-            BOB_DID,
-            vec![
-                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
-                &BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
-            ],
-            &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.id,
+            &BOB_SECRET_KEY_AGREEMENT_KEY_P256_1.id,
+            vec![&BOB_SECRET_KEY_AGREEMENT_KEY_P256_1],
+            ALICE_DID,
             &ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
         )
         .await;

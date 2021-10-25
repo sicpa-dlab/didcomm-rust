@@ -49,7 +49,7 @@ pub(crate) fn sign<Key: KeySign>(
 
     let jws = JWS {
         signatures: vec![signature],
-        payload: &&payload,
+        payload: &payload,
     };
 
     let jws = serde_json::to_string(&jws).kind(ErrorKind::InvalidState, "Unable serialize jws")?;
