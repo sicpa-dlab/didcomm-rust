@@ -70,7 +70,7 @@ impl Message {
             enc_alg_auth: None,
             enc_alg_anon: None,
             sign_alg: None,
-            signed_plaintext: None,
+            signed_message: None,
         };
 
         let anoncryted =
@@ -154,7 +154,7 @@ pub struct UnpackMetadata {
     pub sign_alg: Option<SignAlg>,
 
     /// If the plaintext has been signed, the JWS is returned for non-repudiation purposes
-    pub signed_plaintext: Option<String>,
+    pub signed_message: Option<String>,
 }
 
 #[cfg(test)]
@@ -196,7 +196,7 @@ mod test {
             encrypted_from_kid: None,
             encrypted_to_kids: None,
             sign_from: None,
-            signed_plaintext: None,
+            signed_message: None,
             re_wrapped_in_forward: false,
         };
 
@@ -267,7 +267,7 @@ mod test {
                     encrypted_from_kid: None,
                     encrypted_to_kids: None,
                     sign_from: None,
-                    signed_plaintext: None,
+                    signed_message: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -288,7 +288,7 @@ mod test {
             encrypted_from_kid: None,
             encrypted_to_kids: None,
             sign_from: None,
-            signed_plaintext: None,
+            signed_message: None,
             re_wrapped_in_forward: false,
         };
 
@@ -298,7 +298,7 @@ mod test {
             &UnpackMetadata {
                 sign_from: Some("did:example:alice#key-1".into()),
                 sign_alg: Some(SignAlg::EdDSA),
-                signed_plaintext: Some(SIGNED_MSG_ALICE_KEY_1.into()),
+                signed_message: Some(SIGNED_MSG_ALICE_KEY_1.into()),
                 ..sign_metadata.clone()
             },
         )
@@ -310,7 +310,7 @@ mod test {
             &UnpackMetadata {
                 sign_from: Some("did:example:alice#key-2".into()),
                 sign_alg: Some(SignAlg::ES256),
-                signed_plaintext: Some(SIGNED_MSG_ALICE_KEY_2.into()),
+                signed_message: Some(SIGNED_MSG_ALICE_KEY_2.into()),
                 ..sign_metadata.clone()
             },
         )
@@ -322,7 +322,7 @@ mod test {
             &UnpackMetadata {
                 sign_from: Some("did:example:alice#key-3".into()),
                 sign_alg: Some(SignAlg::ES256K),
-                signed_plaintext: Some(SIGNED_MSG_ALICE_KEY_3.into()),
+                signed_message: Some(SIGNED_MSG_ALICE_KEY_3.into()),
                 ..sign_metadata.clone()
             },
         )
@@ -383,7 +383,7 @@ mod test {
                 &UnpackMetadata {
                     sign_from: Some(sign_by_kid.into()),
                     sign_alg: Some(sign_alg),
-                    signed_plaintext: Some(msg.clone()),
+                    signed_message: Some(msg.clone()),
                     anonymous_sender: false,
                     authenticated: false,
                     non_repudiation: true,
@@ -412,7 +412,7 @@ mod test {
             encrypted_from_kid: None,
             encrypted_to_kids: None,
             sign_from: None,
-            signed_plaintext: None,
+            signed_message: None,
             re_wrapped_in_forward: false,
         };
 
@@ -604,7 +604,7 @@ mod test {
                 &UnpackMetadata {
                     sign_from: None,
                     sign_alg: None,
-                    signed_plaintext: None,
+                    signed_message: None,
                     anonymous_sender: true,
                     authenticated: false,
                     non_repudiation: false,
@@ -736,7 +736,7 @@ mod test {
                 &UnpackMetadata {
                     sign_from: Some(sign_by_kid.into()),
                     sign_alg: Some(sign_alg),
-                    signed_plaintext: None,
+                    signed_message: None,
                     anonymous_sender: true,
                     authenticated: false,
                     non_repudiation: true,
@@ -765,7 +765,7 @@ mod test {
             encrypted_from_kid: None,
             encrypted_to_kids: None,
             sign_from: None,
-            signed_plaintext: None,
+            signed_message: None,
             re_wrapped_in_forward: false,
         };
 
@@ -798,7 +798,7 @@ mod test {
                 non_repudiation: true,
                 sign_from: Some("did:example:alice#key-1".into()),
                 sign_alg: Some(SignAlg::EdDSA),
-                signed_plaintext: Some(ENCRYPTED_MSG_AUTH_P256_SIGNED.into()),
+                signed_message: Some(ENCRYPTED_MSG_AUTH_P256_SIGNED.into()),
                 ..metadata.clone()
             },
         )
@@ -922,7 +922,7 @@ mod test {
                 &UnpackMetadata {
                     sign_from: None,
                     sign_alg: None,
-                    signed_plaintext: None,
+                    signed_message: None,
                     anonymous_sender: false,
                     authenticated: true,
                     non_repudiation: false,
@@ -1097,7 +1097,7 @@ mod test {
                 &UnpackMetadata {
                     sign_from: None,
                     sign_alg: None,
-                    signed_plaintext: None,
+                    signed_message: None,
                     anonymous_sender: true,
                     authenticated: true,
                     non_repudiation: false,
@@ -1207,7 +1207,7 @@ mod test {
                 &UnpackMetadata {
                     sign_from: Some(sign_by_kid.into()),
                     sign_alg: Some(sign_alg),
-                    signed_plaintext: Some("nondeterministic".into()),
+                    signed_message: Some("nondeterministic".into()),
                     anonymous_sender: true,
                     authenticated: true,
                     non_repudiation: true,
@@ -1321,7 +1321,7 @@ mod test {
                 &UnpackMetadata {
                     sign_from: Some(sign_by_kid.into()),
                     sign_alg: Some(sign_alg),
-                    signed_plaintext: Some("nondeterministic".into()),
+                    signed_message: Some("nondeterministic".into()),
                     anonymous_sender: false,
                     authenticated: true,
                     non_repudiation: true,
@@ -1378,7 +1378,7 @@ mod test {
 
         assert_eq!(&msg, exp_msg);
 
-        metadata.signed_plaintext = exp_metadata.signed_plaintext.clone();
+        metadata.signed_message = exp_metadata.signed_message.clone();
         assert_eq!(&metadata, exp_metadata);
     }
 }

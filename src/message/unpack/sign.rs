@@ -138,7 +138,7 @@ pub(crate) async fn _try_unapck_sign<'dr>(
 
     metadata.non_repudiation = true;
     metadata.sign_from = Some(signer_kid.into());
-    metadata.signed_plaintext = Some(jws.into());
+    metadata.signed_message = Some(jws.into());
 
     Ok(Some(payload))
 }
