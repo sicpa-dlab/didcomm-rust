@@ -279,7 +279,7 @@ mod test {
     async fn unpack_works_signed() {
         let sign_metadata = UnpackMetadata {
             anonymous_sender: false,
-            authenticated: false,
+            authenticated: true,
             non_repudiation: true,
             encrypted: false,
             enc_alg_auth: None,
@@ -385,7 +385,7 @@ mod test {
                     sign_alg: Some(sign_alg),
                     signed_message: Some(msg.clone()),
                     anonymous_sender: false,
-                    authenticated: false,
+                    authenticated: true,
                     non_repudiation: true,
                     encrypted: false,
                     enc_alg_auth: None,
@@ -738,7 +738,7 @@ mod test {
                     sign_alg: Some(sign_alg),
                     signed_message: None,
                     anonymous_sender: true,
-                    authenticated: false,
+                    authenticated: true,
                     non_repudiation: true,
                     encrypted: true,
                     enc_alg_auth: None,
