@@ -113,7 +113,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None,
                     &to_keys,
                 )
-                    .context("Unable produce anoncrypt envelope")?, //TODO test
+                .context("Unable produce anoncrypt envelope")?, //TODO test
                 AnonCryptAlg::Xc20pEcdhEsA256kw => jwe::encrypt::<
                     Chacha20Key<XC20P>,
                     EcdhEs<'_, X25519KeyPair>,
@@ -126,7 +126,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None,
                     &to_keys,
                 )
-                    .context("Unable produce anoncrypt envelope")?,
+                .context("Unable produce anoncrypt envelope")?,
                 AnonCryptAlg::A256gcmEcdhEsA256kw => jwe::encrypt::<
                     AesKey<A256Gcm>,
                     EcdhEs<'_, X25519KeyPair>,
@@ -139,7 +139,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None,
                     &to_keys,
                 )
-                    .context("Unable produce anoncrypt envelope")?,
+                .context("Unable produce anoncrypt envelope")?,
             }
         }
         KnownKeyAlg::P256 => {
@@ -166,7 +166,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None,
                     &to_keys,
                 )
-                    .context("Unable produce anoncrypt envelope")?,
+                .context("Unable produce anoncrypt envelope")?,
                 AnonCryptAlg::Xc20pEcdhEsA256kw => jwe::encrypt::<
                     Chacha20Key<XC20P>,
                     EcdhEs<'_, P256KeyPair>,
@@ -179,7 +179,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None,
                     &to_keys,
                 )
-                    .context("Unable produce anoncrypt envelope")?,
+                .context("Unable produce anoncrypt envelope")?,
                 AnonCryptAlg::A256gcmEcdhEsA256kw => jwe::encrypt::<
                     AesKey<A256Gcm>,
                     EcdhEs<'_, P256KeyPair>,
@@ -192,7 +192,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None,
                     &to_keys,
                 )
-                    .context("Unable produce anoncrypt envelope")?,
+                .context("Unable produce anoncrypt envelope")?,
             }
         }
         _ => Err(err_msg(
@@ -203,40 +203,4 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
 
     let to_kids: Vec<_> = to_keys.into_iter().map(|vm| vm.id.clone()).collect();
     Ok((msg, to_kids))
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::{
-        did::DIDResolver,
-        algorithms::AnonCryptAlg,
-        message::pack_encrypted::anoncrypt
-    };
-    use crate::did::resolvers::ExampleDIDResolver;
-    use crate::secrets::resolvers::ExampleSecretsResolver;
-    use crate::test_vectors;
-    use crate::test_vectors::BOB_DID;
-    use crate::utils::utils::get_key_agreement_methods;
-    use crate::test_vectors::ALICE_DID_DOC;
-    use crate::test_vectors::BOB_DID_DOC;
-    use crate::test_vectors::ALICE_SECRETS;
-    use crate::utils::utils::{KeyAgreementCurveType, Person};
-
-    #[test]
-    fn anoncrypt_works() {
-        fn _anoncrypt_works<'dr, 'sr>(to: &String,
-                            msg: &[u8],
-                            enc_alg_anon: &AnonCryptAlg, ) {
-            let did_resolver =
-                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
-
-            let pack_result = anoncrypt(to, &did_resolver, msg, enc_alg_anon);
-
-            let mut expected_to = vec![to];
-            if to == BOB_DID {
-                expected_to = get_key_agreement_methods(Person::BOB, KeyAgreementCurveType::X25519).into_iter().map(|vm| &vm.id).collect();
-            }
-        }
-    }
 }

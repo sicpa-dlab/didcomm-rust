@@ -291,7 +291,6 @@ mod tests {
             EncAlgorithm::A256Gcm,
         );
 
-
         _encrypt_works::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
