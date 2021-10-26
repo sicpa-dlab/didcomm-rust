@@ -16,7 +16,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
     pub(crate) fn decrypt<CE, KDF, KE, KW>(
         &self,
         sender: Option<(&str, &KE)>,
-        recepient: (&str, &KE),
+        recipient: (&str, &KE),
     ) -> Result<Vec<u8>>
     where
         CE: KeyAeadInPlace + KeySecretBytes,
@@ -29,7 +29,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
             None => (None, None),
         };
 
-        let (kid, key) = recepient;
+        let (kid, key) = recipient;
 
         if skid.map(str::as_bytes) != self.apu.as_deref() {
             Err(err_msg(ErrorKind::InvalidState, "Wrong skid used"))?
@@ -41,7 +41,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
                 .recipients
                 .iter()
                 .find(|r| r.header.kid == kid)
-                .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Recepient not found"))?
+                .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Recipient not found"))?
                 .encrypted_key;
 
             base64::decode_config(encrypted_key, base64::URL_SAFE_NO_PAD)
@@ -297,7 +297,7 @@ mod tests {
 
         fn _decrypt_works<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
-            recepient: (&str, &str),
+            recipient: (&str, &str),
             msg: &str,
             payload: &str,
         ) where
@@ -306,7 +306,7 @@ mod tests {
             KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
             KW: KeyWrap + FromKeyDerivation,
         {
-            let res = _decrypt::<CE, KDF, KE, KW>(sender, recepient, msg);
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg);
             let res = res.expect("res is err");
             assert_eq!(res, payload.as_bytes());
         }
@@ -363,7 +363,7 @@ mod tests {
     }
 
     #[test]
-    fn decrypt_works_recepient_not_found() {
+    fn decrypt_works_recipient_not_found() {
         let res = _decrypt::<
             AesKey<A256CbcHs512>,
             Ecdh1PU<'_, P256KeyPair>,
@@ -377,7 +377,7 @@ mod tests {
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::InvalidState);
-        assert_eq!(format!("{}", err), "Invalid state: Recepient not found");
+        assert_eq!(format!("{}", err), "Invalid state: Recipient not found");
     }
 
     #[test]
@@ -511,8 +511,8 @@ mod tests {
     }
 
     #[test]
-    fn decrypt_works_different_recepient_key() {
-        _decrypt_works_different_recepient_key::<
+    fn decrypt_works_different_recipient_key() {
+        _decrypt_works_different_recipient_key::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
             X25519KeyPair,
@@ -523,7 +523,7 @@ mod tests {
             MSG_ANONCRYPT_X25519_XC20P,
         );
 
-        _decrypt_works_different_recepient_key::<
+        _decrypt_works_different_recipient_key::<
             AesKey<A256CbcHs512>,
             EcdhEs<'_, X25519KeyPair>,
             X25519KeyPair,
@@ -534,7 +534,7 @@ mod tests {
             MSG_ANONCRYPT_X25519_A256CBC,
         );
 
-        _decrypt_works_different_recepient_key::<
+        _decrypt_works_different_recipient_key::<
             AesKey<A256Gcm>,
             EcdhEs<'_, X25519KeyPair>,
             X25519KeyPair,
@@ -545,7 +545,7 @@ mod tests {
             MSG_ANONCRYPT_X25519_A256GSM,
         );
 
-        _decrypt_works_different_recepient_key::<
+        _decrypt_works_different_recipient_key::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, P256KeyPair>,
             P256KeyPair,
@@ -556,7 +556,7 @@ mod tests {
             MSG_ANONCRYPT_P256_XC20P,
         );
 
-        _decrypt_works_different_recepient_key::<
+        _decrypt_works_different_recipient_key::<
             AesKey<A256CbcHs512>,
             EcdhEs<'_, P256KeyPair>,
             P256KeyPair,
@@ -567,7 +567,7 @@ mod tests {
             MSG_ANONCRYPT_P256_A256CBC,
         );
 
-        _decrypt_works_different_recepient_key::<
+        _decrypt_works_different_recipient_key::<
             AesKey<A256Gcm>,
             EcdhEs<'_, P256KeyPair>,
             P256KeyPair,
@@ -578,7 +578,7 @@ mod tests {
             MSG_ANONCRYPT_P256_A256GSM,
         );
 
-        _decrypt_works_different_recepient_key::<
+        _decrypt_works_different_recipient_key::<
             AesKey<A256CbcHs512>,
             Ecdh1PU<'_, X25519KeyPair>,
             X25519KeyPair,
@@ -589,7 +589,7 @@ mod tests {
             MSG_AUTHCRYPT_X25519_A256CBC,
         );
 
-        _decrypt_works_different_recepient_key::<
+        _decrypt_works_different_recipient_key::<
             AesKey<A256CbcHs512>,
             Ecdh1PU<'_, P256KeyPair>,
             P256KeyPair,
@@ -600,9 +600,9 @@ mod tests {
             MSG_AUTHCRYPT_P256_A256CBC,
         );
 
-        fn _decrypt_works_different_recepient_key<CE, KDF, KE, KW>(
+        fn _decrypt_works_different_recipient_key<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
-            recepient: (&str, &str),
+            recipient: (&str, &str),
             msg: &str,
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
@@ -610,7 +610,7 @@ mod tests {
             KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
             KW: KeyWrap + FromKeyDerivation,
         {
-            let res = _decrypt::<CE, KDF, KE, KW>(sender, recepient, msg);
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg);
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -714,7 +714,7 @@ mod tests {
 
         fn _decrypt_works_changed_enc_key<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
-            recepient: (&str, &str),
+            recipient: (&str, &str),
             msg: &str,
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
@@ -722,7 +722,7 @@ mod tests {
             KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
             KW: KeyWrap + FromKeyDerivation,
         {
-            let res = _decrypt::<CE, KDF, KE, KW>(sender, recepient, msg);
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg);
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -834,7 +834,7 @@ mod tests {
 
         fn decrypt_works_changed_second_enc_key<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
-            recepient: (&str, &str),
+            recipient: (&str, &str),
             msg: &str,
             payload: &str,
         ) where
@@ -843,7 +843,7 @@ mod tests {
             KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
             KW: KeyWrap + FromKeyDerivation,
         {
-            let res = _decrypt::<CE, KDF, KE, KW>(sender, recepient, msg);
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg);
             let res = res.expect("res is err");
             assert_eq!(&res, payload.as_bytes());
         }
@@ -941,7 +941,7 @@ mod tests {
 
         fn _decrypt_works_changed_ciphertext<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
-            recepient: (&str, &str),
+            recipient: (&str, &str),
             msg: &str,
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
@@ -949,7 +949,7 @@ mod tests {
             KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
             KW: KeyWrap + FromKeyDerivation,
         {
-            let res = _decrypt::<CE, KDF, KE, KW>(sender, recepient, msg);
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg);
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -963,7 +963,7 @@ mod tests {
 
     fn _decrypt<CE, KDF, KE, KW>(
         sender: Option<(&str, &str)>,
-        recepient: (&str, &str),
+        recipient: (&str, &str),
         msg: &str,
     ) -> Result<Vec<u8>, Error>
     where
@@ -975,15 +975,15 @@ mod tests {
         let _sender = sender.map(|(kid, k)| (kid, KE::from_jwk(k).expect("Unable from_jwk")));
         let sender = _sender.as_ref().map(|(kid, k)| (*kid, k));
 
-        let recepient = (
-            recepient.0,
-            &KE::from_jwk(recepient.1).expect("Unable from_jwk"),
+        let recipient = (
+            recipient.0,
+            &KE::from_jwk(recipient.1).expect("Unable from_jwk"),
         );
 
         let mut buf = vec![];
         let msg = jwe::parse(&msg, &mut buf).expect("Unable parse");
 
-        msg.decrypt::<CE, KDF, KE, KW>(sender, recepient)
+        msg.decrypt::<CE, KDF, KE, KW>(sender, recipient)
     }
 
     const PAYLOAD: &str = r#"{"id":"1234567890","typ":"application/didcomm-plain+json","type":"http://example.com/protocols/lets_do_lunch/1.0/proposal","from":"did:example:alice","to":["did:example:bob"],"created_time":1516269022,"expires_time":1516385931,"body":{"messagespecificattribute":"and its value"}}"#;

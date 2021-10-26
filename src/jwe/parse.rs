@@ -87,7 +87,7 @@ mod tests {
         error::ErrorKind,
         jwe::{
             self,
-            envelope::{EncAlgorithm, PerRecipientHeader, ProtectedHeader, Recepient, JWE},
+            envelope::{EncAlgorithm, PerRecipientHeader, ProtectedHeader, Recipient, JWE},
             ParsedJWE,
         },
     };
@@ -131,15 +131,15 @@ mod tests {
             jwe: JWE {
                 protected: "eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkpIanNtSVJaQWFCMHpSR193TlhMVjJyUGdnRjAwaGRIYlc1cmo4ZzBJMjQifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tZW5jcnlwdGVkK2pzb24iLCJlbmMiOiJYQzIwUCIsImFsZyI6IkVDREgtRVMrQTI1NktXIn0",
                 recipients: vec![
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-1" },
                         encrypted_key: "3n1olyBR3nY7ZGAprOx-b7wYAKza6cvOYjNwVg3miTnbLwPP_FmE1A",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-2" },
                         encrypted_key: "j5eSzn3kCrIkhQAWPnEwrFPMW6hG0zF_y37gUvvc5gvlzsuNX4hXrQ",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-3" },
                         encrypted_key: "TEWlqlq-ao7Lbynf0oZYhxs7ZB39SUWBCK4qjqQqfeItfwmNyDm73A",
                     },
@@ -208,15 +208,15 @@ mod tests {
             jwe: JWE {
                 protected: "eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkpIanNtSVJaQWFCMHpSR193TlhMVjJyUGdnRjAwaGRIYlc1cmo4ZzBJMjQifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tZW5jcnlwdGVkK2pzb24iLCJlbmMiOiJYQzIwUCIsImFsZyI6IkVDREgtRVMrQTI1NktXIn0",
                 recipients: vec![
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-1" },
                         encrypted_key: "3n1olyBR3nY7ZGAprOx-b7wYAKza6cvOYjNwVg3miTnbLwPP_FmE1A",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-2" },
                         encrypted_key: "j5eSzn3kCrIkhQAWPnEwrFPMW6hG0zF_y37gUvvc5gvlzsuNX4hXrQ",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-3" },
                         encrypted_key: "TEWlqlq-ao7Lbynf0oZYhxs7ZB39SUWBCK4qjqQqfeItfwmNyDm73A",
                     },
@@ -284,15 +284,15 @@ mod tests {
             jwe: JWE {
                 protected: "eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkpIanNtSVJaQWFCMHpSR193TlhMVjJyUGdnRjAwaGRIYlc1cmo4ZzBJMjQifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tZW5jcnlwdGVkK2pzb24iLCJlbmMiOiJYQzIwUCIsImFsZyI6IkVDREgtRVMrQTI1NktXIiwiZXh0cmEiOiJ2YWx1ZSJ9",
                 recipients: vec![
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-1" },
                         encrypted_key: "3n1olyBR3nY7ZGAprOx-b7wYAKza6cvOYjNwVg3miTnbLwPP_FmE1A",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-2" },
                         encrypted_key: "j5eSzn3kCrIkhQAWPnEwrFPMW6hG0zF_y37gUvvc5gvlzsuNX4hXrQ",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-3" },
                         encrypted_key: "TEWlqlq-ao7Lbynf0oZYhxs7ZB39SUWBCK4qjqQqfeItfwmNyDm73A",
                     },
@@ -360,15 +360,15 @@ mod tests {
             jwe: JWE {
                 protected: "eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkdGY01vcEpsamY0cExaZmNoNGFfR2hUTV9ZQWY2aU5JMWRXREd5VkNhdzAifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInNraWQiOiJkaWQ6ZXhhbXBsZTphbGljZSNrZXkteDI1NTE5LTEiLCJhcHUiOiJaR2xrT21WNFlXMXdiR1U2WVd4cFkyVWphMlY1TFhneU5UVXhPUzB4IiwidHlwIjoiYXBwbGljYXRpb24vZGlkY29tbS1lbmNyeXB0ZWQranNvbiIsImVuYyI6IkEyNTZDQkMtSFM1MTIiLCJhbGciOiJFQ0RILTFQVStBMjU2S1cifQ",
                 recipients: vec![
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-1" },
                         encrypted_key: "o0FJASHkQKhnFo_rTMHTI9qTm_m2mkJp-wv96mKyT5TP7QjBDuiQ0AMKaPI_RLLB7jpyE-Q80Mwos7CvwbMJDhIEBnk2qHVB",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-2" },
                         encrypted_key: "rYlafW0XkNd8kaXCqVbtGJ9GhwBC3lZ9AihHK4B6J6V2kT7vjbSYuIpr1IlAjvxYQOw08yqEJNIwrPpB0ouDzKqk98FVN7rK",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-3" },
                         encrypted_key: "aqfxMY2sV-njsVo-_9Ke9QbOf6hxhGrUVh_m-h_Aq530w3e_4IokChfKWG1tVJvXYv_AffY7vxj0k5aIfKZUxiNmBwC_QsNo",
                     },
@@ -437,15 +437,15 @@ mod tests {
             jwe: JWE {
                 protected: "eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkdGY01vcEpsamY0cExaZmNoNGFfR2hUTV9ZQWY2aU5JMWRXREd5VkNhdzAifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInNraWQiOiJkaWQ6ZXhhbXBsZTphbGljZSNrZXkteDI1NTE5LTEiLCJhcHUiOiJaR2xrT21WNFlXMXdiR1U2WVd4cFkyVWphMlY1TFhneU5UVXhPUzB4IiwidHlwIjoiYXBwbGljYXRpb24vZGlkY29tbS1lbmNyeXB0ZWQranNvbiIsImVuYyI6IkEyNTZDQkMtSFM1MTIiLCJhbGciOiJFQ0RILTFQVStBMjU2S1cifQ",
                 recipients: vec![
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-1" },
                         encrypted_key: "o0FJASHkQKhnFo_rTMHTI9qTm_m2mkJp-wv96mKyT5TP7QjBDuiQ0AMKaPI_RLLB7jpyE-Q80Mwos7CvwbMJDhIEBnk2qHVB",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-2" },
                         encrypted_key: "rYlafW0XkNd8kaXCqVbtGJ9GhwBC3lZ9AihHK4B6J6V2kT7vjbSYuIpr1IlAjvxYQOw08yqEJNIwrPpB0ouDzKqk98FVN7rK",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-3" },
                         encrypted_key: "aqfxMY2sV-njsVo-_9Ke9QbOf6hxhGrUVh_m-h_Aq530w3e_4IokChfKWG1tVJvXYv_AffY7vxj0k5aIfKZUxiNmBwC_QsNo",
                     },
@@ -513,15 +513,15 @@ mod tests {
             jwe: JWE {
                 protected: "eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkdGY01vcEpsamY0cExaZmNoNGFfR2hUTV9ZQWY2aU5JMWRXREd5VkNhdzAifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInNraWQiOiJkaWQ6ZXhhbXBsZTphbGljZSNrZXkteDI1NTE5LTEiLCJhcHUiOiJaR2xrT21WNFlXMXdiR1U2WVd4cFkyVWphMlY1TFhneU5UVXhPUzB4IiwidHlwIjoiYXBwbGljYXRpb24vZGlkY29tbS1lbmNyeXB0ZWQranNvbiIsImVuYyI6IkEyNTZDQkMtSFM1MTIiLCJhbGciOiJFQ0RILTFQVStBMjU2S1ciLCJleHRyYSI6InZhbHVlIn0=",
                 recipients: vec![
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-1" },
                         encrypted_key: "o0FJASHkQKhnFo_rTMHTI9qTm_m2mkJp-wv96mKyT5TP7QjBDuiQ0AMKaPI_RLLB7jpyE-Q80Mwos7CvwbMJDhIEBnk2qHVB",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-2" },
                         encrypted_key: "rYlafW0XkNd8kaXCqVbtGJ9GhwBC3lZ9AihHK4B6J6V2kT7vjbSYuIpr1IlAjvxYQOw08yqEJNIwrPpB0ouDzKqk98FVN7rK",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-3" },
                         encrypted_key: "aqfxMY2sV-njsVo-_9Ke9QbOf6hxhGrUVh_m-h_Aq530w3e_4IokChfKWG1tVJvXYv_AffY7vxj0k5aIfKZUxiNmBwC_QsNo",
                     },
@@ -938,15 +938,15 @@ mod tests {
             jwe: JWE {
                 protected: "eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkpIanNtSVJaQWFCMHpSR193TlhMVjJyUGdnRjAwaGRIYlc1cmo4ZzBJMjQifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tZW5jcnlwdGVkK2pzb24iLCJlbmMiOiJYQzIwUCIsImFsZyI6IkVDREgtRVMrQTI1NktXIn0",
                 recipients: vec![
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-1" },
                         encrypted_key: "3n1olyBR3nY7ZGAprOx-b7wYAKza6cvOYjNwVg3miTnbLwPP_FmE1A",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-2" },
                         encrypted_key: "j5eSzn3kCrIkhQAWPnEwrFPMW6hG0zF_y37gUvvc5gvlzsuNX4hXrQ",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-3" },
                         encrypted_key: "TEWlqlq-ao7Lbynf0oZYhxs7ZB39SUWBCK4qjqQqfeItfwmNyDm73A",
                     },
@@ -1017,15 +1017,15 @@ mod tests {
             jwe: JWE {
                 protected: "eyJlcGsiOnsia3R5IjoiT0tQIiwiY3J2IjoiWDI1NTE5IiwieCI6IkdGY01vcEpsamY0cExaZmNoNGFfR2hUTV9ZQWY2aU5JMWRXREd5VkNhdzAifSwiYXB2IjoiTmNzdUFuclJmUEs2OUEtcmtaMEw5WFdVRzRqTXZOQzNaZzc0QlB6NTNQQSIsInNraWQiOiJkaWQ6ZXhhbXBsZTphbGljZSNrZXkteDI1NTE5LTEiLCJhcHUiOiJaR2xrT21WNFlXMXdiR1U2WVd4cFkyVWphMlY1TFhneU5UVXhPUzB4IiwidHlwIjoiYXBwbGljYXRpb24vZGlkY29tbS1lbmNyeXB0ZWQranNvbiIsImVuYyI6IkEyNTZDQkMtSFM1MTIiLCJhbGciOiJFQ0RILTFQVStBMjU2S1cifQ",
                 recipients: vec![
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-1" },
                         encrypted_key: "o0FJASHkQKhnFo_rTMHTI9qTm_m2mkJp-wv96mKyT5TP7QjBDuiQ0AMKaPI_RLLB7jpyE-Q80Mwos7CvwbMJDhIEBnk2qHVB",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-2" },
                         encrypted_key: "rYlafW0XkNd8kaXCqVbtGJ9GhwBC3lZ9AihHK4B6J6V2kT7vjbSYuIpr1IlAjvxYQOw08yqEJNIwrPpB0ouDzKqk98FVN7rK",
                     },
-                    Recepient {
+                    Recipient {
                         header: PerRecipientHeader { kid: "did:example:bob#key-x25519-3" },
                         encrypted_key: "aqfxMY2sV-njsVo-_9Ke9QbOf6hxhGrUVh_m-h_Aq530w3e_4IokChfKWG1tVJvXYv_AffY7vxj0k5aIfKZUxiNmBwC_QsNo",
                     },

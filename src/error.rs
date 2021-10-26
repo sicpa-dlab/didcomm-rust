@@ -15,9 +15,6 @@ pub enum ErrorKind {
     #[error("Malformed")]
     Malformed,
 
-    #[error("Message doesn't meet trust requrements")]
-    UnsatisfiedConstraint,
-
     #[error("IO error")]
     IoError,
 
@@ -29,6 +26,9 @@ pub enum ErrorKind {
 
     #[error("Unsupported crypto or method")]
     Unsupported,
+
+    #[error("Illegal argument")]
+    IllegalArgument,
 }
 
 #[derive(Debug, thiserror::Error)]
