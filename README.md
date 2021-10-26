@@ -41,7 +41,7 @@ Use `cargo run --example {example-name}` for example `cargo run --example basic`
     - Algorithms: EdDSA (with crv=Ed25519), ES256, ES256K
 - DIDComm has been implemented under the following [Assumptions](https://hackmd.io/i3gLqgHQR2ihVFV5euyhqg)   
 
-### **Futures that will be supported in next versions**
+### **Features that will be supported in next versions**
 
 - *Base58 and Multibase (internally Base58 only) formats for secrets and verification methods.*
 - *Forward protocol.*
