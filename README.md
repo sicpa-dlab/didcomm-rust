@@ -15,6 +15,10 @@ To use `didcomm`, add this to your `Cargo.toml`:
 didcomm = "0.1"
 ```
 
+## Run examples
+
+Use `cargo run --example {example-name}` for example `cargo run --example basic`.
+
 ## Assumptions and Limitations
 - Rust 2018 edition is required.
 - In order to use the library, `SecretsResolver` and `DIDResolver` traits must be implemented on the application level. 
