@@ -26,7 +26,7 @@ impl AsKnownKeyPair for VerificationMethod {
                 match (jwk["kty"].as_str(), jwk["crv"].as_str()) {
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
                         P256KeyPair::from_jwk_value(jwk)
-                            .kind(ErrorKind::Malformed, "Unable parse jwk")
+                            .kind(ErrorKind::Malformed, "Unable parse jwk") //TODO test
                             .map(KnownKeyPair::P256)
                     }
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {

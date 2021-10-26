@@ -20,7 +20,7 @@ impl<'a, 'b> ParsedJWS<'a, 'b> {
         let protected = self
             .protected
             .get(i)
-            .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Invalid protected header index"))?;
+            .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Invalid protected header index"))?; //TODO test
 
         let sig_type = protected.alg.sig_type()?;
         let sign_input = format!("{}.{}", signature.protected, self.jws.payload);

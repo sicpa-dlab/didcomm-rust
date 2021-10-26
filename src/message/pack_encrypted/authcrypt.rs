@@ -37,8 +37,8 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
     let to_ddoc = did_resolver
         .resolve(to_did)
         .await
-        .context("Unable resolve recepient did")?
-        .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Recepient did not found"))?;
+        .context("Unable resolve recipient did")?
+        .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Recipient did not found"))?; //TODO test
 
     let (from_did, from_kid) = did_or_url(from);
 
@@ -46,7 +46,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         .resolve(from_did)
         .await
         .context("Unable resolve sender did")?
-        .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Sender did not found"))?;
+        .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Sender did not found"))?; //TODO test
 
     // Initial list of sender keys is all key_agreements of sender did doc
     // or filtered to keep only provided key
@@ -60,7 +60,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
     if from_kids.is_empty() {
         Err(err_msg(
             ErrorKind::DIDUrlNotFound,
-            "No sender key agreements found",
+            "No sender key agreements found", //TODO test
         ))?
     }
 
@@ -68,7 +68,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
     let from_kids = secrets_resolver
         .find_secrets(&from_kids)
         .await
-        .context("Unable find secrets")?;
+        .context("Unable find secrets")?; //TODO test
 
     if from_kids.is_empty() {
         Err(err_msg(
@@ -90,7 +90,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     err_msg(
                         ErrorKind::Malformed,
                         format!(
-                            "No verification material found for sender key agreement {}",
+                            "No verification material found for sender key agreement {}", //TODO test
                             kid
                         ),
                     )
@@ -110,7 +110,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
     if to_kids.is_empty() {
         Err(err_msg(
             ErrorKind::DIDUrlNotFound,
-            "No recepient key agreements found",
+            "No recipient key agreements found", //TODO test
         ))?
     }
 
@@ -127,7 +127,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     err_msg(
                         ErrorKind::Malformed,
                         format!(
-                            "No verification material found for recepient key agreement {}",
+                            "No verification material found for recipient key agreement {}", //TODO test
                             kid
                         ),
                     )
@@ -150,7 +150,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         .ok_or_else(|| {
             err_msg(
                 ErrorKind::NoCompatibleCrypto,
-                "No common keys between sender and recepient found",
+                "No common keys between sender and recipient found", //TODO test
             )
         })?;
 
@@ -159,7 +159,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         .get_secret(&from_key.id)
         .await
         .context("Unable resolve sender secret")?
-        .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Sender secret not found"))?;
+        .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Sender secret not found"))?; //TODO test
 
     let key_alg = from_key.key_alg();
 
@@ -194,7 +194,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     Some((&from_key.id, &from_priv_key.as_x25519()?)),
                     &to_keys,
                 )
-                .context("Unable produce authcrypt envelope")?,
+                .context("Unable produce authcrypt envelope")?, //TODO test
             };
 
             if protect_sender {
@@ -318,7 +318,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         }
         _ => Err(err_msg(
             ErrorKind::Unsupported,
-            "Unsupported recepient key agreement method",
+            "Unsupported recipient key agreement method", //TODO test
         ))?,
     };
 
