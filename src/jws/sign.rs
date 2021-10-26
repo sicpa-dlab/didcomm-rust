@@ -2,7 +2,7 @@ use askar_crypto::sign::KeySign;
 
 use crate::{
     error::{ErrorKind, Result, ResultExt},
-    jws::envelope::{Algorithm, Header, ProtectedHeader, Signature, JWS},
+    jws::envelope::{Algorithm, Header, ProtectedHeader, CompactHeader, Signature, JWS},
 };
 
 pub(crate) fn sign<Key: KeySign>(
@@ -55,6 +55,49 @@ pub(crate) fn sign<Key: KeySign>(
     let jws = serde_json::to_string(&jws).kind(ErrorKind::InvalidState, "Unable serialize jws")?;
 
     Ok(jws)
+}
+
+pub(crate) fn sign_compact<Key: KeySign>(
+    payload: &[u8],
+    signer: (&str, &Key),
+    typ: &str,
+    alg: Algorithm,
+) -> Result<String> {
+    let (kid, key) = signer;
+
+    let sig_type = alg.sig_type()?;
+
+    let header = {
+        let header = CompactHeader {
+            typ,
+            alg,
+            kid,
+        };
+
+        let header = serde_json::to_string(&header)
+            .kind(ErrorKind::InvalidState, "Unable serialize header")?;
+
+        base64::encode_config(header, base64::URL_SAFE_NO_PAD)
+    };
+
+    let payload = base64::encode_config(payload, base64::URL_SAFE_NO_PAD);
+
+    let signature = {
+        // JWS Signing Input
+        // The input to the digital signature or MAC computation.  Its value
+        // is ASCII(BASE64URL(UTF8(JWS Protected Header)) || '.' || BASE64URL(JWS Payload)).
+        let sign_input = format!("{}.{}", header, payload);
+
+        let signature = key
+            .create_signature(sign_input.as_bytes(), Some(sig_type))
+            .kind(ErrorKind::InvalidState, "Unable create signature")?;
+
+        base64::encode_config(&signature, base64::URL_SAFE_NO_PAD)
+    };
+
+    let compact_jws = format!("{}.{}.{}", header, payload, signature);
+
+    Ok(compact_jws)
 }
 
 #[cfg(test)]

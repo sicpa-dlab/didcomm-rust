@@ -24,7 +24,7 @@ pub(crate) use sign::sign;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use parse::{parse, ParsedJWS};
+pub(crate) use parse::{parse, ParsedJWS, ParsedCompactJWS};
 
 #[cfg(test)]
 mod tests {
