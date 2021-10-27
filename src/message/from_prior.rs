@@ -1,4 +1,6 @@
-#[derive(Debug, PartialEq, Eq, Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct FromPrior {
     pub iss: String,
     pub sub: String,
@@ -7,6 +9,12 @@ pub struct FromPrior {
     pub nbf: Option<u64>,
     pub iat: Option<u64>,
     pub jti: Option<String>,
+}
+
+impl FromPrior {
+    pub fn build(iss: String, sub: String) -> FromPriorBuilder {
+        FromPriorBuilder::new(iss, sub)
+    }
 }
 
 pub struct FromPriorBuilder {

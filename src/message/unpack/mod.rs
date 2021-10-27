@@ -1,6 +1,7 @@
 mod anoncrypt;
 mod authcrypt;
 mod sign;
+mod from_prior;
 
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
@@ -181,6 +182,8 @@ mod test {
         },
         PackEncryptedOptions,
     };
+    use crate::message::pack_plaintext::PackPlaintextOptions;
+    use crate::message::pack_signed::PackSignedOptions;
 
     #[tokio::test]
     async fn unpack_works_plaintext() {
@@ -250,7 +253,16 @@ mod test {
         _unpack_works_plaintext_2way(&MESSAGE_ATTACHMENT_MULTI_2).await;
 
         async fn _unpack_works_plaintext_2way(msg: &Message) {
-            let packed = msg.pack_plaintext().expect("Unable pack_plaintext");
+            let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
+            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let (packed, metadata) = msg.pack_plaintext(
+                &did_resolver,
+                &secrets_resolver,
+                &PackPlaintextOptions::default(),
+            )
+            .await
+            .expect("Unable pack_plaintext");
 
             _verify_unpack(
                 &packed,
@@ -372,7 +384,12 @@ mod test {
             let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
 
             let (msg, _) = message
-                .pack_signed(sign_by, &did_resolver, &secrets_resolver)
+                .pack_signed(
+                    sign_by,
+                    &did_resolver,
+                    &secrets_resolver,
+                    &PackSignedOptions::default(),
+                )
                 .await
                 .expect("Unable pack_signed");
 

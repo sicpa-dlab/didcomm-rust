@@ -1,13 +1,13 @@
 use crate::{
     did::DIDResolver,
-    error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
+    error::{err_msg, ErrorKind, Result, ResultContext},
     jws::{self, Algorithm},
     secrets::SecretsResolver,
     utils::{
         crypto::{AsKnownKeyPair, KnownKeyPair},
         did::did_or_url,
     },
-    Message,
+    Message, PackPlaintextOptions,
 };
 
 impl Message {
@@ -45,6 +45,7 @@ impl Message {
         sign_by: &str,
         did_resolver: &'dr (dyn DIDResolver + 'dr),
         secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+        options: &PackSignedOptions,
     ) -> Result<(String, PackSignedMetadata)> {
         let (did, key_id) = did_or_url(sign_by);
 
@@ -88,8 +89,15 @@ impl Message {
             .as_key_pair()
             .context("Unable instantiate sign key")?;
 
-        let payload = serde_json::to_string(self)
-            .kind(ErrorKind::InvalidState, "Unable serialize message")?;
+        let (payload, pack_plaintext_metadata) = self
+            .pack_plaintext(
+                did_resolver,
+                secrets_resolver,
+                &PackPlaintextOptions {
+                    from_prior_issuer_kid: options.from_prior_issuer_kid.clone(),
+                },
+            )
+            .await?;
 
         let msg = match sign_key {
             KnownKeyPair::Ed25519(ref key) => {
@@ -107,9 +115,25 @@ impl Message {
 
         let metadata = PackSignedMetadata {
             sign_by_kid: key_id.to_owned(),
+            from_prior_issuer_kid: pack_plaintext_metadata.from_prior_issuer_kid,
         };
 
         Ok((msg, metadata))
+    }
+}
+
+/// Allow fine configuration of packing process.
+#[derive(Debug, PartialEq, Eq)]
+pub struct PackSignedOptions {
+    // Identifier (DID URL) of from_prior issuer key
+    pub from_prior_issuer_kid: Option<String>,
+}
+
+impl Default for PackSignedOptions {
+    fn default() -> Self {
+        PackSignedOptions {
+            from_prior_issuer_kid: None,
+        }
     }
 }
 
@@ -118,6 +142,9 @@ impl Message {
 pub struct PackSignedMetadata {
     /// Identifier (DID URL) of sign key.
     pub sign_by_kid: String,
+
+    // Identifier (DID URL) of from_prior issuer key.
+    pub from_prior_issuer_kid: Option<String>,
 }
 
 #[cfg(test)]
@@ -128,6 +155,7 @@ mod tests {
     };
     use serde_json::Value;
 
+    use crate::message::pack_signed::PackSignedOptions;
     use crate::{
         did::{resolvers::ExampleDIDResolver, DIDResolver, VerificationMaterial},
         jwk::FromJwkValue,
@@ -204,14 +232,20 @@ mod tests {
             verification_material: &VerificationMaterial,
         ) {
             let (msg, metadata) = message
-                .pack_signed(sign_by, did_resolver, secrets_resolver)
+                .pack_signed(
+                    sign_by,
+                    did_resolver,
+                    secrets_resolver,
+                    &PackSignedOptions::default(),
+                )
                 .await
                 .expect("Unable pack_signed");
 
             assert_eq!(
                 metadata,
                 PackSignedMetadata {
-                    sign_by_kid: sign_by_kid.into()
+                    sign_by_kid: sign_by_kid.into(),
+                    from_prior_issuer_kid: None,
                 }
             );
 

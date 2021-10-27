@@ -8,7 +8,7 @@ use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext},
     secrets::SecretsResolver,
-    Message, PackSignedMetadata,
+    Message, PackPlaintextMetadata, PackPlaintextOptions, PackSignedMetadata, PackSignedOptions,
 };
 
 use self::{anoncrypt::anoncrypt, authcrypt::authcrypt};
@@ -87,16 +87,43 @@ impl Message {
         // TODO: Think how to avoid resolving of did multiple times
         // and perform async operations in parallel
 
-        let (msg, sign_by_kid) = if let Some(sign_by) = sign_by {
-            let (msg, PackSignedMetadata { sign_by_kid }) = self
-                .pack_signed(sign_by, did_resolver, secrets_resolver)
+        let (msg, sign_by_kid, from_prior_issuer_kid) = if let Some(sign_by) = sign_by {
+            let (
+                msg,
+                PackSignedMetadata {
+                    sign_by_kid,
+                    from_prior_issuer_kid,
+                },
+            ) = self
+                .pack_signed(
+                    sign_by,
+                    did_resolver,
+                    secrets_resolver,
+                    &PackSignedOptions {
+                        from_prior_issuer_kid: options.from_prior_issuer_kid.clone(),
+                    },
+                )
                 .await
                 .context("Unable produce sign envelope")?;
 
-            (msg, Some(sign_by_kid))
+            (msg, Some(sign_by_kid), from_prior_issuer_kid)
         } else {
-            let msg = self.pack_plaintext().context("Unable produce plaintext")?;
-            (msg, None)
+            let (
+                msg,
+                PackPlaintextMetadata {
+                    from_prior_issuer_kid,
+                },
+            ) = self
+                .pack_plaintext(
+                    did_resolver,
+                    secrets_resolver,
+                    &PackPlaintextOptions {
+                        from_prior_issuer_kid: options.from_prior_issuer_kid.clone(),
+                    },
+                )
+                .await
+                .context("Unable produce plaintext")?;
+            (msg, None, from_prior_issuer_kid)
         };
 
         let (msg, from_kid, to_kids) = if let Some(from) = from {
@@ -125,6 +152,7 @@ impl Message {
             from_kid,
             sign_by_kid,
             to_kids,
+            from_prior_issuer_kid,
         };
 
         Ok((msg, metadata))
@@ -156,6 +184,9 @@ pub struct PackEncryptedOptions {
 
     /// Algorithm used for anonymous encryption
     pub enc_alg_anon: AnonCryptAlg,
+
+    // Identifier (DID URL) of from_prior issuer key
+    pub from_prior_issuer_kid: Option<String>,
 }
 
 impl Default for PackEncryptedOptions {
@@ -167,6 +198,7 @@ impl Default for PackEncryptedOptions {
             messaging_service: None,
             enc_alg_auth: AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
             enc_alg_anon: AnonCryptAlg::Xc20pEcdhEsA256kw,
+            from_prior_issuer_kid: None,
         }
     }
 }
@@ -187,6 +219,9 @@ pub struct PackEncryptedMetadata {
 
     /// Identifiers (DID URLs) of recipient keys used for message encryption.
     pub to_kids: Vec<String>,
+
+    // Identifier (DID URL) of from_prior issuer key.
+    pub from_prior_issuer_kid: Option<String>,
 }
 
 /// Information about messaging service used for message preparation.
@@ -391,6 +426,7 @@ mod tests {
                     from_kid: Some(from_key.id.clone()),
                     sign_by_kid: None,
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
+                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -711,6 +747,7 @@ mod tests {
                     from_kid: Some(from_key.id.clone()),
                     sign_by_kid: None,
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
+                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -862,6 +899,7 @@ mod tests {
                     from_kid: Some(from_key.id.clone()),
                     sign_by_kid: Some(sign_by_key.id.clone()),
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
+                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -992,6 +1030,7 @@ mod tests {
                     from_kid: Some(from_key.id.clone()),
                     sign_by_kid: Some(sign_by_key.id.clone()),
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
+                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -1249,6 +1288,7 @@ mod tests {
                     from_kid: None,
                     sign_by_kid: None,
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
+                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -1416,6 +1456,7 @@ mod tests {
                     from_kid: None,
                     sign_by_kid: Some(sign_by_key.id.clone()),
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
+                    from_prior_issuer_kid: None,
                 }
             );
 
