@@ -46,8 +46,8 @@ pub struct Message {
 
     /// Custom message headers.
     #[serde(flatten)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub extra_headers: Option<HashMap<String, Value>>,
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    pub extra_headers: HashMap<String, Value>,
 
     /// The attribute is used for the sender
     /// to express when they created the message, expressed in
@@ -82,7 +82,7 @@ pub struct MessageBuilder {
     to: Option<Vec<String>>,
     thid: Option<String>,
     pthid: Option<String>,
-    extra_headers: Option<HashMap<String, Value>>,
+    extra_headers: HashMap<String, Value>,
     created_time: Option<u64>,
     expires_time: Option<u64>,
     attachments: Option<Vec<Attachment>>,
@@ -98,7 +98,7 @@ impl MessageBuilder {
             to: None,
             thid: None,
             pthid: None,
-            extra_headers: None,
+            extra_headers: HashMap::new(),
             created_time: None,
             expires_time: None,
             attachments: None,
@@ -142,18 +142,8 @@ impl MessageBuilder {
     }
 
     pub fn header(mut self, key: String, value: Value) -> Self {
-        if let Some(ref mut extra_headers) = self.extra_headers {
-            extra_headers.insert(key, value);
-            self
-        } else {
-            self.extra_headers = Some({
-                let mut map = HashMap::new();
-                map.insert(key, value);
-                map
-            });
-
-            self
-        }
+        self.extra_headers.insert(key, value);
+        self
     }
 
     pub fn created_time(mut self, created_time: u64) -> Self {
@@ -261,7 +251,7 @@ mod tests {
             ])
         );
 
-        let extra_headers = message.extra_headers.expect("extra headers is some.");
+        let extra_headers = message.extra_headers;
         assert_eq!(extra_headers.len(), 2);
 
         assert!(extra_headers.contains_key(&"example-header-1".to_owned()));
