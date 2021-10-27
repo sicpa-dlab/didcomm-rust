@@ -12,7 +12,7 @@ To use `didcomm`, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-didcomm = "0.1"
+didcomm = "0.2"
 ```
 
 ## Run examples
