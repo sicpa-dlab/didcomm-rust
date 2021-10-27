@@ -1,3 +1,4 @@
+use crate::utils::did::is_did;
 use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
@@ -46,6 +47,16 @@ impl Message {
         did_resolver: &'dr (dyn DIDResolver + 'dr),
         secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
     ) -> Result<(String, PackSignedMetadata)> {
+        if !is_did(sign_by) {
+            err_msg(
+                ErrorKind::InvalidState,
+                format!(
+                    "`sign_from` value is not a valid DID of DID URL: {}",
+                    sign_by
+                ),
+            );
+        }
+
         let (did, key_id) = did_or_url(sign_by);
 
         let did_doc = did_resolver
