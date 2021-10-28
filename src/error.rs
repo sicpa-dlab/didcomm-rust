@@ -26,6 +26,9 @@ pub enum ErrorKind {
 
     #[error("Unsupported crypto or method")]
     Unsupported,
+
+    #[error("Illegal argument")]
+    IllegalArgument
 }
 
 #[derive(Debug, thiserror::Error)]

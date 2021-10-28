@@ -135,14 +135,14 @@ impl Message {
     fn validate(&self, to: &str, from: Option<&str>, sign_by: Option<&str>) {
         if !is_did(to) {
             err_msg(
-                ErrorKind::InvalidState,
+                ErrorKind::IllegalArgument,
                 format!("`to` value is not a valid DID of DID URL: {}", to),
             );
         }
 
         if from.is_some() && !is_did(from.unwrap()) {
             err_msg(
-                ErrorKind::InvalidState,
+                ErrorKind::IllegalArgument,
                 format!(
                     "`from` value is not a valid DID of DID URL: {}",
                     from.unwrap()
@@ -152,7 +152,7 @@ impl Message {
 
         if sign_by.is_some() && !is_did(sign_by.unwrap()) {
             err_msg(
-                ErrorKind::InvalidState,
+                ErrorKind::IllegalArgument,
                 format!(
                     "`sign_from` value is not a valid DID of DID URL: {}",
                     sign_by.unwrap()
@@ -164,7 +164,7 @@ impl Message {
 
         if self.to.is_some() && !self.to.as_ref().unwrap().contains(&to_did.into()) {
             err_msg(
-                ErrorKind::InvalidState,
+                ErrorKind::IllegalArgument,
                 format!(
                     "`message.to` value {:?} does not contain `to` value's DID {}",
                     self.to.as_ref().unwrap(),
@@ -176,7 +176,7 @@ impl Message {
         let (from_did, _) = did_or_url(to);
         if from.is_some() && self.from.is_some() && from_did != self.from.as_ref().unwrap() {
             err_msg(
-                ErrorKind::InvalidState,
+                ErrorKind::IllegalArgument,
                 format!(
                     "`message.from` value {} is not equal to `from` value's DID {}",
                     self.from.as_ref().unwrap(),

@@ -49,7 +49,7 @@ impl Message {
     ) -> Result<(String, PackSignedMetadata)> {
         if !is_did(sign_by) {
             err_msg(
-                ErrorKind::InvalidState,
+                ErrorKind::IllegalArgument,
                 format!(
                     "`sign_from` value is not a valid DID of DID URL: {}",
                     sign_by
