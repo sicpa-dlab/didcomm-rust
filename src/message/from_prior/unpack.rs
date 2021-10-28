@@ -17,7 +17,7 @@ impl FromPrior {
         let parsed = jws::parse_compact(from_prior_jwt, &mut buf)?;
 
         let typ = parsed.parsed_header.typ;
-        let alg = &parsed.parsed_header.alg;
+        let alg = parsed.parsed_header.alg.clone();
         let kid = parsed.parsed_header.kid;
 
         if typ != "JWT" {
