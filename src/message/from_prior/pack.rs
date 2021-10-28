@@ -1,17 +1,18 @@
+use crate::message::from_prior::JWT_TYP;
 use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
     jws::{self, Algorithm},
-    message::from_prior::FromPrior,
     secrets::SecretsResolver,
     utils::{
         crypto::{AsKnownKeyPair, KnownKeyPair},
         did::did_or_url,
     },
+    FromPrior,
 };
 
 impl FromPrior {
-    pub async fn pack_from_prior<'dr, 'sr>(
+    pub async fn pack<'dr, 'sr>(
         &self,
         issuer_kid: Option<&str>,
         did_resolver: &'dr (dyn DIDResolver + 'dr),
@@ -89,15 +90,24 @@ impl FromPrior {
             .context("Unable to instantiate from_prior issuer key")?;
 
         let from_prior_jwt = match sign_key {
-            KnownKeyPair::Ed25519(ref key) => {
-                jws::sign(from_prior_str.as_bytes(), (kid, key), Algorithm::EdDSA)
-            }
-            KnownKeyPair::P256(ref key) => {
-                jws::sign(from_prior_str.as_bytes(), (kid, key), Algorithm::Es256)
-            }
-            KnownKeyPair::K256(ref key) => {
-                jws::sign(from_prior_str.as_bytes(), (kid, key), Algorithm::Es256K)
-            }
+            KnownKeyPair::Ed25519(ref key) => jws::sign_compact(
+                from_prior_str.as_bytes(),
+                (kid, key),
+                JWT_TYP,
+                Algorithm::EdDSA,
+            ),
+            KnownKeyPair::P256(ref key) => jws::sign_compact(
+                from_prior_str.as_bytes(),
+                (kid, key),
+                JWT_TYP,
+                Algorithm::Es256,
+            ),
+            KnownKeyPair::K256(ref key) => jws::sign_compact(
+                from_prior_str.as_bytes(),
+                (kid, key),
+                JWT_TYP,
+                Algorithm::Es256K,
+            ),
             _ => Err(err_msg(ErrorKind::Unsupported, "Unsupported signature alg"))?,
         }
         .context("Unable to produce signature")?;

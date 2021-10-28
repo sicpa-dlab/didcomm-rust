@@ -1,12 +1,12 @@
 mod anoncrypt;
 mod authcrypt;
 mod sign;
-mod from_prior;
+mod plaintext;
 
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
-    error::{err_msg, ErrorKind, Result, ResultExt},
+    error::{err_msg, ErrorKind, Result},
     secrets::SecretsResolver,
     Message,
 };
@@ -14,6 +14,7 @@ use crate::{
 use anoncrypt::_try_unpack_anoncrypt;
 use authcrypt::_try_unpack_authcrypt;
 use sign::_try_unapck_sign;
+use crate::message::unpack::plaintext::unpack_plaintext;
 
 impl Message {
     /// Unpacks the packed message by doing decryption and verifying the signatures.
@@ -67,10 +68,12 @@ impl Message {
             encrypted_from_kid: None,
             encrypted_to_kids: None,
             sign_from: None,
+            from_prior_issuer_kid: None,
             enc_alg_auth: None,
             enc_alg_anon: None,
             sign_alg: None,
             signed_message: None,
+            from_prior_jwt: None,
         };
 
         let anoncryted =
@@ -88,8 +91,7 @@ impl Message {
 
         let msg = signed.as_deref().unwrap_or(msg);
 
-        let msg: Self =
-            serde_json::from_str(msg).kind(ErrorKind::Malformed, "Unable deserialize jwm")?;
+        let msg: Self = unpack_plaintext(msg, did_resolver, &mut metadata).await?;
 
         Ok((msg, metadata))
     }
@@ -144,6 +146,9 @@ pub struct UnpackMetadata {
     /// Key ID used for signature if the plaintext has been signed
     pub sign_from: Option<String>,
 
+    /// Key ID used for from_prior header signature if from_prior header is present
+    pub from_prior_issuer_kid: Option<String>,
+
     /// Algorithm used for authenticated encryption
     pub enc_alg_auth: Option<AuthCryptAlg>,
 
@@ -155,6 +160,10 @@ pub struct UnpackMetadata {
 
     /// If the plaintext has been signed, the JWS is returned for non-repudiation purposes
     pub signed_message: Option<String>,
+
+    /// If plaintext contains from_prior header, the JWT (compactly serialized JWS with claim set)
+    /// containing from_prior is returned for non-repudiation purposes
+    pub from_prior_jwt: Option<String>,
 }
 
 #[cfg(test)]
@@ -199,6 +208,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior_jwt: None,
             re_wrapped_in_forward: false,
         };
 
@@ -256,7 +267,7 @@ mod test {
             let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
             let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
 
-            let (packed, metadata) = msg.pack_plaintext(
+            let (packed, _metadata) = msg.pack_plaintext(
                 &did_resolver,
                 &secrets_resolver,
                 &PackPlaintextOptions::default(),
@@ -279,6 +290,8 @@ mod test {
                     encrypted_to_kids: None,
                     sign_from: None,
                     signed_message: None,
+                    from_prior_issuer_kid: None,
+                    from_prior_jwt: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -300,6 +313,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior_jwt: None,
             re_wrapped_in_forward: false,
         };
 
@@ -408,6 +423,8 @@ mod test {
                     enc_alg_anon: None,
                     encrypted_from_kid: None,
                     encrypted_to_kids: None,
+                    from_prior_issuer_kid: None,
+                    from_prior_jwt: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -429,6 +446,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior_jwt: None,
             re_wrapped_in_forward: false,
         };
 
@@ -629,6 +648,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg),
                     encrypted_from_kid: None,
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior_jwt: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -761,6 +782,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg),
                     encrypted_from_kid: None,
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior_jwt: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -782,6 +805,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior_jwt: None,
             re_wrapped_in_forward: false,
         };
 
@@ -947,6 +972,8 @@ mod test {
                     enc_alg_anon: None,
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior_jwt: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1122,6 +1149,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg_anon),
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior_jwt: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1232,6 +1261,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg_anon),
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior_jwt: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1346,6 +1377,8 @@ mod test {
                     enc_alg_anon: None,
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior_jwt: None,
                     re_wrapped_in_forward: false,
                 },
             )

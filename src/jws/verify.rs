@@ -37,7 +37,7 @@ impl<'a, 'b> ParsedJWS<'a, 'b> {
 }
 
 impl<'a> ParsedCompactJWS<'a> {
-    pub(crate) fn verify_compact<Key: KeySigVerify>(&self, key: &Key) -> Result<bool> {
+    pub(crate) fn verify<Key: KeySigVerify>(&self, key: &Key) -> Result<bool> {
         let sig_type = self.parsed_header.alg.sig_type()?;
         let sign_input = format!("{}.{}", self.header, self.payload);
 

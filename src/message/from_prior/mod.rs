@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+mod pack;
+mod unpack;
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct FromPrior {
     pub iss: String,
@@ -10,6 +13,8 @@ pub struct FromPrior {
     pub iat: Option<u64>,
     pub jti: Option<String>,
 }
+
+const JWT_TYP: &str = "JWT";
 
 impl FromPrior {
     pub fn build(iss: String, sub: String) -> FromPriorBuilder {

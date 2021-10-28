@@ -4,7 +4,6 @@ mod message;
 mod pack_encrypted;
 mod pack_plaintext;
 mod pack_signed;
-mod pack_from_prior;
 mod unpack;
 
 pub use attachment::{
@@ -15,7 +14,7 @@ pub use attachment::{
 pub use from_prior::FromPrior;
 
 pub use message::{Message, MessageBuilder};
-pub use pack_plaintext::{PackPlaintextOptions, PackPlaintextMetadata};
-pub use pack_signed::{PackSignedOptions, PackSignedMetadata};
-pub use pack_encrypted::{PackEncryptedOptions, PackEncryptedMetadata};
+pub use pack_plaintext::{PackPlaintextMetadata, PackPlaintextOptions};
+pub use pack_signed::{PackSignedMetadata, PackSignedOptions};
+pub use pack_encrypted::{PackEncryptedMetadata, PackEncryptedOptions};
 pub use unpack::{UnpackMetadata, UnpackOptions};

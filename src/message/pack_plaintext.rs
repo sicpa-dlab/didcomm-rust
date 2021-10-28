@@ -27,31 +27,31 @@ impl Message {
         secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
         options: &PackPlaintextOptions,
     ) -> Result<(String, PackPlaintextMetadata)> {
-        let (message, from_prior_issuer_kid) = match &self.from_prior {
-            Some(value) => {
-                let (from_prior_jwt, from_prior_issuer_kid) = value
-                    .pack_from_prior(options.from_prior_issuer_kid.as_deref(),
-                                     did_resolver,
-                                     secrets_resolver)
+        let (msg, from_prior_issuer_kid) = match &self.from_prior {
+            Some(from_prior) => {
+                let (from_prior_jwt, from_prior_issuer_kid) = from_prior
+                    .pack(options.from_prior_issuer_kid.as_deref(),
+                          did_resolver,
+                          secrets_resolver)
                     .await?;
-                let cloned_message = self.clone();
-                let message = Message {
+                let cloned_msg = self.clone();
+                let msg = Message {
                     from_prior: None,
                     from_prior_jwt: Some(from_prior_jwt),
-                    ..cloned_message
+                    ..cloned_msg
                 };
-                (message, Some(from_prior_issuer_kid))
+                (msg, Some(from_prior_issuer_kid))
             }
             None => (self.clone(), None)
         };
 
-        let packed_message =
-            serde_json::to_string(&message)
+        let msg =
+            serde_json::to_string(&msg)
                 .kind(ErrorKind::InvalidState, "Unable to serialize message")?;
 
         let metadata = PackPlaintextMetadata { from_prior_issuer_kid };
 
-        Ok((packed_message, metadata))
+        Ok((msg, metadata))
     }
 }
 
@@ -81,17 +81,14 @@ pub struct PackPlaintextMetadata {
 mod tests {
     use serde_json::Value;
 
-    use crate::{
-        test_vectors::{
-            ALICE_DID_DOC, ALICE_SECRETS,
-            MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS,
-            MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_MINIMAL,
-            MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
-            PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
-            PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
-        },
-        Message,
-    };
+    use crate::{test_vectors::{
+        ALICE_DID_DOC, ALICE_SECRETS,
+        MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS,
+        MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_MINIMAL,
+        MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
+        PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
+        PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
+    }, Message, PackPlaintextMetadata};
     use crate::did::resolvers::ExampleDIDResolver;
     use crate::message::pack_plaintext::PackPlaintextOptions;
     use crate::secrets::resolvers::ExampleSecretsResolver;
@@ -135,7 +132,12 @@ mod tests {
 
             let msg: Value = serde_json::from_str(&msg).expect("Unable from_str");
             let exp_msg: Value = serde_json::from_str(exp_msg).expect("Unable from_str");
-            assert_eq!(msg, exp_msg)
+            assert_eq!(msg, exp_msg);
+
+            let expected_metadata = PackPlaintextMetadata {
+                from_prior_issuer_kid: None
+            };
+            assert_eq!(metadata, expected_metadata);
         }
     }
 }
