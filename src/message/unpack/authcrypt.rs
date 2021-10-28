@@ -44,7 +44,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     let from_kid = std::str::from_utf8(
         msg.apu
             .as_deref()
-            .ok_or_else(|| err_msg(ErrorKind::Malformed, "No apu presend for authcryot"))?,
+            .ok_or_else(|| err_msg(ErrorKind::Malformed, "No apu presented for authcrypt"))?,
     )
     .kind(ErrorKind::Malformed, "apu is invalid utf8")?;
 
@@ -142,11 +142,11 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
 
                 msg.decrypt::<
-                        AesKey<A256CbcHs512>,
-                        Ecdh1PU<'_, X25519KeyPair>,
-                        X25519KeyPair,
-                        AesKey<A256Kw>,
-                    >(Some((from_kid, from_key)), (to_kid, to_key))?
+                    AesKey<A256CbcHs512>,
+                    Ecdh1PU<'_, X25519KeyPair>,
+                    X25519KeyPair,
+                    AesKey<A256Kw>,
+                >(Some((from_kid, from_key)), (to_kid, to_key))?
             }
             (
                 KnownKeyPair::P256(ref from_key),
@@ -156,11 +156,11 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
 
                 msg.decrypt::<
-                        AesKey<A256CbcHs512>,
-                        Ecdh1PU<'_, P256KeyPair>,
-                        P256KeyPair,
-                        AesKey<A256Kw>,
-                    >(Some((from_kid, from_key)), (to_kid, to_key))?
+                    AesKey<A256CbcHs512>,
+                    Ecdh1PU<'_, P256KeyPair>,
+                    P256KeyPair,
+                    AesKey<A256Kw>,
+                >(Some((from_kid, from_key)), (to_kid, to_key))?
             }
             (KnownKeyPair::X25519(_), KnownKeyPair::P256(_), _) => Err(err_msg(
                 ErrorKind::Malformed,
