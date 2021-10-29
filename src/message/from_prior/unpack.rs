@@ -95,7 +95,13 @@ impl FromPrior {
             Err(err_msg(ErrorKind::Malformed, "Wrong from_prior signature"))?
         }
 
-        let from_prior: FromPrior = serde_json::from_str(parsed.payload)
+        let payload = base64::decode_config(parsed.payload, base64::URL_SAFE_NO_PAD)
+            .kind(ErrorKind::Malformed, "from_prior payload is not a valid base64")?;
+
+        let payload = String::from_utf8(payload)
+            .kind(ErrorKind::Malformed, "Decoded from_prior payload is not a valid UTF-8")?;
+
+        let from_prior: FromPrior = serde_json::from_str(&payload)
             .kind(ErrorKind::Malformed, "Unable to parse from_prior")?;
 
         Ok((from_prior, kid.into()))

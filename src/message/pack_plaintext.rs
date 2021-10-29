@@ -82,13 +82,16 @@ mod tests {
     use serde_json::Value;
 
     use crate::{test_vectors::{
-        ALICE_DID_DOC, ALICE_SECRETS,
+        ALICE_DID_DOC, BOB_DID_DOC, CHARLIE_DID_DOC,
+        ALICE_SECRETS, BOB_SECRETS, CHARLIE_ROTATED_TO_ALICE_SECRETS,
+        CHARLIE_SECRET_AUTH_KEY_ED25519,
         MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS,
         MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_MINIMAL,
+        MESSAGE_FROM_PRIOR, MESSAGE_FROM_PRIOR_MINIMAL,
         MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
         PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
         PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
-    }, Message, PackPlaintextMetadata};
+    }, Message, PackPlaintextMetadata, UnpackOptions};
     use crate::did::resolvers::ExampleDIDResolver;
     use crate::message::pack_plaintext::PackPlaintextOptions;
     use crate::secrets::resolvers::ExampleSecretsResolver;
@@ -138,6 +141,62 @@ mod tests {
                 from_prior_issuer_kid: None
             };
             assert_eq!(metadata, expected_metadata);
+        }
+    }
+
+    #[tokio::test]
+    async fn pack_plaintext_with_from_prior_and_issuer_kid() {
+        _pack_plaintext_with_from_prior_works_and_issuer_kid(&MESSAGE_FROM_PRIOR_MINIMAL).await;
+        _pack_plaintext_with_from_prior_works_and_issuer_kid(&MESSAGE_FROM_PRIOR).await;
+
+        async fn _pack_plaintext_with_from_prior_works_and_issuer_kid(msg: &Message) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![
+                    ALICE_DID_DOC.clone(),
+                    BOB_DID_DOC.clone(),
+                    CHARLIE_DID_DOC.clone(),
+                ]);
+            let charlie_rotated_to_alice_secrets_resolver =
+                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+            let bob_secrets_resolver =
+                ExampleSecretsResolver::new(BOB_SECRETS.clone());
+
+            let (packed_msg, pack_metadata) =
+                msg.pack_plaintext(
+                    &did_resolver,
+                    &charlie_rotated_to_alice_secrets_resolver,
+                    &PackPlaintextOptions {
+                        from_prior_issuer_kid: Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone())
+                    },
+                )
+                .await
+                .expect("Unable pack_plaintext");
+
+            assert_eq!(
+                pack_metadata.from_prior_issuer_kid,
+                Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone())
+            );
+
+            let (unpacked_msg, unpack_metadata) =
+                Message::unpack(
+                    &packed_msg,
+                    &did_resolver,
+                    &bob_secrets_resolver,
+                    &UnpackOptions::default(),
+                )
+                .await
+                .expect("Unable unpack");
+
+            assert_eq!(&unpacked_msg, msg);
+            assert_eq!(
+                unpack_metadata.from_prior_issuer_kid,
+                Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone())
+            );
+
+            let parsed_packed_msg: Message = serde_json::from_str(&packed_msg)
+                .expect("Unable parse packed message");
+
+            assert_eq!(unpack_metadata.from_prior_jwt, parsed_packed_msg.from_prior_jwt);
         }
     }
 }

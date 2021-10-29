@@ -6,11 +6,22 @@ mod unpack;
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct FromPrior {
     pub iss: String,
+
     pub sub: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub aud: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exp: Option<u64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub nbf: Option<u64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub iat: Option<u64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jti: Option<String>,
 }
 
