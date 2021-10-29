@@ -108,7 +108,7 @@ where
 
             let encrypted_key = kw
                 .wrap_key(&cek)
-                .kind(ErrorKind::InvalidState, "Unable wrap key")?; //TODO test
+                .kind(ErrorKind::InvalidState, "Unable wrap key")?;
 
             let encrypted_key = base64::encode_config(&encrypted_key, base64::URL_SAFE_NO_PAD);
             encrypted_keys.push((kid.clone(), encrypted_key));

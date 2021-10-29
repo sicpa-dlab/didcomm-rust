@@ -33,7 +33,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
         .resolve(to_did)
         .await
         .context("Unable resolve recipient did")?
-        .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Recipient did not found"))?; //TODO test
+        .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Recipient did not found"))?;
 
     // Initial list of recipient key ids is all key_agreements of recipient did doc
     // or one key if url was explicitly provided
@@ -47,7 +47,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
     if to_kids.is_empty() {
         Err(err_msg(
             ErrorKind::DIDUrlNotFound,
-            "No recipient key agreements found", //TODO test
+            "No recipient key agreements found",
         ))?
     }
 
@@ -63,7 +63,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     // TODO: support external keys
                     err_msg(
                         ErrorKind::Unsupported,
-                        "External keys are unsupported in this version", //TODO test
+                        "External keys are unsupported in this version",
                     )
                 })
         })
@@ -78,7 +78,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
         .ok_or_else(|| {
             err_msg(
                 ErrorKind::InvalidState,
-                "No key agreement keys found for recipient", //TODO test
+                "No key agreement keys found for recipient",
             )
         })?;
 
@@ -113,7 +113,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None,
                     &to_keys,
                 )
-                .context("Unable produce anoncrypt envelope")?, //TODO test
+                .context("Unable produce anoncrypt envelope")?,
                 AnonCryptAlg::Xc20pEcdhEsA256kw => jwe::encrypt::<
                     Chacha20Key<XC20P>,
                     EcdhEs<'_, X25519KeyPair>,

@@ -1499,7 +1499,6 @@ mod tests {
         }
     }
 
-    ////////////////////////////////////////////////////////////
     #[tokio::test]
     async fn pack_encrypted_works_from_is_not_a_did_or_did_url() {
         let did_resolver =

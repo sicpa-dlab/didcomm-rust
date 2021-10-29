@@ -63,7 +63,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
             &tag,
             true,
         )
-        .kind(ErrorKind::InvalidState, "Unable derive kw")?; //TODO test
+        .kind(ErrorKind::InvalidState, "Unable derive kw")?;
 
         let cek: CE = kw
             .unwrap_key(&encrypted_key)
