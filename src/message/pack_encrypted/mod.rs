@@ -85,7 +85,10 @@ impl Message {
             ))?
         };
 
-        self.validate(to, from, sign_by);
+        match self.validate(to, from, sign_by) {
+            Ok(_) => {}
+            Err(e) => Err(e)?,
+        };
         // TODO: Think how to avoid resolving of did multiple times
         // and perform async operations in parallel
 
@@ -132,58 +135,70 @@ impl Message {
         Ok((msg, metadata))
     }
 
-    fn validate(&self, to: &str, from: Option<&str>, sign_by: Option<&str>) {
+    fn validate(&self, to: &str, from: Option<&str>, sign_by: Option<&str>) -> Result<bool> {
         if !is_did(to) {
-            err_msg(
+            Err(err_msg(
                 ErrorKind::IllegalArgument,
                 format!("`to` value is not a valid DID of DID URL: {}", to),
-            );
+            ))?;
         }
 
-        if from.is_some() && !is_did(from.unwrap()) {
-            err_msg(
+        match from {
+            Some(from) if !is_did(from) => Err(err_msg(
                 ErrorKind::IllegalArgument,
-                format!(
-                    "`from` value is not a valid DID of DID URL: {}",
-                    from.unwrap()
-                ),
-            );
+                format!("`from` value is not a valid DID of DID URL: {}", from),
+            ))?,
+            _ => {}
         }
 
-        if sign_by.is_some() && !is_did(sign_by.unwrap()) {
-            err_msg(
+        match sign_by {
+            Some(sign_by) if !is_did(sign_by) => Err(err_msg(
                 ErrorKind::IllegalArgument,
                 format!(
                     "`sign_from` value is not a valid DID of DID URL: {}",
-                    sign_by.unwrap()
+                    sign_by
                 ),
-            );
+            ))?,
+            _ => {}
         }
 
         let (to_did, _) = did_or_url(to);
 
-        if self.to.is_some() && !self.to.as_ref().unwrap().contains(&to_did.into()) {
-            err_msg(
-                ErrorKind::IllegalArgument,
-                format!(
-                    "`message.to` value {:?} does not contain `to` value's DID {}",
-                    self.to.as_ref().unwrap(),
-                    to_did
-                ),
-            );
+        let self_to = &self.to;
+        match self_to {
+            Some(self_to) if !self_to.contains(&to_did.into()) => {
+                Err(err_msg(
+                    ErrorKind::IllegalArgument,
+                    format!(
+                        "`message.to` value {:?} does not contain `to` value's DID {}",
+                        self_to, to_did
+                    ),
+                ))?;
+            }
+            _ => {}
         }
 
-        let (from_did, _) = did_or_url(to);
-        if from.is_some() && self.from.is_some() && from_did != self.from.as_ref().unwrap() {
-            err_msg(
-                ErrorKind::IllegalArgument,
-                format!(
-                    "`message.from` value {} is not equal to `from` value's DID {}",
-                    self.from.as_ref().unwrap(),
-                    from_did
-                ),
-            );
+        match from {
+            Some(from) => {
+                let (from_did, _) = did_or_url(from);
+                let self_from = &self.from;
+                match self_from {
+                    Some(self_from) if from_did != self_from => {
+                        Err(err_msg(
+                            ErrorKind::IllegalArgument,
+                            format!(
+                                "`message.from` value {} is not equal to `from` value's DID {}",
+                                self_from, from_did
+                            ),
+                        ))?;
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
         }
+
+        Ok(true)
     }
 }
 
@@ -274,6 +289,8 @@ mod tests {
     };
     use serde_json::Value;
 
+    use crate::error::ErrorKind;
+    use crate::test_vectors::CHARLIE_DID;
     use crate::{
         algorithms::AnonCryptAlg,
         did::{resolvers::ExampleDIDResolver, VerificationMaterial, VerificationMethod},
@@ -283,11 +300,12 @@ mod tests {
         secrets::{resolvers::ExampleSecretsResolver, Secret, SecretMaterial},
         test_vectors::{
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
-            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
-            ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519, BOB_DID, BOB_DID_DOC,
-            BOB_SECRET_KEY_AGREEMENT_KEY_P256_1, BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
-            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
-            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
+            ALICE_DID, ALICE_DID_DOC, ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS,
+            ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256, ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
+            BOB_DID, BOB_DID_DOC, BOB_DID_DOC_NO_SECRETS, BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
+            BOB_SECRET_KEY_AGREEMENT_KEY_P256_2, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3,
+            MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
         },
         utils::crypto::{JoseKDF, KeyWrap},
         PackEncryptedMetadata, PackEncryptedOptions,
@@ -1478,6 +1496,672 @@ mod tests {
             let msg = _verify_anoncrypt::<CE, KDF, KE, KW>(&msg, to_keys, enc_alg_jwe);
             let msg = _verify_signed::<SK>(&msg, sign_by_key, sign_alg);
             _verify_plaintext(&msg, PLAINTEXT_MSG_SIMPLE);
+        }
+    }
+
+    ////////////////////////////////////////////////////////////
+    #[tokio::test]
+    async fn pack_encrypted_works_from_is_not_a_did_or_did_url() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let res = MESSAGE_SIMPLE
+            .pack_encrypted(
+                BOB_DID,
+                "not-a-did".into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `from` value is not a valid DID of DID URL: not-a-did"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_is_not_a_did_or_did_url() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let res = MESSAGE_SIMPLE
+            .pack_encrypted(
+                "not-a-did".into(),
+                None,
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `to` value is not a valid DID of DID URL: not-a-did"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_sign_by_is_not_a_did_or_did_url() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let res = MESSAGE_SIMPLE
+            .pack_encrypted(
+                BOB_DID,
+                ALICE_DID.into(),
+                "not-a-did".into(),
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `sign_from` value is not a valid DID of DID URL: not-a-did"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_from_differs_from_msg_from() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.from = CHARLIE_DID.to_string().into();
+        let res = msg
+            .pack_encrypted(
+                BOB_DID,
+                ALICE_DID.into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(format!("{}", err), "Illegal argument: `message.from` value did:example:charlie is not equal to `from` value's DID did:example:alice");
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_differs_from_msg_to() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.to = Some(vec![CHARLIE_DID.to_string()]);
+        let res = msg
+            .pack_encrypted(
+                BOB_DID,
+                ALICE_DID.into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(format!("{}", err), "Illegal argument: `message.to` value [\"did:example:charlie\"] does not contain `to` value's DID did:example:bob");
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_presented_in_msg_to() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.to = Some(vec![CHARLIE_DID.to_string(), BOB_DID.to_string()]);
+        let _ = msg
+            .pack_encrypted(
+                BOB_DID,
+                ALICE_DID.into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_from_is_not_a_did_or_did_url_in_msg() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.from = "not-a-did".to_string().into();
+        let res = msg
+            .pack_encrypted(
+                BOB_DID,
+                "not-a-did".into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `from` value is not a valid DID of DID URL: not-a-did"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_is_not_a_did_or_did_url_in_msg() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.to = Some(vec!["not-a-did".to_string()]);
+        let res = msg
+            .pack_encrypted(
+                "not-a-did".into(),
+                ALICE_DID.into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `to` value is not a valid DID of DID URL: not-a-did"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_from_is_did_url_from_msg_is_did_positive() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let _ = MESSAGE_SIMPLE
+            .pack_encrypted(
+                BOB_DID,
+                "did:example:alice#key-x25519-1".into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_is_did_url_to_msg_is_did_positive() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.to = Some(vec![ALICE_DID.to_string(), BOB_DID.to_string()]);
+        let _ = msg
+            .pack_encrypted(
+                "did:example:bob#key-x25519-1".into(),
+                None,
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_sign_by_differs_from_msg_from_positive() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let _ = MESSAGE_SIMPLE
+            .pack_encrypted(
+                BOB_DID,
+                ALICE_DID.into(),
+                CHARLIE_DID.into(),
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_from_is_did_from_msg_is_did_url() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.from = "did:example:alice#key-x25519-1".to_string().into();
+
+        let res = msg
+            .pack_encrypted(
+                BOB_DID,
+                ALICE_DID.into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(format!("{}", err), "Illegal argument: `message.from` value did:example:alice#key-x25519-1 is not equal to `from` value's DID did:example:alice");
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_is_did_to_msg_is_did_url() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.to = Some(vec!["did:example:bob#key-x25519-1".into()]);
+        let res = msg
+            .pack_encrypted(
+                BOB_DID,
+                None,
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(format!("{}", err), "Illegal argument: `message.to` value [\"did:example:bob#key-x25519-1\"] does not contain `to` value's DID did:example:bob");
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_from_unknown_did() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.from = "did:example:unknown".to_string().into();
+        let res = msg
+            .pack_encrypted(
+                BOB_DID,
+                "did:example:unknown".into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::DIDNotResolved);
+
+        assert_eq!(format!("{}", err), "DID not resolved: Sender did not found");
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_from_unknown_did_url() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let from = ALICE_DID.to_string() + "#unknown-key";
+        let res = MESSAGE_SIMPLE
+            .pack_encrypted(
+                BOB_DID,
+                from.as_str().into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::DIDUrlNotFound);
+
+        assert_eq!(
+            format!("{}", err),
+            "DID not resolved: No sender key agreements found"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_unknown_did() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.to = Some(vec!["did:example:unknown".into()]);
+        let res = msg
+            .pack_encrypted(
+                "did:example:unknown",
+                None,
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::DIDNotResolved);
+
+        assert_eq!(
+            format!("{}", err),
+            "DID not resolved: Recipient did not found"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_unknown_did_url() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let to = BOB_DID.to_string() + "#unknown-key";
+        let res = MESSAGE_SIMPLE
+            .pack_encrypted(
+                to.as_str(),
+                ALICE_DID.into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::DIDUrlNotFound);
+
+        assert_eq!(
+            format!("{}", err),
+            "DID not resolved: No recipient key agreements found"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_sign_by_unknown_did_url() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let sign_by = ALICE_DID.to_string() + "#unknown-key";
+        let res = MESSAGE_SIMPLE
+            .pack_encrypted(
+                BOB_DID,
+                ALICE_DID.into(),
+                sign_by.as_str().into(),
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::DIDUrlNotFound);
+
+        assert_eq!(
+            format!("{}", err),
+            "DID not resolved: Unable produce sign envelope: Signer key id not found in did doc"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_from_not_in_secrets() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let res = MESSAGE_SIMPLE
+            .pack_encrypted(
+                BOB_DID,
+                "did:example:alice#key-x25519-not-in-secrets-1".into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::SecretNotFound);
+
+        assert_eq!(
+            format!("{}", err),
+            "Secret not found: No sender secrets found"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_sign_by_not_in_secrets() {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC_WITH_NO_SECRETS.clone(),
+            BOB_DID_DOC.clone(),
+        ]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let res = MESSAGE_SIMPLE
+            .pack_encrypted(
+                BOB_DID,
+                ALICE_DID.into(),
+                "did:example:alice#key-not-in-secrets-1".into(),
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::SecretNotFound);
+
+        assert_eq!(
+            format!("{}", err),
+            "Secret not found: Unable produce sign envelope: No signer secrets found"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_not_in_secrets_positive() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC_NO_SECRETS.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+        let to = "did:example:bob#key-x25519-not-secrets-1";
+        let _ = MESSAGE_SIMPLE
+            .pack_encrypted(
+                to,
+                ALICE_DID.into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_from_different_curves() {
+        _pack_encrypted_works_to_from_different_curves(
+            "did:example:alice#key-x25519-1".into(),
+            "did:example:bob#key-p256-1",
+        )
+        .await;
+        _pack_encrypted_works_to_from_different_curves(
+            "did:example:alice#key-x25519-1".into(),
+            "did:example:bob#key-p384-1",
+        )
+        .await;
+        _pack_encrypted_works_to_from_different_curves(
+            "did:example:alice#key-x25519-1".into(),
+            "did:example:bob#key-p521-1",
+        )
+        .await;
+        _pack_encrypted_works_to_from_different_curves(
+            "did:example:alice#key-p256-1".into(),
+            "did:example:bob#key-p384-1",
+        )
+        .await;
+        _pack_encrypted_works_to_from_different_curves(
+            "did:example:alice#key-p256-1".into(),
+            "did:example:bob#key-p521-1",
+        )
+        .await;
+        _pack_encrypted_works_to_from_different_curves(
+            "did:example:alice#key-p521-1".into(),
+            "did:example:bob#key-p384-1",
+        )
+        .await;
+
+        async fn _pack_encrypted_works_to_from_different_curves(from: Option<&str>, to: &str) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let res = MESSAGE_SIMPLE
+                .pack_encrypted(
+                    to,
+                    from,
+                    None,
+                    &did_resolver,
+                    &secrets_resolver,
+                    &PackEncryptedOptions {
+                        forward: false,
+                        ..PackEncryptedOptions::default()
+                    },
+                )
+                .await;
+
+            let err = res.expect_err("res is ok");
+            assert_eq!(err.kind(), ErrorKind::NoCompatibleCrypto);
+
+            assert_eq!(
+                format!("{}", err),
+                "No compatible crypto: No common keys between sender and recipient found"
+            );
         }
     }
 

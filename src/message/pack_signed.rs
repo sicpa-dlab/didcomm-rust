@@ -48,13 +48,13 @@ impl Message {
         secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
     ) -> Result<(String, PackSignedMetadata)> {
         if !is_did(sign_by) {
-            err_msg(
+            Err(err_msg(
                 ErrorKind::IllegalArgument,
                 format!(
                     "`sign_from` value is not a valid DID of DID URL: {}",
                     sign_by
                 ),
-            );
+            ))?;
         }
 
         let (did, key_id) = did_or_url(sign_by);
@@ -290,21 +290,6 @@ mod tests {
         assert_eq!(format!("{}", err), "DID not resolved: Signer did not found");
     }
 
-    // #[tokio::test]
-    // async fn pack_signed_works_signer_is_not_did_our_did_url() {
-    //     let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
-    //     let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
-    //
-    //     let res = MESSAGE_SIMPLE
-    //         .pack_signed("not-a-did", &did_resolver, &secrets_resolver)
-    //         .await;
-    //
-    //     let err = res.expect_err("res is ok");
-    //     assert_eq!(err.kind(), ErrorKind::DIDNotResolved);
-    //
-    //     assert_eq!(format!("{}", err), "DID not resolved: Signer did not found");
-    // }
-
     #[tokio::test]
     async fn pack_signed_works_signer_is_not_did_our_did_url() {
         let mut did_doc = ALICE_DID_DOC.clone();
@@ -317,9 +302,12 @@ mod tests {
             .await;
 
         let err = res.expect_err("res is ok");
-        assert_eq!(err.kind(), ErrorKind::DIDNotResolved);
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
 
-        assert_eq!(format!("{}", err), "DID not resolved: Signer did not found");
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `sign_from` value is not a valid DID of DID URL: not-a-did"
+        );
     }
 
     #[tokio::test]

@@ -28,7 +28,7 @@ pub enum ErrorKind {
     Unsupported,
 
     #[error("Illegal argument")]
-    IllegalArgument
+    IllegalArgument,
 }
 
 #[derive(Debug, thiserror::Error)]
