@@ -1,6 +1,6 @@
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
-    jws::envelope::{ProtectedHeader, CompactHeader, JWS},
+    jws::envelope::{CompactHeader, ProtectedHeader, JWS},
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -46,10 +46,16 @@ pub(crate) struct ParsedCompactJWS<'a> {
     pub(crate) signature: &'a str,
 }
 
-pub(crate) fn parse_compact<'a>(compact_jws: &'a str, buf: &'a mut Vec<u8>) -> Result<ParsedCompactJWS<'a>> {
+pub(crate) fn parse_compact<'a>(
+    compact_jws: &'a str,
+    buf: &'a mut Vec<u8>,
+) -> Result<ParsedCompactJWS<'a>> {
     let segments: Vec<&str> = compact_jws.split('.').collect();
     if segments.len() != 3 {
-        return Err(err_msg(ErrorKind::InvalidState, "Unable to parse compactly serialized JWS"));
+        return Err(err_msg(
+            ErrorKind::InvalidState,
+            "Unable to parse compactly serialized JWS",
+        ));
     }
 
     let header = segments[0];
@@ -59,10 +65,15 @@ pub(crate) fn parse_compact<'a>(compact_jws: &'a str, buf: &'a mut Vec<u8>) -> R
     base64::decode_config_buf(header, base64::URL_SAFE_NO_PAD, buf)
         .kind(ErrorKind::Malformed, "Unable decode protected header")?;
 
-    let parsed_header: CompactHeader = serde_json::from_slice(buf)
-        .kind(ErrorKind::Malformed, "Unable parse protected header")?;
+    let parsed_header: CompactHeader =
+        serde_json::from_slice(buf).kind(ErrorKind::Malformed, "Unable parse protected header")?;
 
-    Ok(ParsedCompactJWS { header, parsed_header, payload, signature })
+    Ok(ParsedCompactJWS {
+        header,
+        parsed_header,
+        payload,
+        signature,
+    })
 }
 
 #[cfg(test)]
@@ -75,6 +86,7 @@ mod tests {
             ParsedJWS,
         },
     };
+    use crate::jws::{CompactHeader, ParsedCompactJWS};
 
     #[test]
     fn parse_works() {
@@ -395,5 +407,44 @@ mod tests {
             format!("{}", res),
             "Malformed: Unable parse protected header: invalid type: string \"typ\", expected struct ProtectedHeader at line 1 column 5"
         );
+    }
+
+    #[test]
+    fn parse_compact_works() {
+        let msg =
+            "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+             ZSNrZXktMSJ9\
+             .\
+             CiAgICB7ImlkIjoiMTIzNDU2Nzg5MCIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tcGxhaW4ranNv\
+             biIsInR5cGUiOiJodHRwOi8vZXhhbXBsZS5jb20vcHJvdG9jb2xzL2xldHNfZG9fbHVuY2gvMS4wL3By\
+             b3Bvc2FsIiwiZnJvbSI6ImRpZDpleGFtcGxlOmFsaWNlIiwidG8iOlsiZGlkOmV4YW1wbGU6Ym9iIl0s\
+             ImNyZWF0ZWRfdGltZSI6MTUxNjI2OTAyMiwiZXhwaXJlc190aW1lIjoxNTE2Mzg1OTMxLCJib2R5Ijp7\
+             Im1lc3NhZ2VzcGVjaWZpY2F0dHJpYnV0ZSI6ImFuZCBpdHMgdmFsdWUifX0KICAgIA\
+             .\
+             zaWcR-zXXYToP8xrzYsXQ905xxtVcpmiRObc5N5e8m-OAxmmbnEr0ZbA6DIxmSwGg_fy4EUQPRtd0qA6\
+             mVRWDg";
+
+        let mut buf = vec![];
+        let res = jws::parse_compact(&msg, &mut buf);
+        let res = res.expect("res is err");
+
+        let exp = ParsedCompactJWS {
+            header: "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+                     ZSNrZXktMSJ9",
+            parsed_header: CompactHeader {
+                typ: "example-typ-1",
+                alg: Algorithm::EdDSA,
+                kid: "did:example:alice#key-1",
+            },
+            payload: "CiAgICB7ImlkIjoiMTIzNDU2Nzg5MCIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tcGxhaW4ranNv\
+                      biIsInR5cGUiOiJodHRwOi8vZXhhbXBsZS5jb20vcHJvdG9jb2xzL2xldHNfZG9fbHVuY2gvMS4wL3By\
+                      b3Bvc2FsIiwiZnJvbSI6ImRpZDpleGFtcGxlOmFsaWNlIiwidG8iOlsiZGlkOmV4YW1wbGU6Ym9iIl0s\
+                      ImNyZWF0ZWRfdGltZSI6MTUxNjI2OTAyMiwiZXhwaXJlc190aW1lIjoxNTE2Mzg1OTMxLCJib2R5Ijp7\
+                      Im1lc3NhZ2VzcGVjaWZpY2F0dHJpYnV0ZSI6ImFuZCBpdHMgdmFsdWUifX0KICAgIA",
+            signature: "zaWcR-zXXYToP8xrzYsXQ905xxtVcpmiRObc5N5e8m-OAxmmbnEr0ZbA6DIxmSwGg_fy4EUQPRtd0qA6\
+                        mVRWDg",
+        };
+
+        assert_eq!(res, exp);
     }
 }

@@ -289,6 +289,68 @@ mod tests {
         }
     }
 
+    #[test]
+    fn sign_compact_works() {
+        _sign_compact_works::<Ed25519KeyPair>(
+            ALICE_KID_ED25519,
+            ALICE_KEY_ED25519,
+            ALICE_PKEY_ED25519,
+            "example-typ-1",
+            Algorithm::EdDSA,
+            PAYLOAD,
+        );
+
+        _sign_compact_works::<P256KeyPair>(
+            ALICE_KID_P256,
+            ALICE_KEY_P256,
+            ALICE_PKEY_P256,
+            "example-typ-2",
+            Algorithm::Es256,
+            PAYLOAD,
+        );
+
+        _sign_compact_works::<K256KeyPair>(
+            ALICE_KID_K256,
+            ALICE_KEY_K256,
+            ALICE_PKEY_K256,
+            "example-typ-3",
+            Algorithm::Es256K,
+            PAYLOAD,
+        );
+
+        fn _sign_compact_works<K: FromJwk + KeySign + KeySigVerify>(
+            kid: &str,
+            key: &str,
+            pkey: &str,
+            typ: &str,
+            alg: Algorithm,
+            payload: &str,
+        ) {
+            let res =
+                _sign_compact::<K>(kid, key, typ, alg.clone(), payload);
+
+            let msg = res.expect("Unable _sign_compact");
+
+            let mut buf = vec![];
+            let msg = jws::parse_compact(&msg, &mut buf)
+                .expect("Unable parse_compact.");
+
+            assert_eq!(
+                msg.payload,
+                base64::encode_config(payload, base64::URL_SAFE_NO_PAD)
+            );
+
+            assert_eq!(msg.parsed_header.typ, typ);
+            assert_eq!(msg.parsed_header.alg, alg);
+            assert_eq!(msg.parsed_header.kid, kid);
+
+            let pkey = K::from_jwk(pkey).expect("unable from_jwk");
+            let valid = msg.verify::<K>(&pkey).expect("Unable verify");
+
+            assert!(valid);
+        }
+    }
+
     fn _sign<K: FromJwk + KeySign>(
         kid: &str,
         key: &str,
@@ -297,6 +359,17 @@ mod tests {
     ) -> Result<String> {
         let key = K::from_jwk(key).expect("unable from_jwk.");
         jws::sign(payload.as_bytes(), (&kid, &key), alg.clone())
+    }
+
+    fn _sign_compact<K: FromJwk + KeySign>(
+        kid: &str,
+        key: &str,
+        typ: &str,
+        alg: Algorithm,
+        payload: &str,
+    ) -> Result<String> {
+        let key = K::from_jwk(key).expect("unable from_jwk.");
+        jws::sign_compact(payload.as_bytes(), (&kid, &key), typ, alg.clone())
     }
 
     const ALICE_KID_ED25519: &str = "did:example:alice#key-1";

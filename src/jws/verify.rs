@@ -2,7 +2,7 @@ use askar_crypto::sign::KeySigVerify;
 
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
-    jws::{ParsedJWS, ParsedCompactJWS},
+    jws::{ParsedCompactJWS, ParsedJWS},
 };
 
 impl<'a, 'b> ParsedJWS<'a, 'b> {
@@ -267,6 +267,27 @@ mod tests {
         }
     }
 
+    #[test]
+    fn verify_for_compact_works() {
+        let msg =
+            "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+             ZSNrZXktMSJ9\
+             .\
+             CiAgICB7ImlkIjoiMTIzNDU2Nzg5MCIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tcGxhaW4ranNv\
+             biIsInR5cGUiOiJodHRwOi8vZXhhbXBsZS5jb20vcHJvdG9jb2xzL2xldHNfZG9fbHVuY2gvMS4wL3By\
+             b3Bvc2FsIiwiZnJvbSI6ImRpZDpleGFtcGxlOmFsaWNlIiwidG8iOlsiZGlkOmV4YW1wbGU6Ym9iIl0s\
+             ImNyZWF0ZWRfdGltZSI6MTUxNjI2OTAyMiwiZXhwaXJlc190aW1lIjoxNTE2Mzg1OTMxLCJib2R5Ijp7\
+             Im1lc3NhZ2VzcGVjaWZpY2F0dHJpYnV0ZSI6ImFuZCBpdHMgdmFsdWUifX0KICAgIA\
+             .\
+             zaWcR-zXXYToP8xrzYsXQ905xxtVcpmiRObc5N5e8m-OAxmmbnEr0ZbA6DIxmSwGg_fy4EUQPRtd0qA6\
+             mVRWDg";
+
+        let res = _verify_for_compact::<Ed25519KeyPair>(ALICE_PKEY_ED25519, msg);
+        let res = res.expect("res is err");
+
+        assert_eq!(res, true);
+    }
+
     fn _verify<Key: FromJwk + KeySigVerify>(
         kid: &str,
         key: &str,
@@ -278,6 +299,18 @@ mod tests {
         let msg = jws::parse(&msg, &mut buf).expect("unable parse.");
 
         msg.verify((kid, &key))
+    }
+
+    fn _verify_for_compact<Key: FromJwk + KeySigVerify>(
+        key: &str,
+        msg: &str,
+    ) -> Result<bool, Error> {
+        let key = Key::from_jwk(key).expect("unable from_jwk.");
+
+        let mut buf = vec![];
+        let msg = jws::parse_compact(&msg, &mut buf).expect("unable parse.");
+
+        msg.verify(&key)
     }
 
     const ALICE_KID_ED25519: &str = "did:example:alice#key-1";
