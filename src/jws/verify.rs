@@ -282,8 +282,13 @@ mod tests {
              zaWcR-zXXYToP8xrzYsXQ905xxtVcpmiRObc5N5e8m-OAxmmbnEr0ZbA6DIxmSwGg_fy4EUQPRtd0qA6\
              mVRWDg";
 
-        let res = _verify_for_compact::<Ed25519KeyPair>(ALICE_PKEY_ED25519, msg);
-        let res = res.expect("res is err");
+        let mut buf = vec![];
+        let msg = jws::parse_compact(&msg, &mut buf).expect("unable to parse");
+
+        assert_eq!(msg.parsed_header.kid, ALICE_KID_ED25519);
+
+        let key = Ed25519KeyPair::from_jwk(ALICE_PKEY_ED25519).expect("unable from_jwk");
+        let res = msg.verify(&key).expect("unable to verify");
 
         assert_eq!(res, true);
     }
@@ -299,18 +304,6 @@ mod tests {
         let msg = jws::parse(&msg, &mut buf).expect("unable parse.");
 
         msg.verify((kid, &key))
-    }
-
-    fn _verify_for_compact<Key: FromJwk + KeySigVerify>(
-        key: &str,
-        msg: &str,
-    ) -> Result<bool, Error> {
-        let key = Key::from_jwk(key).expect("unable from_jwk.");
-
-        let mut buf = vec![];
-        let msg = jws::parse_compact(&msg, &mut buf).expect("unable parse.");
-
-        msg.verify(&key)
     }
 
     const ALICE_KID_ED25519: &str = "did:example:alice#key-1";
