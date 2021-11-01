@@ -4,12 +4,13 @@ pub mod resolvers;
 
 use async_trait::async_trait;
 use serde_json::Value;
+use serde::Deserialize;
 
 use crate::error::Result;
 
 /// Interface for secrets resolver.
 /// Resolves secrets such as private keys to be used for signing and encryption.
-#[async_trait]
+#[async_trait(?Send)]
 pub trait SecretsResolver {
     /// Finds secret (usually private key) identified by the given key ID.
     ///
@@ -36,7 +37,7 @@ pub trait SecretsResolver {
 }
 
 /// Represents secret.
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Secret {
     /// A key ID identifying a secret (private key).
     pub id: String,
@@ -49,7 +50,7 @@ pub struct Secret {
 }
 
 /// Must have the same semantics as type ('type' field) of the corresponding method in DID Doc containing a public key.
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Deserialize)]
 pub enum SecretType {
     JsonWebKey2020,
     X25519KeyAgreementKey2019,
@@ -59,7 +60,7 @@ pub enum SecretType {
 }
 
 /// Represents secret crypto material.
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Deserialize)]
 pub enum SecretMaterial {
     JWK(Value),
     Multibase(String),

@@ -1,3 +1,14 @@
+[[bench]]
+name = 'pack_signed'
+harness = false
+
+[[bench]]
+name = 'pack_encrypted'
+harness = false
+
+[[example]]
+name = 'basic'
+
 [package]
 name = 'didcomm'
 version = '0.2.0'
@@ -37,18 +48,10 @@ features = [
     'macros',
 ]
 
+[dev-dependencies.getrandom]
+version = '0.2'
+features = ['js']
+
 [dev-dependencies.criterion]
 version = '0.3'
 features = ['async_futures']
-
-[[bench]]
-name = "pack_signed"
-harness = false
-
-[[bench]]
-name = "pack_encrypted"
-harness = false
-
-[[example]]
-name = "basic"
-

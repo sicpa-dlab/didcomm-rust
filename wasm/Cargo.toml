@@ -1,0 +1,52 @@
+[package]
+name = 'didcomm-wasm'
+version = '0.2.0'
+authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
+edition = '2018'
+description = 'WASM wrapper for DIDComm'
+license = 'Apache-2.0'
+repository = 'https://github.com/sicpa-dlab/didcomm-rust'
+
+[lib]
+crate-type = [
+    'cdylib',
+    'rlib',
+]
+
+[features]
+default = ['console_error_panic_hook']
+
+[dependencies]
+async-trait = '0.1'
+wasm-bindgen-futures = '0.4'
+js-sys = '0.3'
+
+[dependencies.didcomm]
+path = '..'
+
+[dev-dependencies.getrandom]
+version = '0.2'
+features = ['js']
+
+[dependencies.wasm-bindgen]
+version = '0.2'
+features = ['serde-serialize']
+
+[dependencies.console_error_panic_hook]
+version = '0.1'
+optional = true
+
+[dependencies.serde]
+version = '1.0'
+features = ['derive']
+
+[dependencies.wee_alloc]
+version = '0.4'
+optional = true
+
+[dev-dependencies]
+wasm-bindgen-test = '0.3'
+
+[profile.release]
+opt-level = 's'
+lto = true
