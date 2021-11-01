@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Unit Tests](https://github.com/sicpa-dlab/didcomm-rust/workflows/verify/badge.svg)](https://github.com/sicpa-dlab/didcomm-rust/actions/workflows/verify.yml)
-[![Rust Package](https://img.shields.io/crates/v/didcomm)](https://crates.io/crates/actix/)
+[![Rust Package](https://img.shields.io/crates/v/didcomm)](https://crates.io/crates/didcomm/)
 
 Basic [DIDComm v2](https://identity.foundation/didcomm-messaging/spec) support in Rust.
 
