@@ -85,10 +85,7 @@ impl Message {
             ))?
         };
 
-        match self.validate(to, from, sign_by) {
-            Ok(_) => {}
-            Err(e) => Err(e)?,
-        };
+        self._validate_pack_encrypted(to, from, sign_by)?;
         // TODO: Think how to avoid resolving of did multiple times
         // and perform async operations in parallel
 
@@ -135,18 +132,23 @@ impl Message {
         Ok((msg, metadata))
     }
 
-    fn validate(&self, to: &str, from: Option<&str>, sign_by: Option<&str>) -> Result<bool> {
+    fn _validate_pack_encrypted(
+        &self,
+        to: &str,
+        from: Option<&str>,
+        sign_by: Option<&str>,
+    ) -> Result<bool> {
         if !is_did(to) {
             Err(err_msg(
                 ErrorKind::IllegalArgument,
-                format!("`to` value is not a valid DID of DID URL: {}", to),
+                "`to` value is not a valid DID of DID URL",
             ))?;
         }
 
         match from {
             Some(from) if !is_did(from) => Err(err_msg(
                 ErrorKind::IllegalArgument,
-                format!("`from` value is not a valid DID of DID URL: {}", from),
+                "`from` value is not a valid DID of DID URL",
             ))?,
             _ => {}
         }
@@ -154,47 +156,28 @@ impl Message {
         match sign_by {
             Some(sign_by) if !is_did(sign_by) => Err(err_msg(
                 ErrorKind::IllegalArgument,
-                format!(
-                    "`sign_from` value is not a valid DID of DID URL: {}",
-                    sign_by
-                ),
+                "`sign_from` value is not a valid DID of DID URL",
             ))?,
             _ => {}
         }
 
         let (to_did, _) = did_or_url(to);
 
-        let self_to = &self.to;
-        match self_to {
-            Some(self_to) if !self_to.contains(&to_did.into()) => {
+        match self.to {
+            Some(ref sto) if !sto.contains(&to_did.into()) => {
                 Err(err_msg(
                     ErrorKind::IllegalArgument,
-                    format!(
-                        "`message.to` value {:?} does not contain `to` value's DID {}",
-                        self_to, to_did
-                    ),
+                    "`message.to` value does not contain `to` value's DID",
                 ))?;
             }
             _ => {}
         }
 
-        match from {
-            Some(from) => {
-                let (from_did, _) = did_or_url(from);
-                let self_from = &self.from;
-                match self_from {
-                    Some(self_from) if from_did != self_from => {
-                        Err(err_msg(
-                            ErrorKind::IllegalArgument,
-                            format!(
-                                "`message.from` value {} is not equal to `from` value's DID {}",
-                                self_from, from_did
-                            ),
-                        ))?;
-                    }
-                    _ => {}
-                }
-            }
+        match (from, &self.from) {
+            (Some(ref from), Some(ref sfrom)) if did_or_url(from).0 != sfrom => Err(err_msg(
+                ErrorKind::IllegalArgument,
+                "`message.from` value is not equal to `from` value's DID",
+            ))?,
             _ => {}
         }
 
@@ -1500,7 +1483,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_from_is_not_a_did_or_did_url() {
+    async fn pack_encrypted_works_from_not_did_or_did_url() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1525,12 +1508,12 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `from` value is not a valid DID of DID URL: not-a-did"
+            "Illegal argument: `from` value is not a valid DID of DID URL"
         );
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_to_is_not_a_did_or_did_url() {
+    async fn pack_encrypted_works_to_not_did_or_did_url() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1555,12 +1538,12 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `to` value is not a valid DID of DID URL: not-a-did"
+            "Illegal argument: `to` value is not a valid DID of DID URL"
         );
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_sign_by_is_not_a_did_or_did_url() {
+    async fn pack_encrypted_works_sign_by_not_did_or_did_url() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1585,12 +1568,12 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `sign_from` value is not a valid DID of DID URL: not-a-did"
+            "Illegal argument: `sign_from` value is not a valid DID of DID URL"
         );
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_from_differs_from_msg_from() {
+    async fn pack_encrypted_works_from_differs_msg_from() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1615,11 +1598,14 @@ mod tests {
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::IllegalArgument);
 
-        assert_eq!(format!("{}", err), "Illegal argument: `message.from` value did:example:charlie is not equal to `from` value's DID did:example:alice");
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `message.from` value is not equal to `from` value's DID"
+        );
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_to_differs_from_msg_to() {
+    async fn pack_encrypted_works_to_differs_msg_to() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1644,7 +1630,10 @@ mod tests {
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::IllegalArgument);
 
-        assert_eq!(format!("{}", err), "Illegal argument: `message.to` value [\"did:example:charlie\"] does not contain `to` value's DID did:example:bob");
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `message.to` value does not contain `to` value's DID"
+        );
     }
 
     #[tokio::test]
@@ -1672,7 +1661,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_from_is_not_a_did_or_did_url_in_msg() {
+    async fn pack_encrypted_works_from_not_did_or_did_url_in_msg() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1699,12 +1688,12 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `from` value is not a valid DID of DID URL: not-a-did"
+            "Illegal argument: `from` value is not a valid DID of DID URL"
         );
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_to_is_not_a_did_or_did_url_in_msg() {
+    async fn pack_encrypted_works_to_not_did_or_did_url_in_msg() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1731,12 +1720,12 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `to` value is not a valid DID of DID URL: not-a-did"
+            "Illegal argument: `to` value is not a valid DID of DID URL"
         );
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_from_is_did_url_from_msg_is_did_positive() {
+    async fn pack_encrypted_works_from_did_url_from_msg_did_positive() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1758,7 +1747,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_to_is_did_url_to_msg_is_did_positive() {
+    async fn pack_encrypted_works_to_did_url_to_msg_did_positive() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1782,7 +1771,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_sign_by_differs_from_msg_from_positive() {
+    async fn pack_encrypted_works_sign_by_differs_msg_from_positive() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1804,7 +1793,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_from_is_did_from_msg_is_did_url() {
+    async fn pack_encrypted_works_from_did_from_msg_did_url() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1830,11 +1819,14 @@ mod tests {
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::IllegalArgument);
 
-        assert_eq!(format!("{}", err), "Illegal argument: `message.from` value did:example:alice#key-x25519-1 is not equal to `from` value's DID did:example:alice");
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `message.from` value is not equal to `from` value's DID"
+        );
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_to_is_did_to_msg_is_did_url() {
+    async fn pack_encrypted_works_to_did_to_msg_did_url() {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1859,7 +1851,10 @@ mod tests {
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::IllegalArgument);
 
-        assert_eq!(format!("{}", err), "Illegal argument: `message.to` value [\"did:example:bob#key-x25519-1\"] does not contain `to` value's DID did:example:bob");
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `message.to` value does not contain `to` value's DID"
+        );
     }
 
     #[tokio::test]

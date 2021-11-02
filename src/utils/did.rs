@@ -11,8 +11,8 @@ use crate::{
 };
 
 pub(crate) fn is_did(did: &str) -> bool {
-    let parts: Vec<String> = did.split(':').map(str::to_string).collect();
-    return parts.len() >= 3 && parts.get(0).unwrap() == "did";
+    let parts: Vec<_> = did.split(':').collect();
+    return parts.len() >= 3 && parts.get(0).unwrap() == &"did";
 }
 
 pub(crate) fn did_or_url(did_or_url: &str) -> (&str, Option<&str>) {

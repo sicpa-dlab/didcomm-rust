@@ -939,17 +939,6 @@ mod tests {
             MSG_AUTHCRYPT_P256_A256CBC_CHANGED_CIPHERTEXT,
         );
 
-        _decrypt_works_changed_ciphertext::<
-            AesKey<A256CbcHs512>,
-            Ecdh1PU<'_, P256KeyPair>,
-            P256KeyPair,
-            AesKey<A256Kw>,
-        >(
-            Some((ALICE_KID_P256_1, ALICE_PKEY_P256_1)),
-            (BOB_KID_P256_1, BOB_KEY_P256_1),
-            MSG_AUTHCRYPT_P256_A256CBC_CHANGED_CIPHERTEXT,
-        );
-
         fn _decrypt_works_changed_ciphertext<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
             recipient: (&str, &str),

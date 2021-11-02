@@ -47,15 +47,7 @@ impl Message {
         did_resolver: &'dr (dyn DIDResolver + 'dr),
         secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
     ) -> Result<(String, PackSignedMetadata)> {
-        if !is_did(sign_by) {
-            Err(err_msg(
-                ErrorKind::IllegalArgument,
-                format!(
-                    "`sign_from` value is not a valid DID of DID URL: {}",
-                    sign_by
-                ),
-            ))?;
-        }
+        self._validate_pack_signed(sign_by)?;
 
         let (did, key_id) = did_or_url(sign_by);
 
@@ -122,6 +114,17 @@ impl Message {
 
         Ok((msg, metadata))
     }
+
+    fn _validate_pack_signed(&self, sign_by: &str) -> Result<bool> {
+        if !is_did(sign_by) {
+            Err(err_msg(
+                ErrorKind::IllegalArgument,
+                "`sign_from` value is not a valid DID of DID URL",
+            ))?;
+        }
+
+        Ok(true)
+    }
 }
 
 /// Additional metadata about this `pack` method execution like used key identifiers.
@@ -139,8 +142,8 @@ mod tests {
     };
     use serde_json::Value;
 
+    use crate::did::resolvers::mock::MockDidResolver;
     use crate::error::{err_msg, ErrorKind};
-    use crate::message::MockDidResolver;
     use crate::secrets::{Secret, SecretMaterial, SecretType};
     use crate::{
         did::{resolvers::ExampleDIDResolver, DIDResolver, VerificationMaterial},
@@ -306,7 +309,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `sign_from` value is not a valid DID of DID URL: not-a-did"
+            "Illegal argument: `sign_from` value is not a valid DID of DID URL"
         );
     }
 
