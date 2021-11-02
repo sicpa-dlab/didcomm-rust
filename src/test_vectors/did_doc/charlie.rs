@@ -27,7 +27,7 @@ lazy_static! {
             {
                 "kty": "OKP",
                 "crv": "Ed25519",
-                "x": "G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww",
+                "x": "VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE",
             })),
         };
     pub(crate) static ref CHARLIE_DID_DOC: DIDDoc = DIDDoc {

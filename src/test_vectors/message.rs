@@ -1,9 +1,8 @@
 use lazy_static::lazy_static;
 use serde_json::json;
 
-use super::common::{ALICE_DID, BOB_DID};
+use super::common::{ALICE_DID, BOB_DID, CHARLIE_DID, DAVE_DID};
 use crate::didcomm::{Attachment, FromPrior, Message, MessageBuilder};
-use crate::test_vectors::CHARLIE_DID;
 
 lazy_static! {
     pub(crate) static ref MESSAGE_SIMPLE: Message = _message().finalize();
@@ -45,6 +44,82 @@ lazy_static! {
                     CHARLIE_DID.into(),
                     ALICE_DID.into(),
                 )
+                .finalize()
+            )
+        )
+        .finalize();
+}
+
+lazy_static! {
+    pub(crate) static ref MESSAGE_FROM_PRIOR_INVALID_FROM_PRIOR_ISS: Message = _message()
+        .from_prior(
+            Some(
+                FromPrior::build(
+                    "invalid".into(),
+                    ALICE_DID.into(),
+                )
+                .aud("123".into())
+                .exp(1234)
+                .nbf(12345)
+                .iat(123456)
+                .jti("dfg".into())
+                .finalize()
+            )
+        )
+        .finalize();
+}
+
+lazy_static! {
+    pub(crate) static ref MESSAGE_FROM_PRIOR_INVALID_FROM_PRIOR_SUB: Message = _message()
+        .from_prior(
+            Some(
+                FromPrior::build(
+                    CHARLIE_DID.into(),
+                    "invalid".into(),
+                )
+                .aud("123".into())
+                .exp(1234)
+                .nbf(12345)
+                .iat(123456)
+                .jti("dfg".into())
+                .finalize()
+            )
+        )
+        .finalize();
+}
+
+lazy_static! {
+    pub(crate) static ref MESSAGE_FROM_PRIOR_FROM_PRIOR_EQUAL_ISS_AND_SUB: Message = _message()
+        .from_prior(
+            Some(
+                FromPrior::build(
+                    ALICE_DID.into(),
+                    ALICE_DID.into(),
+                )
+                .aud("123".into())
+                .exp(1234)
+                .nbf(12345)
+                .iat(123456)
+                .jti("dfg".into())
+                .finalize()
+            )
+        )
+        .finalize();
+}
+
+lazy_static! {
+    pub(crate) static ref MESSAGE_FROM_PRIOR_MISMATCHED_FROM_PRIOR_SUB: Message = _message()
+        .from_prior(
+            Some(
+                FromPrior::build(
+                    CHARLIE_DID.into(),
+                    DAVE_DID.into(),
+                )
+                .aud("123".into())
+                .exp(1234)
+                .nbf(12345)
+                .iat(123456)
+                .jti("dfg".into())
                 .finalize()
             )
         )

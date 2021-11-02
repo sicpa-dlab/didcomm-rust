@@ -20,6 +20,48 @@ pub(crate) const PLAINTEXT_MSG_MINIMAL: &str = r#"
 }
 "#;
 
+pub(crate) const PLAINTEXT_FROM_PRIOR: &str = r#"
+{
+    "id": "1234567890",
+    "typ": "application/didcomm-plain+json",
+    "type": "http://example.com/protocols/lets_do_lunch/1.0/proposal",
+    "from": "did:example:alice",
+    "to": ["did:example:bob"],
+    "created_time": 1516269022,
+    "expires_time": 1516385931,
+    "from_prior": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImtpZCI6ImRpZDpleGFtcGxlOmNoYXJsaWUja2V5LTEifQ.eyJpc3MiOiJkaWQ6ZXhhbXBsZTpjaGFybGllIiwic3ViIjoiZGlkOmV4YW1wbGU6YWxpY2UiLCJhdWQiOiIxMjMiLCJleHAiOjEyMzQsIm5iZiI6MTIzNDUsImlhdCI6MTIzNDU2LCJqdGkiOiJkZmcifQ.ir0tegXiGJIZIMagO5P853KwhzGTEw0OpFFAyarUV-nQrtbI_ELbxT9l7jPBoPve_-60ifGJ9v3ArmFjELFlDA",
+    "body": {"messagespecificattribute": "and its value"}
+}
+"#;
+
+pub(crate) const PLAINTEXT_INVALID_FROM_PRIOR: &str = r#"
+{
+    "id": "1234567890",
+    "typ": "application/didcomm-plain+json",
+    "type": "http://example.com/protocols/lets_do_lunch/1.0/proposal",
+    "from": "did:example:alice",
+    "to": ["did:example:bob"],
+    "created_time": 1516269022,
+    "expires_time": 1516385931,
+    "from_prior": "invalid",
+    "body": {"messagespecificattribute": "and its value"}
+}
+"#;
+
+pub(crate) const PLAINTEXT_INVALID_FROM_PRIOR_SIGNATURE: &str = r#"
+{
+    "id": "1234567890",
+    "typ": "application/didcomm-plain+json",
+    "type": "http://example.com/protocols/lets_do_lunch/1.0/proposal",
+    "from": "did:example:alice",
+    "to": ["did:example:bob"],
+    "created_time": 1516269022,
+    "expires_time": 1516385931,
+    "from_prior": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImtpZCI6ImRpZDpleGFtcGxlOmNoYXJsaWUja2V5LTEifQ.eyJpc3MiOiJkaWQ6ZXhhbXBsZTpjaGFybGllIiwic3ViIjoiZGlkOmV4YW1wbGU6YWxpY2UiLCJhdWQiOiIxMjMiLCJleHAiOjEyMzQsIm5iZiI6MTIzNDUsImlhdCI6MTIzNDU2LCJqdGkiOiJkZmcifQ.ir0tegXiGJIZIMagO5P853KwhzGTEw0OpFFAyarUV-nQrtbI_ELbxT9l7jPBoPve_-60ifGJ9v3ArmFjELFlDB",
+    "body": {"messagespecificattribute": "and its value"}
+}
+"#;
+
 pub(crate) const PLAINTEXT_MSG_ATTACHMENT_BASE64: &str = r#"
 {
     "id": "1234567890",

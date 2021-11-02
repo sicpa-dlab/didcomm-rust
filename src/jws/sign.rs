@@ -284,7 +284,7 @@ mod tests {
 
             assert_eq!(
                 format!("{}", err),
-                "Unsupported crypto or method: Unsuported signature type"
+                "Unsupported crypto or method: Unsupported signature type"
             );
         }
     }
@@ -348,6 +348,136 @@ mod tests {
             let valid = msg.verify::<K>(&pkey).expect("Unable verify");
 
             assert!(valid);
+        }
+    }
+
+    #[test]
+    fn sign_compact_works_incompatible_alg() {
+        _sign_compact_works_incompatible_alg::<Ed25519KeyPair>(
+            ALICE_KID_ED25519,
+            ALICE_KEY_ED25519,
+            "example-typ-1",
+            Algorithm::Es256,
+            PAYLOAD,
+        );
+
+        _sign_compact_works_incompatible_alg::<Ed25519KeyPair>(
+            ALICE_KID_ED25519,
+            ALICE_KEY_ED25519,
+            "example-typ-1",
+            Algorithm::Es256K,
+            PAYLOAD,
+        );
+
+        _sign_compact_works_incompatible_alg::<P256KeyPair>(
+            ALICE_KID_P256,
+            ALICE_KEY_P256,
+            "example-typ-1",
+            Algorithm::Es256K,
+            PAYLOAD,
+        );
+
+        _sign_compact_works_incompatible_alg::<P256KeyPair>(
+            ALICE_KID_P256,
+            ALICE_KEY_P256,
+            "example-typ-1",
+            Algorithm::EdDSA,
+            PAYLOAD,
+        );
+
+        _sign_compact_works_incompatible_alg::<P256KeyPair>(
+            ALICE_KID_P256,
+            ALICE_KEY_P256,
+            "example-typ-1",
+            Algorithm::Es256K,
+            PAYLOAD,
+        );
+
+        _sign_compact_works_incompatible_alg::<K256KeyPair>(
+            ALICE_KID_K256,
+            ALICE_KEY_K256,
+            "example-typ-1",
+            Algorithm::Es256,
+            PAYLOAD,
+        );
+
+        _sign_compact_works_incompatible_alg::<K256KeyPair>(
+            ALICE_KID_K256,
+            ALICE_KEY_K256,
+            "example-typ-1",
+            Algorithm::EdDSA,
+            PAYLOAD,
+        );
+
+        _sign_compact_works_incompatible_alg::<K256KeyPair>(
+            ALICE_KID_K256,
+            ALICE_KEY_K256,
+            "example-typ-1",
+            Algorithm::Es256,
+            PAYLOAD,
+        );
+
+        fn _sign_compact_works_incompatible_alg<K: FromJwk + KeySign + KeySigVerify>(
+            kid: &str,
+            key: &str,
+            typ: &str,
+            alg: Algorithm,
+            payload: &str,
+        ) {
+            let res = _sign_compact::<K>(kid, key, typ, alg.clone(), payload);
+
+            let err = res.expect_err("res is ok");
+            assert_eq!(err.kind(), ErrorKind::InvalidState);
+
+            assert_eq!(
+                format!("{}", err),
+                "Invalid state: Unable create signature: Unsupported signature type"
+            );
+        }
+    }
+
+    #[test]
+    fn sign_compact_works_unknown_alg() {
+        _sign_compact_works_unknown_alg::<Ed25519KeyPair>(
+            ALICE_KID_ED25519,
+            ALICE_KEY_ED25519,
+            "example-typ-1",
+            Algorithm::Other("bls".to_owned()),
+            PAYLOAD,
+        );
+
+        _sign_compact_works_unknown_alg::<P256KeyPair>(
+            ALICE_KID_P256,
+            ALICE_KEY_P256,
+            "example-typ-1",
+            Algorithm::Other("bls".to_owned()),
+            PAYLOAD,
+        );
+
+        _sign_compact_works_unknown_alg::<K256KeyPair>(
+            ALICE_KID_K256,
+            ALICE_KEY_K256,
+            "example-typ-1",
+            Algorithm::Other("bls".to_owned()),
+            PAYLOAD,
+        );
+
+        fn _sign_compact_works_unknown_alg<K: FromJwk + KeySign + KeySigVerify>(
+            kid: &str,
+            key: &str,
+            typ: &str,
+            alg: Algorithm,
+            payload: &str,
+        ) {
+            let res = _sign_compact::<K>(kid, key, typ, alg.clone(), payload);
+
+            let err = res.expect_err("res is ok");
+            assert_eq!(err.kind(), ErrorKind::Unsupported);
+
+            assert_eq!(
+                format!("{}", err),
+                "Unsupported crypto or method: Unsupported signature type"
+            );
         }
     }
 
@@ -433,7 +563,5 @@ mod tests {
     }
     "#;
 
-    const PAYLOAD: &str = r#"
-    {"id":"1234567890","typ":"application/didcomm-plain+json","type":"http://example.com/protocols/lets_do_lunch/1.0/proposal","from":"did:example:alice","to":["did:example:bob"],"created_time":1516269022,"expires_time":1516385931,"body":{"messagespecificattribute":"and its value"}}
-    "#;
+    const PAYLOAD: &str = r#"{"id":"1234567890","typ":"application/didcomm-plain+json","type":"http://example.com/protocols/lets_do_lunch/1.0/proposal","from":"did:example:alice","to":["did:example:bob"],"created_time":1516269022,"expires_time":1516385931,"body":{"messagespecificattribute":"and its value"}}"#;
 }

@@ -268,29 +268,60 @@ mod tests {
     }
 
     #[test]
-    fn verify_for_compact_works() {
-        let msg =
-            "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
-             ZSNrZXktMSJ9\
-             .\
-             CiAgICB7ImlkIjoiMTIzNDU2Nzg5MCIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tcGxhaW4ranNv\
-             biIsInR5cGUiOiJodHRwOi8vZXhhbXBsZS5jb20vcHJvdG9jb2xzL2xldHNfZG9fbHVuY2gvMS4wL3By\
-             b3Bvc2FsIiwiZnJvbSI6ImRpZDpleGFtcGxlOmFsaWNlIiwidG8iOlsiZGlkOmV4YW1wbGU6Ym9iIl0s\
-             ImNyZWF0ZWRfdGltZSI6MTUxNjI2OTAyMiwiZXhwaXJlc190aW1lIjoxNTE2Mzg1OTMxLCJib2R5Ijp7\
-             Im1lc3NhZ2VzcGVjaWZpY2F0dHJpYnV0ZSI6ImFuZCBpdHMgdmFsdWUifX0KICAgIA\
-             .\
-             zaWcR-zXXYToP8xrzYsXQ905xxtVcpmiRObc5N5e8m-OAxmmbnEr0ZbA6DIxmSwGg_fy4EUQPRtd0qA6\
-             mVRWDg";
-
-        let mut buf = vec![];
-        let msg = jws::parse_compact(&msg, &mut buf).expect("unable to parse");
-
-        assert_eq!(msg.parsed_header.kid, ALICE_KID_ED25519);
-
-        let key = Ed25519KeyPair::from_jwk(ALICE_PKEY_ED25519).expect("unable from_jwk");
-        let res = msg.verify(&key).expect("unable to verify");
-
+    fn verify_compact_works() {
+        let res =
+            _verify_compact::<Ed25519KeyPair>(ALICE_PKEY_ED25519, ALICE_COMPACT_MSG_ED25519);
+        let res = res.expect("res is err");
         assert_eq!(res, true);
+    }
+
+    #[test]
+    fn verify_compact_works_different_key() {
+        // use Dave's public key instead of Alice's one
+        let res =
+            _verify_compact::<Ed25519KeyPair>(CHARLIE_PKEY_ED25519, ALICE_COMPACT_MSG_ED25519);
+        let res = res.expect("res is err");
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn verify_compact_works_changed_payload() {
+        let res =
+            _verify_compact::<Ed25519KeyPair>(
+                ALICE_PKEY_ED25519,
+                ALICE_COMPACT_MSG_ED25519_CHANGED_PAYLOAD
+            );
+        let res = res.expect("res is err");
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn verify_compact_works_different_curve() {
+        let res =
+            _verify_compact::<P256KeyPair>(ALICE_PKEY_P256, ALICE_COMPACT_MSG_ED25519);
+            let err = res.expect_err("res is ok");
+            assert_eq!(err.kind(), ErrorKind::Malformed);
+
+            assert_eq!(
+                format!("{}", err),
+                "Malformed: Unable verify signature: Unsupported signature type"
+            );
+    }
+
+    #[test]
+    fn verify_compact_works_undecodable_sig() {
+        let res =
+            _verify_compact::<Ed25519KeyPair>(
+                ALICE_PKEY_ED25519,
+                ALICE_COMPACT_MSG_ED25519_UNDECODABLE_SIG
+            );
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
+
+        assert_eq!(
+            format!("{}", err),
+            "Malformed: Unable decode signature: Invalid byte 33, offset 0."
+        );
     }
 
     fn _verify<Key: FromJwk + KeySigVerify>(
@@ -304,6 +335,18 @@ mod tests {
         let msg = jws::parse(&msg, &mut buf).expect("unable parse.");
 
         msg.verify((kid, &key))
+    }
+
+    fn _verify_compact<Key: FromJwk + KeySigVerify>(
+        key: &str,
+        msg: &str,
+    ) -> Result<bool, Error> {
+        let key = Key::from_jwk(key).expect("unable from_jwk.");
+
+        let mut buf = vec![];
+        let msg = jws::parse_compact(&msg, &mut buf).expect("unable parse.");
+
+        msg.verify(&key)
     }
 
     const ALICE_KID_ED25519: &str = "did:example:alice#key-1";
@@ -531,6 +574,45 @@ mod tests {
     }
     "#;
 
+    const ALICE_COMPACT_MSG_ED25519: &str =
+        "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+         ZSNrZXktMSJ9\
+         .\
+         eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+         eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+         bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+         dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+         YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+         .\
+         iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+         bHgtCg";
+
+    const ALICE_COMPACT_MSG_ED25519_CHANGED_PAYLOAD: &str =
+        "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+         ZSNrZXktMSJ9\
+         .\
+         eyJpZCI6IjAyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+         eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+         bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+         dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+         YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+         .\
+         iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+         bHgtCg";
+
+    const ALICE_COMPACT_MSG_ED25519_UNDECODABLE_SIG: &str =
+        "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+         ZSNrZXktMSJ9\
+         .\
+         eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+         eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+         bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+         dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+         YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+         .\
+         !iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+         bHgtCg";
+
     /*
     Bob key Ed25519
     {"crv":"Ed25519","kty":"OKP","x":"ECEdOp9caYYVMgGomcV-bHjvJcRvh68COWd_GO-npGI","d":"CKMS_Kt8x6to6jD88d6EGo_H_fSG3L2SAEccLBGQG3U"}
@@ -581,6 +663,14 @@ mod tests {
             "signature":"Jym1ZSzMJBq9hjOx0I0wG03I0nf2NySLt8GostuIQ3JE9hGluwhBBGeFaSATJt4OUEFsB_k0YuwPGSwbo3nKUw"
         }],
         "payload":"eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3NhbCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVhdGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNzYWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19"
+    }
+    "#;
+
+    const CHARLIE_PKEY_ED25519: &str = r#"
+    {
+        "kty":"OKP",
+        "crv":"Ed25519",
+        "x":"VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE"
     }
     "#;
 }

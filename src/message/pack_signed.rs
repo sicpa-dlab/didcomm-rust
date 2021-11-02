@@ -153,9 +153,9 @@ mod tests {
         alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair},
         sign::KeySigVerify,
     };
+
     use serde_json::Value;
 
-    use crate::message::pack_signed::PackSignedOptions;
     use crate::{
         did::{resolvers::ExampleDIDResolver, DIDResolver, VerificationMaterial},
         jwk::FromJwkValue,
@@ -163,9 +163,12 @@ mod tests {
         secrets::{resolvers::ExampleSecretsResolver, SecretsResolver},
         test_vectors::{
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
-            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
+            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID_DOC, BOB_SECRETS, CHARLIE_DID,
+            CHARLIE_DID_DOC, CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519,
+            MESSAGE_FROM_PRIOR, MESSAGE_FROM_PRIOR_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
         },
-        Message, PackSignedMetadata,
+        utils::did::did_or_url,
+        Message, PackSignedMetadata, PackSignedOptions, UnpackOptions,
     };
 
     #[tokio::test]
@@ -291,6 +294,105 @@ mod tests {
                 .expect("Unable verify");
 
             assert!(valid);
+        }
+    }
+
+    #[tokio::test]
+    async fn pack_signed_works_from_prior_and_issuer_kid() {
+        _pack_signed_works_from_prior_and_issuer_kid(&MESSAGE_FROM_PRIOR_MINIMAL).await;
+        _pack_signed_works_from_prior_and_issuer_kid(&MESSAGE_FROM_PRIOR).await;
+
+        async fn _pack_signed_works_from_prior_and_issuer_kid(msg: &Message) {
+            let did_resolver = ExampleDIDResolver::new(vec![
+                ALICE_DID_DOC.clone(),
+                BOB_DID_DOC.clone(),
+                CHARLIE_DID_DOC.clone(),
+            ]);
+            let charlie_rotated_to_alice_secrets_resolver =
+                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+            let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+
+            let (packed_msg, pack_metadata) = msg
+                .pack_signed(
+                    ALICE_DID,
+                    &did_resolver,
+                    &charlie_rotated_to_alice_secrets_resolver,
+                    &PackSignedOptions {
+                        from_prior_issuer_kid: Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone()),
+                    },
+                )
+                .await
+                .expect("Unable pack_signed");
+
+            assert_eq!(
+                pack_metadata.from_prior_issuer_kid,
+                Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone())
+            );
+
+            let (unpacked_msg, unpack_metadata) = Message::unpack(
+                &packed_msg,
+                &did_resolver,
+                &bob_secrets_resolver,
+                &UnpackOptions::default(),
+            )
+            .await
+            .expect("Unable unpack");
+
+            assert_eq!(&unpacked_msg, msg);
+            assert_eq!(
+                unpack_metadata.from_prior_issuer_kid,
+                Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone())
+            );
+            assert!(unpack_metadata.from_prior_jwt.is_some());
+        }
+    }
+
+    #[tokio::test]
+    async fn pack_signed_works_from_prior_and_no_issuer_kid() {
+        _pack_signed_with_from_prior_works_and_no_issuer_kid(&MESSAGE_FROM_PRIOR_MINIMAL).await;
+        _pack_signed_with_from_prior_works_and_no_issuer_kid(&MESSAGE_FROM_PRIOR).await;
+
+        async fn _pack_signed_with_from_prior_works_and_no_issuer_kid(msg: &Message) {
+            let did_resolver = ExampleDIDResolver::new(vec![
+                ALICE_DID_DOC.clone(),
+                BOB_DID_DOC.clone(),
+                CHARLIE_DID_DOC.clone(),
+            ]);
+            let charlie_rotated_to_alice_secrets_resolver =
+                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+            let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+
+            let (packed_msg, pack_metadata) = msg
+                .pack_signed(
+                    ALICE_DID,
+                    &did_resolver,
+                    &charlie_rotated_to_alice_secrets_resolver,
+                    &PackSignedOptions::default(),
+                )
+                .await
+                .expect("Unable pack_signed");
+
+            assert!(pack_metadata.from_prior_issuer_kid.is_some());
+
+            let (did, kid) = did_or_url(pack_metadata.from_prior_issuer_kid.as_deref().unwrap());
+            assert!(kid.is_some());
+            assert_eq!(did, CHARLIE_DID);
+
+            let (unpacked_msg, unpack_metadata) = Message::unpack(
+                &packed_msg,
+                &did_resolver,
+                &bob_secrets_resolver,
+                &UnpackOptions::default(),
+            )
+            .await
+            .expect("Unable unpack");
+
+            assert_eq!(&unpacked_msg, msg);
+            assert_eq!(
+                unpack_metadata.from_prior_issuer_kid,
+                pack_metadata.from_prior_issuer_kid
+            );
+            assert!(unpack_metadata.from_prior_jwt.is_some());
         }
     }
 }

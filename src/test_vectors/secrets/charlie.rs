@@ -20,8 +20,8 @@ lazy_static! {
         secret_material: SecretMaterial::JWK(json!({
             "kty": "OKP",
             "crv": "Ed25519",
-            "x": "G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww",
-            "d": "pFRUKkyzx4kHdJtFSnlPA9WzqkDT1HWV0xZ5OYZd2SY",
+            "x": "VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE",
+            "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg",
         })),
     };
     pub(crate) static ref CHARLIE_SECRETS: Vec<Secret> = vec![

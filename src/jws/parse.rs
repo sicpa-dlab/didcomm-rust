@@ -53,7 +53,7 @@ pub(crate) fn parse_compact<'a>(
     let segments: Vec<&str> = compact_jws.split('.').collect();
     if segments.len() != 3 {
         return Err(err_msg(
-            ErrorKind::InvalidState,
+            ErrorKind::Malformed,
             "Unable to parse compactly serialized JWS",
         ));
     }
@@ -63,10 +63,10 @@ pub(crate) fn parse_compact<'a>(
     let signature = segments[2];
 
     base64::decode_config_buf(header, base64::URL_SAFE_NO_PAD, buf)
-        .kind(ErrorKind::Malformed, "Unable decode protected header")?;
+        .kind(ErrorKind::Malformed, "Unable decode header")?;
 
     let parsed_header: CompactHeader =
-        serde_json::from_slice(buf).kind(ErrorKind::Malformed, "Unable parse protected header")?;
+        serde_json::from_slice(buf).kind(ErrorKind::Malformed, "Unable parse header")?;
 
     Ok(ParsedCompactJWS {
         header,
@@ -285,11 +285,11 @@ mod tests {
         let mut buf = vec![];
         let res = jws::parse(&msg, &mut buf);
 
-        let res = res.expect_err("res is ok");
-        assert_eq!(res.kind(), ErrorKind::Malformed);
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
 
         assert_eq!(
-            format!("{}", res),
+            format!("{}", err),
             "Malformed: Unable parse jws: trailing comma at line 10 column 19"
         );
     }
@@ -313,11 +313,11 @@ mod tests {
         let mut buf = vec![];
         let res = jws::parse(&msg, &mut buf);
 
-        let res = res.expect_err("res is ok");
-        assert_eq!(res.kind(), ErrorKind::Malformed);
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
 
         assert_eq!(
-            format!("{}", res),
+            format!("{}", err),
             "Malformed: Unable parse jws: missing field `kid` at line 9 column 17"
         );
     }
@@ -342,11 +342,11 @@ mod tests {
         let mut buf = vec![];
         let res = jws::parse(&msg, &mut buf);
 
-        let res = res.expect_err("res is ok");
-        assert_eq!(res.kind(), ErrorKind::Malformed);
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
 
         assert_eq!(
-            format!("{}", res),
+            format!("{}", err),
             "Malformed: Unable decode protected header: Invalid byte 33, offset 0."
         );
     }
@@ -371,11 +371,11 @@ mod tests {
         let mut buf = vec![];
         let res = jws::parse(&msg, &mut buf);
 
-        let res = res.expect_err("res is ok");
-        assert_eq!(res.kind(), ErrorKind::Malformed);
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
 
         assert_eq!(
-            format!("{}", res),
+            format!("{}", err),
             "Malformed: Unable parse protected header: key must be a string at line 1 column 2"
         );
     }
@@ -387,7 +387,7 @@ mod tests {
             "payload":"eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3NhbCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVhdGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNzYWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19",
             "signatures":[
                {
-                  "protected":"InR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tc2lnbmVkK2pzb24ifQ",
+                  "protected":"eyJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXNpZ25lZCtqc29uIn0",
                   "signature":"FW33NnvOHV0Ted9-F7GZbkia-vYAfBKtH4oBxbrttWAhBZ6UFJMxcGjL3lwOl4YohI3kyyd08LHPWNMgP2EVCQ",
                   "header":{
                     "kid":"did:example:alice#key-1"
@@ -400,12 +400,12 @@ mod tests {
         let mut buf = vec![];
         let res = jws::parse(&msg, &mut buf);
 
-        let res = res.expect_err("res is ok");
-        assert_eq!(res.kind(), ErrorKind::Malformed);
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
 
         assert_eq!(
-            format!("{}", res),
-            "Malformed: Unable parse protected header: invalid type: string \"typ\", expected struct ProtectedHeader at line 1 column 5"
+            format!("{}", err),
+            "Malformed: Unable parse protected header: missing field `alg` at line 1 column 41"
         );
     }
 
@@ -415,14 +415,14 @@ mod tests {
             "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
              ZSNrZXktMSJ9\
              .\
-             CiAgICB7ImlkIjoiMTIzNDU2Nzg5MCIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tcGxhaW4ranNv\
-             biIsInR5cGUiOiJodHRwOi8vZXhhbXBsZS5jb20vcHJvdG9jb2xzL2xldHNfZG9fbHVuY2gvMS4wL3By\
-             b3Bvc2FsIiwiZnJvbSI6ImRpZDpleGFtcGxlOmFsaWNlIiwidG8iOlsiZGlkOmV4YW1wbGU6Ym9iIl0s\
-             ImNyZWF0ZWRfdGltZSI6MTUxNjI2OTAyMiwiZXhwaXJlc190aW1lIjoxNTE2Mzg1OTMxLCJib2R5Ijp7\
-             Im1lc3NhZ2VzcGVjaWZpY2F0dHJpYnV0ZSI6ImFuZCBpdHMgdmFsdWUifX0KICAgIA\
+             eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+             eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+             bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+             dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+             YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
              .\
-             zaWcR-zXXYToP8xrzYsXQ905xxtVcpmiRObc5N5e8m-OAxmmbnEr0ZbA6DIxmSwGg_fy4EUQPRtd0qA6\
-             mVRWDg";
+             iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+             bHgtCg";
 
         let mut buf = vec![];
         let res = jws::parse_compact(&msg, &mut buf);
@@ -436,15 +436,188 @@ mod tests {
                 alg: Algorithm::EdDSA,
                 kid: "did:example:alice#key-1",
             },
-            payload: "CiAgICB7ImlkIjoiMTIzNDU2Nzg5MCIsInR5cCI6ImFwcGxpY2F0aW9uL2RpZGNvbW0tcGxhaW4ranNv\
-                      biIsInR5cGUiOiJodHRwOi8vZXhhbXBsZS5jb20vcHJvdG9jb2xzL2xldHNfZG9fbHVuY2gvMS4wL3By\
-                      b3Bvc2FsIiwiZnJvbSI6ImRpZDpleGFtcGxlOmFsaWNlIiwidG8iOlsiZGlkOmV4YW1wbGU6Ym9iIl0s\
-                      ImNyZWF0ZWRfdGltZSI6MTUxNjI2OTAyMiwiZXhwaXJlc190aW1lIjoxNTE2Mzg1OTMxLCJib2R5Ijp7\
-                      Im1lc3NhZ2VzcGVjaWZpY2F0dHJpYnV0ZSI6ImFuZCBpdHMgdmFsdWUifX0KICAgIA",
-            signature: "zaWcR-zXXYToP8xrzYsXQ905xxtVcpmiRObc5N5e8m-OAxmmbnEr0ZbA6DIxmSwGg_fy4EUQPRtd0qA6\
-                        mVRWDg",
+            payload: "eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+                      eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+                      bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+                      dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+                      YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19",
+            signature: "iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+                        bHgtCg",
         };
 
         assert_eq!(res, exp);
+    }
+
+    #[test]
+    fn parse_compact_works_header_unknown_fields() {
+        let msg =
+            "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+             ZSNrZXktMSIsImV4dHJhIjoidmFsdWUifQ\
+             .\
+             eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+             eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+             bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+             dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+             YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+             .\
+             iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+             bHgtCg";
+
+        let mut buf = vec![];
+        let res = jws::parse_compact(&msg, &mut buf);
+        let res = res.expect("res is err");
+
+        let exp = ParsedCompactJWS {
+            header: "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+                     ZSNrZXktMSIsImV4dHJhIjoidmFsdWUifQ",
+            parsed_header: CompactHeader {
+                typ: "example-typ-1",
+                alg: Algorithm::EdDSA,
+                kid: "did:example:alice#key-1",
+            },
+            payload: "eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+                      eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+                      bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+                      dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+                      YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19",
+            signature: "iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+                        bHgtCg",
+        };
+
+        assert_eq!(res, exp);
+    }
+
+    #[test]
+    fn parse_compact_works_too_few_segments() {
+        let msg =
+            "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+             ZSNrZXktMSJ9\
+             .\
+             eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+             eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+             bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+             dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+             YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19";
+
+        let mut buf = vec![];
+        let res = jws::parse_compact(&msg, &mut buf);
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
+
+        assert_eq!(
+            format!("{}", err),
+            "Malformed: Unable to parse compactly serialized JWS"
+        );
+    }
+
+    #[test]
+    fn parse_compact_works_too_many_segments() {
+        let msg =
+            "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+             ZSNrZXktMSJ9\
+             .\
+             eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+             eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+             bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+             dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+             YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+             .\
+             iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+             bHgtCg\
+             .\
+             eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+             ZSNrZXktMSJ9";
+
+        let mut buf = vec![];
+        let res = jws::parse_compact(&msg, &mut buf);
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
+
+        assert_eq!(
+            format!("{}", err),
+            "Malformed: Unable to parse compactly serialized JWS"
+        );
+    }
+
+    #[test]
+    fn parse_compact_works_undecodable_header() {
+        let msg =
+            "!eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+             ZSNrZXktMSJ9\
+             .\
+             eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+             eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+             bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+             dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+             YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+             .\
+             iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+             bHgtCg";
+
+        let mut buf = vec![];
+        let res = jws::parse_compact(&msg, &mut buf);
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
+
+        assert_eq!(
+            format!("{}", err),
+            "Malformed: Unable decode header: Encoded text cannot have a 6-bit remainder."
+        );
+    }
+
+    #[test]
+    fn parse_compact_works_unparsable_header() {
+        let msg =
+            "ey4idHlwIjoiZXhhbXBsZS10eXAtMSIsImFsZyI6IkVkRFNBIiwia2lkIjoiZGlkOmV4YW1wbGU6YWxp\
+             Y2Uja2V5LTEifQ\
+             .\
+             eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+             eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+             bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+             dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+             YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+             .\
+             iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+             bHgtCg";
+
+        let mut buf = vec![];
+        let res = jws::parse_compact(&msg, &mut buf);
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
+
+        assert_eq!(
+            format!("{}", err),
+            "Malformed: Unable parse header: key must be a string at line 1 column 2"
+        );
+    }
+
+    #[test]
+    fn parse_compact_works_misstructured_header() {
+        let msg =
+            "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwia2lkIjoiZGlkOmV4YW1wbGU6YWxpY2Uja2V5LTEifQ\
+             .\
+             eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+             eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+             bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+             dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+             YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+             .\
+             iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+             bHgtCg";
+
+        let mut buf = vec![];
+        let res = jws::parse_compact(&msg, &mut buf);
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
+
+        assert_eq!(
+            format!("{}", err),
+            "Malformed: Unable parse header: missing field `alg` at line 1 column 55"
+        );
     }
 }
