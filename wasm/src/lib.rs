@@ -1,4 +1,6 @@
 mod did_resolver;
+mod error;
+mod message;
 mod secrets_resolver;
 mod utils;
 
@@ -12,7 +14,11 @@ pub use crate::{
     did_resolver::DIDResolver, secrets_resolver::SecretsResolver, utils::set_panic_hook,
 };
 
-use crate::{did_resolver::JsDIDResolver, secrets_resolver::JsSecretsResolver};
+use crate::{
+    did_resolver::JsDIDResolver,
+    message::Message,
+    secrets_resolver::JsSecretsResolver,
+};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -21,21 +27,7 @@ use crate::{did_resolver::JsDIDResolver, secrets_resolver::JsSecretsResolver};
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-pub struct Message(didcomm::Message);
-
-#[wasm_bindgen]
 impl Message {
-    #[wasm_bindgen(constructor)]
-    pub fn new(value: JsValue) -> Self {
-        // TODO: FIXME: Error handling
-        Message(value.into_serde().unwrap())
-    }
-
-    pub fn as_value(&self) -> JsValue {
-        // TODO: FIXME: Error handling
-        JsValue::from_serde(&self.0).unwrap()
-    }
-
     pub fn pack_plaintext(&self) -> Result<String, JsValue> {
         self.0.pack_plaintext().map_err(|e| format!("{}", e).into())
     }
