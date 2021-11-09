@@ -11,7 +11,7 @@ name = 'basic'
 
 [package]
 name = 'didcomm'
-version = '0.2.0'
+version = '0.2.1'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'DIDComm for Rust'
