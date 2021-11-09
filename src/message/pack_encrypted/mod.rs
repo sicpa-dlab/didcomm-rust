@@ -1,6 +1,7 @@
 mod anoncrypt;
 mod authcrypt;
 
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::{
@@ -132,14 +133,16 @@ impl Message {
 }
 
 /// Allow fine configuration of packing process.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Deserialize)]
 pub struct PackEncryptedOptions {
     /// If `true` and message is authenticated than information about sender will be protected from mediators, but
     /// additional re-encryption will be required. For anonymous messages this property will be ignored.
+    #[serde(default)]
     pub protect_sender: bool,
 
     /// Whether the encrypted messages need to be wrapped into `Forward` messages to be sent to Mediators
     /// as defined by the `Forward` protocol.
+    #[serde(default = "crate::utils::serde::_true")]
     pub forward: bool,
 
     /// if forward is enabled these optional headers can be passed to the wrapping `Forward` messages.
@@ -152,9 +155,11 @@ pub struct PackEncryptedOptions {
     pub messaging_service: Option<String>,
 
     /// Algorithm used for authenticated encryption
+    #[serde(default)]
     pub enc_alg_auth: AuthCryptAlg,
 
     /// Algorithm used for anonymous encryption
+    #[serde(default)]
     pub enc_alg_anon: AnonCryptAlg,
 }
 
@@ -165,15 +170,15 @@ impl Default for PackEncryptedOptions {
             forward: true,
             forward_headers: None,
             messaging_service: None,
-            enc_alg_auth: AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
-            enc_alg_anon: AnonCryptAlg::Xc20pEcdhEsA256kw,
+            enc_alg_auth: AuthCryptAlg::default(),
+            enc_alg_anon: AnonCryptAlg::default(),
         }
     }
 }
 
 /// Additional metadata about this `encrypt` method execution like used keys identifiers,
 /// used messaging service.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct PackEncryptedMetadata {
     /// Information about messaging service used for message preparation.
     /// Practically `service_endpoint` field can be used to transport the message.
@@ -191,7 +196,7 @@ pub struct PackEncryptedMetadata {
 
 /// Information about messaging service used for message preparation.
 /// Practically `service_endpoint` field can be used to transport the message.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct MessagingServiceMetadata {
     /// Identifier (DID URL) of used messaging service.
     pub id: String,

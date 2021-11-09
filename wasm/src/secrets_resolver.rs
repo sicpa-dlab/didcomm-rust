@@ -1,11 +1,10 @@
-use std::convert::TryFrom;
-
 use async_trait::async_trait;
 use didcomm::{
     error::{err_msg, ErrorKind, Result as _Result, ResultExt},
     secrets::{Secret, SecretsResolver as _SecretsResolver},
 };
 use js_sys::Array;
+use std::convert::TryFrom;
 use wasm_bindgen::prelude::*;
 
 /// TODO: Provide description
@@ -42,7 +41,7 @@ impl _SecretsResolver for JsSecretsResolver {
 
         let secret: Option<Secret> = secret.into_serde().kind(
             ErrorKind::InvalidState,
-            "Unable deserialize DIDDoc from JsValue",
+            "Unable deserialize Secret from JsValue",
         )?;
 
         Ok(secret)
@@ -82,7 +81,7 @@ impl _SecretsResolver for JsSecretsResolver {
 
         let found: Vec<_> = secret_ids
             .iter()
-            .filter(|&s| found.iter().find(|_s| s == s).is_some())
+            .filter(|&s| found.iter().find(|_s| _s == s).is_some())
             .map(|&s| s)
             .collect();
 

@@ -2,6 +2,8 @@ mod anoncrypt;
 mod authcrypt;
 mod sign;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
@@ -95,14 +97,17 @@ impl Message {
 }
 
 /// Allows fine customization of unpacking process
+#[derive(Debug, PartialEq, Eq, Deserialize)]
 pub struct UnpackOptions {
     /// Whether the plaintext must be decryptable by all keys resolved by the secrets resolver. False by default.
+    #[serde(default)]
     pub expect_decrypt_by_all_keys: bool,
 
     /// If `true` and the packed message is a `Forward`
     /// wrapping a plaintext packed for the given recipient, then both Forward and packed plaintext are unpacked automatically,
     /// and the unpacked plaintext will be returned instead of unpacked Forward.
     /// False by default.
+    #[serde(default)]
     pub unwrap_re_wrapping_forward: bool,
 }
 
@@ -117,7 +122,7 @@ impl Default for UnpackOptions {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct UnpackMetadata {
     /// Whether the plaintext has been encrypted
     pub encrypted: bool,

@@ -1,4 +1,4 @@
-## WASMP wrapper for DIDComm Rust
+## WASM based javascript wrapper for DIDComm
 
 ### 🛠️ Build with `wasm-pack build`
 

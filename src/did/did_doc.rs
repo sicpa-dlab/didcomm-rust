@@ -1,10 +1,10 @@
 //! Set of interfaces that describe DID Document (https://www.w3.org/TR/did-core/)
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 /// Represents DID Document (https://www.w3.org/TR/did-core/)
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DIDDoc {
     /// DID for the given DID Doc
     pub did: String,
@@ -30,15 +30,16 @@ pub struct DIDDoc {
 
 /// Represents verification method record in DID Document
 /// (https://www.w3.org/TR/did-core/#verification-methods).
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct VerificationMethod {
     pub id: String,
+    #[serde(rename = "type")]
     pub type_: VerificationMethodType,
     pub controller: String,
     pub verification_material: VerificationMaterial,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum VerificationMethodType {
     JsonWebKey2020,
     X25519KeyAgreementKey2019,
@@ -48,7 +49,7 @@ pub enum VerificationMethodType {
 }
 
 /// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum VerificationMaterial {
     JWK(Value),
     Multibase(String),
@@ -58,14 +59,14 @@ pub enum VerificationMaterial {
 }
 
 /// Represents service record in DID Document (https://www.w3.org/TR/did-core/#services).
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Service {
     pub id: String,
     pub kind: ServiceKind,
 }
 
 /// Represents additional service properties defined for specific Service type.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum ServiceKind {
     DIDCommMessaging(DIDCommMessagingService),
     Other(Value),
@@ -73,7 +74,7 @@ pub enum ServiceKind {
 
 /// Properties for DIDCommMessagingService
 /// (https://identity.foundation/didcomm-messaging/spec/#did-document-service-endpoint).
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DIDCommMessagingService {
     pub service_endpoint: String,
     pub accept: Vec<String>,
