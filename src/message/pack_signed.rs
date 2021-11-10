@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
@@ -114,7 +116,7 @@ impl Message {
 }
 
 /// Additional metadata about this `pack` method execution like used key identifiers.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PackSignedMetadata {
     /// Identifier (DID URL) of sign key.
     pub sign_by_kid: String,
