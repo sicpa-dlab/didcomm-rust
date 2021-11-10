@@ -152,7 +152,7 @@ impl AsKnownKeyPair for VerificationMethod {
                     )
                 })?;
 
-                let (codec, decoded_value) = from_multicodec(&decoded_value)?;
+                let (codec, decoded_value) = _from_multicodec(&decoded_value)?;
                 if codec != Codec::X25519Pub {
                     Err(err_msg(
                         ErrorKind::IllegalArgument,
@@ -193,7 +193,7 @@ impl AsKnownKeyPair for VerificationMethod {
                     )
                 })?;
 
-                let (codec, decoded_value) = from_multicodec(&decoded_value)?;
+                let (codec, decoded_value) = _from_multicodec(&decoded_value)?;
                 if codec != Codec::Ed25519Pub {
                     Err(err_msg(
                         ErrorKind::IllegalArgument,
@@ -344,7 +344,7 @@ impl AsKnownKeyPair for Secret {
                         )
                     })?;
 
-                let (codec, decoded_value) = from_multicodec(&decoded_multibase_value)?;
+                let (codec, decoded_value) = _from_multicodec(&decoded_multibase_value)?;
                 if codec != Codec::X25519Priv {
                     Err(err_msg(
                         ErrorKind::IllegalArgument,
@@ -390,7 +390,7 @@ impl AsKnownKeyPair for Secret {
                         )
                     })?;
 
-                let (codec, decoded_value) = from_multicodec(&decoded_multibase_value)?;
+                let (codec, decoded_value) = _from_multicodec(&decoded_multibase_value)?;
                 if codec != Codec::Ed25519Priv {
                     Err(err_msg(
                         ErrorKind::IllegalArgument,
@@ -446,7 +446,7 @@ impl Codec {
     }
 }
 
-pub(crate) fn from_multicodec(value: &Vec<u8>) -> Result<(Codec, &[u8])> {
+fn _from_multicodec(value: &Vec<u8>) -> Result<(Codec, &[u8])> {
     let mut val: Cursor<Vec<u8>> = Cursor::new(value.clone());
     let prefix_int = val.read_unsigned_varint_32().map_err(|_e| {
         err_msg(
