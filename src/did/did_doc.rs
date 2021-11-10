@@ -43,6 +43,8 @@ pub enum VerificationMethodType {
     X25519KeyAgreementKey2019,
     Ed25519VerificationKey2018,
     EcdsaSecp256k1VerificationKey2019,
+    X25519KeyAgreementKey2020,
+    Ed25519VerificationKey2020,
     Other(String),
 }
 
