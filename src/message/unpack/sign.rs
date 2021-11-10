@@ -15,14 +15,13 @@ pub(crate) async fn _try_unapck_sign<'dr>(
     _opts: &UnpackOptions,
     metadata: &mut UnpackMetadata,
 ) -> Result<Option<String>> {
+    if !jws::is_jws(msg) {
+        return Ok(None);
+    }
+
     let jws = msg;
     let mut buf = vec![];
-
-    let msg = if let Ok(msg) = jws::parse(msg, &mut buf) {
-        msg
-    } else {
-        return Ok(None);
-    };
+    let msg = jws::parse(msg, &mut buf)?;
 
     if msg.protected.len() != 1 {
         Err(err_msg(

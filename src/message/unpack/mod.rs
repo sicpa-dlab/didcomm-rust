@@ -74,21 +74,19 @@ impl Message {
 
         let anoncryted =
             _try_unpack_anoncrypt(msg, secrets_resolver, options, &mut metadata).await?;
-
         let msg = anoncryted.as_deref().unwrap_or(msg);
 
         let authcrypted =
             _try_unpack_authcrypt(msg, did_resolver, secrets_resolver, options, &mut metadata)
                 .await?;
-
         let msg = authcrypted.as_deref().unwrap_or(msg);
 
         let signed = _try_unapck_sign(msg, did_resolver, options, &mut metadata).await?;
-
         let msg = signed.as_deref().unwrap_or(msg);
 
         let msg: Self =
             serde_json::from_str(msg).kind(ErrorKind::Malformed, "Unable deserialize jwm")?;
+        msg.validate()?;
 
         Ok((msg, metadata))
     }
@@ -160,6 +158,10 @@ pub struct UnpackMetadata {
 mod test {
     use super::*;
 
+    use crate::test_vectors::{
+        remove_field, remove_protected_field, update_field, update_protected_field,
+        INVALID_ENCRYPTED_MSG_ANON_P256_EPK_WRONG_POINT,
+    };
     use crate::{
         did::resolvers::ExampleDIDResolver,
         secrets::resolvers::ExampleSecretsResolver,
@@ -171,7 +173,17 @@ mod test {
             BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
             BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, ENCRYPTED_MSG_ANON_XC20P_1,
             ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256, ENCRYPTED_MSG_AUTH_P256_SIGNED,
-            ENCRYPTED_MSG_AUTH_X25519, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
+            ENCRYPTED_MSG_AUTH_X25519, INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_INT_ARRAY,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_STRING,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_EMPTY_DATA,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_LINKS_NO_HASH,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_NO_DATA, INVALID_PLAINTEXT_MSG_ATTACHMENTS_NULL_DATA,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_WRONG_DATA,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_WRONG_ID, INVALID_PLAINTEXT_MSG_EMPTY,
+            INVALID_PLAINTEXT_MSG_EMPTY_ATTACHMENTS, INVALID_PLAINTEXT_MSG_NO_BODY,
+            INVALID_PLAINTEXT_MSG_NO_ID, INVALID_PLAINTEXT_MSG_NO_TYP,
+            INVALID_PLAINTEXT_MSG_NO_TYPE, INVALID_PLAINTEXT_MSG_STRING,
+            INVALID_PLAINTEXT_MSG_WRONG_TYP, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
             MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2,
             MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64,
             PLAINTEXT_MSG_ATTACHMENT_JSON, PLAINTEXT_MSG_ATTACHMENT_LINKS,
@@ -1336,6 +1348,278 @@ mod test {
         }
     }
 
+    #[tokio::test]
+    async fn unpack_works_invalid_epk_point() {
+        _verify_unpack_malformed(
+            &INVALID_ENCRYPTED_MSG_ANON_P256_EPK_WRONG_POINT,
+            "Malformed: Unable instantiate epk: Unable produce jwk: Invalid key data",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_malformed_anoncrypt_msg() {
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_ANON_XC20P_1, "protected", "invalid").as_str(),
+            "Malformed: Unable decode protected header: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "protected").as_str(),
+            "Malformed: Unable parse jwe: missing field `protected` at line 1 column 844",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_ANON_XC20P_1, "iv", "invalid").as_str(),
+            "Malformed: Unable decode iv: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "iv").as_str(),
+            "Malformed: Unable parse jwe: missing field `iv` at line 1 column 1110",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_ANON_XC20P_1, "ciphertext", "invalid").as_str(),
+            "Malformed: Unable decode ciphertext: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "ciphertext").as_str(),
+            "Malformed: Unable parse jwe: missing field `ciphertext` at line 1 column 762",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_ANON_XC20P_1, "tag", "invalid").as_str(),
+            "Malformed: Unable decode tag: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "tag").as_str(),
+            "Malformed: Unable parse jwe: missing field `tag` at line 1 column 1119",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_protected_field(ENCRYPTED_MSG_ANON_XC20P_1, "apv", "invalid").as_str(),
+            "Malformed: Unable decode apv: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_protected_field(ENCRYPTED_MSG_ANON_XC20P_1, "apv").as_str(),
+            "Malformed: Unable parse protected header: missing field `apv` at line 1 column 166",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_malformed_authcrypt_msg() {
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_AUTH_X25519, "protected", "invalid").as_str(),
+            "Malformed: Unable decode protected header: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_AUTH_X25519, "protected").as_str(),
+            "Malformed: Unable parse jwe: missing field `protected` at line 1 column 993",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_AUTH_X25519, "iv", "invalid").as_str(),
+            "Malformed: Unable decode iv: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_AUTH_X25519, "iv").as_str(),
+            "Malformed: Unable parse jwe: missing field `iv` at line 1 column 1400",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_AUTH_X25519, "ciphertext", "invalid").as_str(),
+            "Malformed: Unable decode ciphertext: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_AUTH_X25519, "ciphertext").as_str(),
+            "Malformed: Unable parse jwe: missing field `ciphertext` at line 1 column 1030",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_AUTH_X25519, "tag", "invalid").as_str(),
+            "Malformed: Unable decode tag: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_AUTH_X25519, "tag").as_str(),
+            "Malformed: Unable parse jwe: missing field `tag` at line 1 column 1378",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_protected_field(ENCRYPTED_MSG_AUTH_X25519, "apv", "invalid").as_str(),
+            "Malformed: Unable decode apv: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_protected_field(ENCRYPTED_MSG_AUTH_X25519, "apv").as_str(),
+            "Malformed: Unable parse protected header: missing field `apv` at line 1 column 264",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_protected_field(ENCRYPTED_MSG_AUTH_X25519, "apu", "invalid").as_str(),
+            "Malformed: Unable decode apu: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_protected_field(ENCRYPTED_MSG_AUTH_X25519, "apu").as_str(),
+            "Malformed: SKID present, but no apu",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_malformed_signed_msg() {
+        _verify_unpack_malformed(
+            update_field(SIGNED_MSG_ALICE_KEY_1, "payload", "invalid").as_str(),
+            "Malformed: Wrong signature",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(SIGNED_MSG_ALICE_KEY_1, "payload").as_str(),
+            "Malformed: Unable parse jws: missing field `payload` at line 1 column 251",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(SIGNED_MSG_ALICE_KEY_1, "signatures", "invalid").as_str(),
+            "Malformed: Unable parse jws: invalid type: string \"invalid\", expected a sequence at line 1 column 408"
+        ).await;
+
+        _verify_unpack_malformed(
+            remove_field(SIGNED_MSG_ALICE_KEY_1, "signatures").as_str(),
+            "Malformed: Unable parse jws: missing field `signatures` at line 1 column 386",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_malformed_plaintext_msg() {
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_EMPTY,
+            "Malformed: Unable deserialize jwm: missing field `id` at line 2 column 2",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_STRING,
+            "Malformed: Unable deserialize jwm: expected value at line 2 column 1",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_NO_ID,
+            "Malformed: Unable deserialize jwm: missing field `id` at line 6 column 1",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_NO_TYP,
+            "Malformed: Unable deserialize jwm: missing field `typ` at line 6 column 1",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_NO_TYPE,
+            "Malformed: Unable deserialize jwm: missing field `type` at line 6 column 1",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_NO_BODY,
+            "Malformed: Unable deserialize jwm: missing field `body` at line 6 column 1",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_WRONG_TYP,
+            "Malformed: `typ` must be \"application/didcomm-plain+json\"",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_EMPTY_ATTACHMENTS,
+            "Malformed: Unable deserialize jwm: missing field `data` at line 7 column 22",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_NO_DATA,
+            "Malformed: Unable deserialize jwm: missing field `data` at line 7 column 32",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_EMPTY_DATA,
+            "Malformed: Unable deserialize jwm: data did not match any variant of untagged enum AttachmentData at line 7 column 44",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_LINKS_NO_HASH,
+            "Malformed: Unable deserialize jwm: data did not match any variant of untagged enum AttachmentData at line 7 column 67",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_STRING,
+            "Malformed: Unable deserialize jwm: invalid type: string \"131\", expected a sequence at line 7 column 24",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_INT_ARRAY,
+            "Malformed: Unable deserialize jwm: invalid type: integer `2131`, expected struct Attachment at line 7 column 24",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_WRONG_DATA,
+            "Malformed: Unable deserialize jwm: data did not match any variant of untagged enum AttachmentData at line 7 column 50",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_WRONG_ID,
+            "Malformed: Unable deserialize jwm: invalid type: integer `2`, expected a string at line 7 column 28",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_NULL_DATA,
+            "Malformed: Unable deserialize jwm: data did not match any variant of untagged enum AttachmentData at line 7 column 45",
+        )
+        .await;
+    }
+
     async fn _verify_unpack(msg: &str, exp_msg: &Message, exp_metadata: &UnpackMetadata) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
@@ -1379,5 +1663,24 @@ mod test {
 
         metadata.signed_message = exp_metadata.signed_message.clone();
         assert_eq!(&metadata, exp_metadata);
+    }
+
+    async fn _verify_unpack_malformed(msg: &str, exp_error_str: &str) {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+
+        let res = Message::unpack(
+            msg,
+            &did_resolver,
+            &secrets_resolver,
+            &UnpackOptions::default(),
+        )
+        .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
+        assert_eq!(format!("{}", err), exp_error_str);
     }
 }

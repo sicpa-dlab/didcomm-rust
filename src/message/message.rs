@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use super::Attachment;
+use crate::error::{err_msg, ErrorKind, Result};
 
 ///  Wrapper for plain message. Provides helpers for message building and packing/unpacking.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
@@ -10,7 +11,7 @@ pub struct Message {
     /// Message id. Must be unique to the sender.
     pub id: String,
 
-    /// Must be
+    /// Must be "application/didcomm-plain+json"
     pub typ: String,
 
     /// Message type attribute value MUST be a valid Message Type URI,
@@ -68,9 +69,21 @@ pub struct Message {
     pub attachments: Option<Vec<Attachment>>,
 }
 
+const PLAINTEXT_TYP: &str = "application/didcomm-plain+json";
+
 impl Message {
     pub fn build(id: String, type_: String, body: Value) -> MessageBuilder {
         MessageBuilder::new(id, type_, body)
+    }
+
+    pub fn validate(&self) -> Result<()> {
+        if self.typ != PLAINTEXT_TYP {
+            Err(err_msg(
+                ErrorKind::Malformed,
+                format!("`typ` must be \"{}\"", PLAINTEXT_TYP),
+            ))?;
+        }
+        Ok(())
     }
 }
 
@@ -180,7 +193,7 @@ impl MessageBuilder {
     pub fn finalize(self) -> Message {
         Message {
             id: self.id,
-            typ: "application/didcomm-plain+json".to_owned(),
+            typ: PLAINTEXT_TYP.to_owned(),
             type_: self.type_,
             body: self.body,
             to: self.to,

@@ -13,6 +13,13 @@ pub(crate) struct ParsedJWE<'a, 'b> {
     pub(crate) apv: Vec<u8>,
 }
 
+pub(crate) fn is_jwe(msg: &str) -> bool {
+    msg.contains("ciphertext")
+        || msg.contains("recipients")
+        || msg.contains("tag")
+        || msg.contains("iv")
+}
+
 pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<ParsedJWE<'a, 'b>> {
     let jwe: JWE = serde_json::from_str(jwe).kind(ErrorKind::Malformed, "Unable parse jwe")?;
 
@@ -29,7 +36,7 @@ pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<Parsed
         .apu
         .map(|apu| base64::decode_config(apu, base64::URL_SAFE_NO_PAD))
         .transpose()
-        .kind(ErrorKind::Malformed, "Unable decode apv")?;
+        .kind(ErrorKind::Malformed, "Unable decode apu")?;
 
     let jwe = ParsedJWE {
         jwe,
@@ -803,7 +810,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Malformed: Unable decode apv: Encoded text cannot have a 6-bit remainder."
+            "Malformed: Unable decode apu: Encoded text cannot have a 6-bit remainder."
         );
     }
 

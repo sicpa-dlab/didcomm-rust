@@ -20,7 +20,7 @@ pub(crate) use encrypt::encrypt;
 
 // TODO: remove allow
 #[allow(unused_imports)]
-pub(crate) use parse::{parse, ParsedJWE};
+pub(crate) use parse::{is_jwe, parse, ParsedJWE};
 
 // TODO: remove allow
 #[allow(unused_imports)]

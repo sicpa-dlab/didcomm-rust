@@ -26,13 +26,12 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
     opts: &UnpackOptions,
     metadata: &mut UnpackMetadata,
 ) -> Result<Option<String>> {
-    let mut buf = vec![];
-
-    let msg = if let Ok(msg) = jwe::parse(msg, &mut buf) {
-        msg
-    } else {
+    if !jwe::is_jwe(msg) {
         return Ok(None);
-    };
+    }
+
+    let mut buf = vec![];
+    let msg = jwe::parse(msg, &mut buf)?;
 
     if msg.protected.alg != jwe::Algorithm::EcdhEsA256kw {
         return Ok(None);

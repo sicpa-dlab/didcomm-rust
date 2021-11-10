@@ -9,6 +9,10 @@ pub(crate) struct ParsedJWS<'a, 'b> {
     pub(crate) protected: Vec<ProtectedHeader<'b>>,
 }
 
+pub(crate) fn is_jws(msg: &str) -> bool {
+    msg.contains("payload") || msg.contains("signatures")
+}
+
 pub(crate) fn parse<'a, 'b>(jws: &'a str, buf: &'b mut Vec<Vec<u8>>) -> Result<ParsedJWS<'a, 'b>> {
     let jws: JWS = serde_json::from_str(jws).kind(ErrorKind::Malformed, "Unable parse jws")?;
 
