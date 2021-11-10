@@ -126,8 +126,6 @@ impl FromPrior {
 
 #[cfg(test)]
 mod tests {
-    use lazy_static::__Deref;
-
     use crate::{
         did::resolvers::ExampleDIDResolver,
         error::ErrorKind,
@@ -147,7 +145,7 @@ mod tests {
             .await
             .expect("unpack FromPrior failed");
 
-        assert_eq!(&from_prior, FROM_PRIOR_FULL.deref());
+        assert_eq!(&from_prior, &*FROM_PRIOR_FULL);
         assert_eq!(issuer_kid, CHARLIE_AUTH_METHOD_25519.id);
     }
 

@@ -128,7 +128,6 @@ mod tests {
         sign::KeySigVerify,
     };
 
-    use lazy_static::__Deref;
     use serde_json::Value;
 
     use crate::{
@@ -294,14 +293,11 @@ mod tests {
         .await
         .expect("Unable unpack");
 
-        assert_eq!(&unpacked_msg, MESSAGE_FROM_PRIOR_FULL.deref());
+        assert_eq!(&unpacked_msg, &*MESSAGE_FROM_PRIOR_FULL);
         assert_eq!(
             unpack_metadata.from_prior_issuer_kid.as_ref(),
             Some(&CHARLIE_SECRET_AUTH_KEY_ED25519.id)
         );
-        assert_eq!(
-            unpack_metadata.from_prior.as_ref(),
-            Some(FROM_PRIOR_FULL.deref())
-        );
+        assert_eq!(unpack_metadata.from_prior.as_ref(), Some(&*FROM_PRIOR_FULL));
     }
 }
