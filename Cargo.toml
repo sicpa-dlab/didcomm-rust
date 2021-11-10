@@ -1,6 +1,17 @@
+[[bench]]
+name = 'pack_signed'
+harness = false
+
+[[bench]]
+name = 'pack_encrypted'
+harness = false
+
+[[example]]
+name = 'basic'
+
 [package]
 name = 'didcomm'
-version = '0.2.0'
+version = '0.2.1'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'DIDComm for Rust'
@@ -39,18 +50,10 @@ features = [
     'macros',
 ]
 
+[dev-dependencies.getrandom]
+version = '0.2'
+features = ['js']
+
 [dev-dependencies.criterion]
 version = '0.3'
 features = ['async_futures']
-
-[[bench]]
-name = "pack_signed"
-harness = false
-
-[[bench]]
-name = "pack_encrypted"
-harness = false
-
-[[example]]
-name = "basic"
-

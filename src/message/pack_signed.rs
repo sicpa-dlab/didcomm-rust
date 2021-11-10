@@ -1,4 +1,5 @@
-use crate::utils::did::is_did;
+use serde::Serialize;
+
 use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
@@ -47,8 +48,6 @@ impl Message {
         did_resolver: &'dr (dyn DIDResolver + 'dr),
         secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
     ) -> Result<(String, PackSignedMetadata)> {
-        self._validate_pack_signed(sign_by)?;
-
         let (did, key_id) = did_or_url(sign_by);
 
         let did_doc = did_resolver
@@ -114,21 +113,10 @@ impl Message {
 
         Ok((msg, metadata))
     }
-
-    fn _validate_pack_signed(&self, sign_by: &str) -> Result<bool> {
-        if !is_did(sign_by) {
-            Err(err_msg(
-                ErrorKind::IllegalArgument,
-                "`sign_from` value is not a valid DID of DID URL",
-            ))?;
-        }
-
-        Ok(true)
-    }
 }
 
 /// Additional metadata about this `pack` method execution like used key identifiers.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PackSignedMetadata {
     /// Identifier (DID URL) of sign key.
     pub sign_by_kid: String,
@@ -142,9 +130,6 @@ mod tests {
     };
     use serde_json::Value;
 
-    use crate::did::resolvers::mock::MockDidResolver;
-    use crate::error::{err_msg, ErrorKind};
-    use crate::secrets::{Secret, SecretMaterial, SecretType};
     use crate::{
         did::{resolvers::ExampleDIDResolver, DIDResolver, VerificationMaterial},
         jwk::FromJwkValue,
@@ -152,8 +137,7 @@ mod tests {
         secrets::{resolvers::ExampleSecretsResolver, SecretsResolver},
         test_vectors::{
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
-            ALICE_DID, ALICE_DID_DOC, ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS, MESSAGE_SIMPLE,
-            PLAINTEXT_MSG_SIMPLE,
+            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
         },
         Message, PackSignedMetadata,
     };
@@ -276,142 +260,5 @@ mod tests {
 
             assert!(valid);
         }
-    }
-
-    #[tokio::test]
-    async fn pack_signed_works_signer_did_not_found() {
-        let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
-
-        let res = MESSAGE_SIMPLE
-            .pack_signed("did:example:unknown", &did_resolver, &secrets_resolver)
-            .await;
-
-        let err = res.expect_err("res is ok");
-        assert_eq!(err.kind(), ErrorKind::DIDNotResolved);
-
-        assert_eq!(format!("{}", err), "DID not resolved: Signer did not found");
-    }
-
-    #[tokio::test]
-    async fn pack_signed_works_signer_is_not_did_our_did_url() {
-        let mut did_doc = ALICE_DID_DOC.clone();
-        did_doc.did = "not-a-did".into();
-        let did_resolver = ExampleDIDResolver::new(vec![did_doc]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
-
-        let res = MESSAGE_SIMPLE
-            .pack_signed("not-a-did", &did_resolver, &secrets_resolver)
-            .await;
-
-        let err = res.expect_err("res is ok");
-        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
-
-        assert_eq!(
-            format!("{}", err),
-            "Illegal argument: `sign_from` value is not a valid DID of DID URL"
-        );
-    }
-
-    #[tokio::test]
-    async fn pack_signed_works_signer_did_url_not_found() {
-        let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
-
-        let res = MESSAGE_SIMPLE
-            .pack_signed(
-                &format!("{}#unkown", ALICE_DID),
-                &did_resolver,
-                &secrets_resolver,
-            )
-            .await;
-
-        let err = res.expect_err("res is ok");
-        assert_eq!(err.kind(), ErrorKind::DIDUrlNotFound);
-
-        assert_eq!(
-            format!("{}", err),
-            "DID not resolved: Signer key id not found in did doc"
-        );
-    }
-
-    #[tokio::test]
-    async fn pack_signed_works_signer_did_resolving_err() {
-        let did_resolver =
-            MockDidResolver::new(vec![Err(err_msg(ErrorKind::InvalidState, "Mock error"))]);
-
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
-
-        let res = MESSAGE_SIMPLE
-            .pack_signed(ALICE_DID, &did_resolver, &secrets_resolver)
-            .await;
-
-        let err = res.expect_err("res is ok");
-        assert_eq!(err.kind(), ErrorKind::InvalidState);
-
-        assert_eq!(
-            format!("{}", err),
-            "Invalid state: Unable resolve signer did: Mock error"
-        );
-    }
-
-    #[tokio::test]
-    async fn pack_signed_works_signer_secrets_not_found() {
-        let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC_WITH_NO_SECRETS.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
-
-        let res = MESSAGE_SIMPLE
-            .pack_signed(
-                &"did:example:alice#key-not-in-secrets-1",
-                &did_resolver,
-                &secrets_resolver,
-            )
-            .await;
-
-        let err = res.expect_err("res is ok");
-        assert_eq!(err.kind(), ErrorKind::SecretNotFound);
-
-        assert_eq!(
-            format!("{}", err),
-            "Secret not found: No signer secrets found"
-        );
-    }
-
-    #[tokio::test]
-    async fn pack_signed_works_unable_instantiate_sign_key() {
-        let mut did_doc = ALICE_DID_DOC.clone();
-        did_doc
-            .authentications
-            .push("did:example:alice#key-d25519-1".into());
-        let mut secrets = ALICE_SECRETS.clone();
-        secrets.push(Secret {
-            id: "did:example:alice#key-d25519-1".into(),
-            type_: SecretType::JsonWebKey2020,
-            secret_material: SecretMaterial::JWK(serde_json::json!({
-                "kty": "EC",
-                "d": "sB0bYtpaXyp-h17dDpMx91N3Du1AdN4z1FUq02GbmLw",
-                "crv": "A-256",
-                "x": "L0crjMN1g0Ih4sYAJ_nGoHUck2cloltUpUVQDhF2nHE",
-                "y": "SxYgE7CmEJYi7IDhgK5jI4ZiajO8jPRZDldVhqFpYoo",
-            })),
-        });
-        let did_resolver = ExampleDIDResolver::new(vec![did_doc]);
-        let secrets_resolver = ExampleSecretsResolver::new(secrets);
-
-        let res = MESSAGE_SIMPLE
-            .pack_signed(
-                &"did:example:alice#key-d25519-1",
-                &did_resolver,
-                &secrets_resolver,
-            )
-            .await;
-
-        let err = res.expect_err("res is ok");
-        assert_eq!(err.kind(), ErrorKind::Unsupported);
-
-        assert_eq!(
-            format!("{}", err),
-            "Unsupported crypto or method: Unable instantiate sign key: Unsupported key type or curve"
-        );
     }
 }
