@@ -13,16 +13,14 @@ pub(crate) struct ParsedJWE<'a, 'b> {
     pub(crate) apv: Vec<u8>,
 }
 
-pub(crate) fn is_jwe(msg: &str) -> bool {
-    msg.contains("ciphertext")
-        || msg.contains("recipients")
-        || msg.contains("tag")
-        || msg.contains("iv")
+pub(crate) fn to_jwe(jwe: &str) -> Result<JWE> {
+    serde_json::from_str(jwe).kind(ErrorKind::Malformed, "Unable parse jwe")
 }
 
-pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<ParsedJWE<'a, 'b>> {
-    let jwe: JWE = serde_json::from_str(jwe).kind(ErrorKind::Malformed, "Unable parse jwe")?;
-
+pub(crate) fn to_parsed_jwe<'a, 'b>(
+    jwe: JWE<'a>,
+    buf: &'b mut Vec<u8>,
+) -> Result<ParsedJWE<'a, 'b>> {
     base64::decode_config_buf(jwe.protected, base64::URL_SAFE_NO_PAD, buf)
         .kind(ErrorKind::Malformed, "Unable decode protected header")?;
 
@@ -46,6 +44,11 @@ pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<Parsed
     };
 
     Ok(jwe)
+}
+
+pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<ParsedJWE<'a, 'b>> {
+    let jwe: JWE = to_jwe(jwe)?;
+    to_parsed_jwe(jwe, buf)
 }
 
 impl<'a, 'b> ParsedJWE<'a, 'b> {

@@ -9,13 +9,14 @@ pub(crate) struct ParsedJWS<'a, 'b> {
     pub(crate) protected: Vec<ProtectedHeader<'b>>,
 }
 
-pub(crate) fn is_jws(msg: &str) -> bool {
-    msg.contains("payload") || msg.contains("signatures")
+pub(crate) fn to_jws(jws: &str) -> Result<JWS> {
+    serde_json::from_str(jws).kind(ErrorKind::Malformed, "Unable parse jws")
 }
 
-pub(crate) fn parse<'a, 'b>(jws: &'a str, buf: &'b mut Vec<Vec<u8>>) -> Result<ParsedJWS<'a, 'b>> {
-    let jws: JWS = serde_json::from_str(jws).kind(ErrorKind::Malformed, "Unable parse jws")?;
-
+pub(crate) fn to_parsed_jws<'a, 'b>(
+    jws: JWS<'a>,
+    buf: &'b mut Vec<Vec<u8>>,
+) -> Result<ParsedJWS<'a, 'b>> {
     let protected = {
         let len = jws.signatures.len();
         let mut protected = Vec::<ProtectedHeader>::with_capacity(len);
@@ -40,6 +41,11 @@ pub(crate) fn parse<'a, 'b>(jws: &'a str, buf: &'b mut Vec<Vec<u8>>) -> Result<P
     };
 
     Ok(ParsedJWS { jws, protected })
+}
+
+pub(crate) fn parse<'a, 'b>(jws: &'a str, buf: &'b mut Vec<Vec<u8>>) -> Result<ParsedJWS<'a, 'b>> {
+    let jws: JWS = to_jws(jws)?;
+    to_parsed_jws(jws, buf)
 }
 
 #[cfg(test)]

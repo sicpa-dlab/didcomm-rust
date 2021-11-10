@@ -27,21 +27,24 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     opts: &UnpackOptions,
     metadata: &mut UnpackMetadata,
 ) -> Result<Option<String>> {
-    if !jwe::is_jwe(msg) {
+    let jwe = if let Ok(msg) = jwe::to_jwe(msg) {
+        msg
+    } else {
         return Ok(None);
-    }
+    };
 
     let mut buf = vec![];
-    let msg = jwe::parse(msg, &mut buf)?;
+    let parsed_jwe = jwe::to_parsed_jwe(jwe, &mut buf)?;
 
-    if msg.protected.alg != jwe::Algorithm::Ecdh1puA256kw {
+    if parsed_jwe.protected.alg != jwe::Algorithm::Ecdh1puA256kw {
         return Ok(None);
     }
 
-    let msg = msg.verify_didcomm()?;
+    let parsed_jwe = parsed_jwe.verify_didcomm()?;
 
     let from_kid = std::str::from_utf8(
-        msg.apu
+        parsed_jwe
+            .apu
             .as_deref()
             .ok_or_else(|| err_msg(ErrorKind::Malformed, "No apu presend for authcryot"))?,
     )
@@ -80,7 +83,12 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
         })?
         .as_key_pair()?;
 
-    let to_kids: Vec<_> = msg.jwe.recipients.iter().map(|r| r.header.kid).collect();
+    let to_kids: Vec<_> = parsed_jwe
+        .jwe
+        .recipients
+        .iter()
+        .map(|r| r.header.kid)
+        .collect();
 
     let to_kid = to_kids
         .first()
@@ -132,7 +140,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
             })?
             .as_key_pair()?;
 
-        let _payload = match (&from_key, &to_key, &msg.protected.enc) {
+        let _payload = match (&from_key, &to_key, &parsed_jwe.protected.enc) {
             (
                 KnownKeyPair::X25519(ref from_key),
                 KnownKeyPair::X25519(ref to_key),
@@ -140,7 +148,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
             ) => {
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
 
-                msg.decrypt::<
+                parsed_jwe.decrypt::<
                         AesKey<A256CbcHs512>,
                         Ecdh1PU<'_, X25519KeyPair>,
                         X25519KeyPair,
@@ -154,7 +162,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
             ) => {
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
 
-                msg.decrypt::<
+                parsed_jwe.decrypt::<
                         AesKey<A256CbcHs512>,
                         Ecdh1PU<'_, P256KeyPair>,
                         P256KeyPair,

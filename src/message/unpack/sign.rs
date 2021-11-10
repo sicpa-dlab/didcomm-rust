@@ -15,22 +15,25 @@ pub(crate) async fn _try_unapck_sign<'dr>(
     _opts: &UnpackOptions,
     metadata: &mut UnpackMetadata,
 ) -> Result<Option<String>> {
-    if !jws::is_jws(msg) {
+    let jws_json = msg;
+
+    let jws = if let Ok(msg) = jws::to_jws(msg) {
+        msg
+    } else {
         return Ok(None);
-    }
+    };
 
-    let jws = msg;
     let mut buf = vec![];
-    let msg = jws::parse(msg, &mut buf)?;
+    let parsed_jws = jws::to_parsed_jws(jws, &mut buf)?;
 
-    if msg.protected.len() != 1 {
+    if parsed_jws.protected.len() != 1 {
         Err(err_msg(
             ErrorKind::Malformed,
             "Wrong amount of signatures for jws",
         ))?
     }
 
-    let alg = &msg
+    let alg = &parsed_jws
         .protected
         .first()
         .ok_or_else(|| {
@@ -41,7 +44,7 @@ pub(crate) async fn _try_unapck_sign<'dr>(
         })?
         .alg;
 
-    let signer_kid = msg
+    let signer_kid = parsed_jws
         .jws
         .signatures
         .first()
@@ -95,7 +98,8 @@ pub(crate) async fn _try_unapck_sign<'dr>(
                 .as_ed25519()
                 .context("Unable instantiate signer key")?;
 
-            msg.verify::<Ed25519KeyPair>((signer_kid, &signer_key))
+            parsed_jws
+                .verify::<Ed25519KeyPair>((signer_kid, &signer_key))
                 .context("Unable verify sign envelope")?
         }
         jws::Algorithm::Es256 => {
@@ -105,7 +109,8 @@ pub(crate) async fn _try_unapck_sign<'dr>(
                 .as_p256()
                 .context("Unable instantiate signer key")?;
 
-            msg.verify::<P256KeyPair>((signer_kid, &signer_key))
+            parsed_jws
+                .verify::<P256KeyPair>((signer_kid, &signer_key))
                 .context("Unable verify sign envelope")?
         }
         jws::Algorithm::Es256K => {
@@ -115,7 +120,8 @@ pub(crate) async fn _try_unapck_sign<'dr>(
                 .as_k256()
                 .context("Unable instantiate signer key")?;
 
-            msg.verify::<K256KeyPair>((signer_kid, &signer_key))
+            parsed_jws
+                .verify::<K256KeyPair>((signer_kid, &signer_key))
                 .context("Unable verify sign envelope")?
         }
         jws::Algorithm::Other(_) => Err(err_msg(
@@ -129,7 +135,7 @@ pub(crate) async fn _try_unapck_sign<'dr>(
     }
 
     // TODO: More precise error conversion
-    let payload = base64::decode_config(msg.jws.payload, base64::URL_SAFE_NO_PAD)
+    let payload = base64::decode_config(parsed_jws.jws.payload, base64::URL_SAFE_NO_PAD)
         .kind(ErrorKind::Malformed, "Signed payloa is invalid base64")?;
 
     let payload =
@@ -138,7 +144,7 @@ pub(crate) async fn _try_unapck_sign<'dr>(
     metadata.authenticated = true;
     metadata.non_repudiation = true;
     metadata.sign_from = Some(signer_kid.into());
-    metadata.signed_message = Some(jws.into());
+    metadata.signed_message = Some(jws_json.into());
 
     Ok(Some(payload))
 }

@@ -84,8 +84,17 @@ impl Message {
         let signed = _try_unapck_sign(msg, did_resolver, options, &mut metadata).await?;
         let msg = signed.as_deref().unwrap_or(msg);
 
-        let msg: Self =
-            serde_json::from_str(msg).kind(ErrorKind::Malformed, "Unable deserialize jwm")?;
+        let msg: Result<Self> =
+            serde_json::from_str(msg).kind(ErrorKind::Malformed, "Unable deserialize jwm");
+
+        let msg = match msg {
+            Ok(msg) => msg,
+            Err(_) => Err(err_msg(
+                ErrorKind::Malformed,
+                "Message is not a valid JWE, JWS or JWM",
+            ))?,
+        };
+
         msg.validate()?;
 
         Ok((msg, metadata))
@@ -1367,7 +1376,7 @@ mod test {
 
         _verify_unpack_malformed(
             remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "protected").as_str(),
-            "Malformed: Unable parse jwe: missing field `protected` at line 1 column 844",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
@@ -1379,7 +1388,7 @@ mod test {
 
         _verify_unpack_malformed(
             remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "iv").as_str(),
-            "Malformed: Unable parse jwe: missing field `iv` at line 1 column 1110",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
@@ -1391,7 +1400,7 @@ mod test {
 
         _verify_unpack_malformed(
             remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "ciphertext").as_str(),
-            "Malformed: Unable parse jwe: missing field `ciphertext` at line 1 column 762",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
@@ -1403,7 +1412,7 @@ mod test {
 
         _verify_unpack_malformed(
             remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "tag").as_str(),
-            "Malformed: Unable parse jwe: missing field `tag` at line 1 column 1119",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
@@ -1430,7 +1439,7 @@ mod test {
 
         _verify_unpack_malformed(
             remove_field(ENCRYPTED_MSG_AUTH_X25519, "protected").as_str(),
-            "Malformed: Unable parse jwe: missing field `protected` at line 1 column 993",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
@@ -1442,7 +1451,7 @@ mod test {
 
         _verify_unpack_malformed(
             remove_field(ENCRYPTED_MSG_AUTH_X25519, "iv").as_str(),
-            "Malformed: Unable parse jwe: missing field `iv` at line 1 column 1400",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
@@ -1454,7 +1463,7 @@ mod test {
 
         _verify_unpack_malformed(
             remove_field(ENCRYPTED_MSG_AUTH_X25519, "ciphertext").as_str(),
-            "Malformed: Unable parse jwe: missing field `ciphertext` at line 1 column 1030",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
@@ -1466,7 +1475,7 @@ mod test {
 
         _verify_unpack_malformed(
             remove_field(ENCRYPTED_MSG_AUTH_X25519, "tag").as_str(),
-            "Malformed: Unable parse jwe: missing field `tag` at line 1 column 1378",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
@@ -1505,18 +1514,19 @@ mod test {
 
         _verify_unpack_malformed(
             remove_field(SIGNED_MSG_ALICE_KEY_1, "payload").as_str(),
-            "Malformed: Unable parse jws: missing field `payload` at line 1 column 251",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             update_field(SIGNED_MSG_ALICE_KEY_1, "signatures", "invalid").as_str(),
-            "Malformed: Unable parse jws: invalid type: string \"invalid\", expected a sequence at line 1 column 408"
-        ).await;
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
 
         _verify_unpack_malformed(
             remove_field(SIGNED_MSG_ALICE_KEY_1, "signatures").as_str(),
-            "Malformed: Unable parse jws: missing field `signatures` at line 1 column 386",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
     }
@@ -1525,37 +1535,37 @@ mod test {
     async fn unpack_works_malformed_plaintext_msg() {
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_EMPTY,
-            "Malformed: Unable deserialize jwm: missing field `id` at line 2 column 2",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_STRING,
-            "Malformed: Unable deserialize jwm: expected value at line 2 column 1",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_NO_ID,
-            "Malformed: Unable deserialize jwm: missing field `id` at line 6 column 1",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_NO_TYP,
-            "Malformed: Unable deserialize jwm: missing field `typ` at line 6 column 1",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_NO_TYPE,
-            "Malformed: Unable deserialize jwm: missing field `type` at line 6 column 1",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_NO_BODY,
-            "Malformed: Unable deserialize jwm: missing field `body` at line 6 column 1",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
@@ -1567,55 +1577,55 @@ mod test {
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_EMPTY_ATTACHMENTS,
-            "Malformed: Unable deserialize jwm: missing field `data` at line 7 column 22",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_ATTACHMENTS_NO_DATA,
-            "Malformed: Unable deserialize jwm: missing field `data` at line 7 column 32",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_ATTACHMENTS_EMPTY_DATA,
-            "Malformed: Unable deserialize jwm: data did not match any variant of untagged enum AttachmentData at line 7 column 44",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_ATTACHMENTS_LINKS_NO_HASH,
-            "Malformed: Unable deserialize jwm: data did not match any variant of untagged enum AttachmentData at line 7 column 67",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_STRING,
-            "Malformed: Unable deserialize jwm: invalid type: string \"131\", expected a sequence at line 7 column 24",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_INT_ARRAY,
-            "Malformed: Unable deserialize jwm: invalid type: integer `2131`, expected struct Attachment at line 7 column 24",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_ATTACHMENTS_WRONG_DATA,
-            "Malformed: Unable deserialize jwm: data did not match any variant of untagged enum AttachmentData at line 7 column 50",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_ATTACHMENTS_WRONG_ID,
-            "Malformed: Unable deserialize jwm: invalid type: integer `2`, expected a string at line 7 column 28",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
 
         _verify_unpack_malformed(
             &INVALID_PLAINTEXT_MSG_ATTACHMENTS_NULL_DATA,
-            "Malformed: Unable deserialize jwm: data did not match any variant of untagged enum AttachmentData at line 7 column 45",
+            "Malformed: Message is not a valid JWE, JWS or JWM",
         )
         .await;
     }
