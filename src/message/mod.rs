@@ -14,7 +14,6 @@ pub use attachment::{
 pub use from_prior::FromPrior;
 
 pub use message::{Message, MessageBuilder};
-pub use pack_plaintext::{PackPlaintextMetadata, PackPlaintextOptions};
-pub use pack_signed::{PackSignedMetadata, PackSignedOptions};
+pub use pack_signed::PackSignedMetadata;
 pub use pack_encrypted::{PackEncryptedMetadata, PackEncryptedOptions};
 pub use unpack::{UnpackMetadata, UnpackOptions};

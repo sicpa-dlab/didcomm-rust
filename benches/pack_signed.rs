@@ -6,7 +6,7 @@ pub(crate) use didcomm;
 mod test_vectors;
 
 use criterion::{async_executor::FuturesExecutor, criterion_group, criterion_main, Criterion};
-use didcomm::{did::resolvers::ExampleDIDResolver, PackSignedOptions, secrets::resolvers::ExampleSecretsResolver};
+use didcomm::{did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver};
 
 use test_vectors::{
     ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1, ALICE_DID_DOC,
@@ -20,7 +20,7 @@ async fn pack_signed(
     secrets_resolver: &ExampleSecretsResolver,
 ) {
     MESSAGE_SIMPLE
-        .pack_signed(sign_by, did_resolver, secrets_resolver, &PackSignedOptions::default())
+        .pack_signed(sign_by, did_resolver, secrets_resolver)
         .await
         .expect("Unable pack_signed");
 }

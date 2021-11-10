@@ -48,7 +48,7 @@ pub(crate) const PLAINTEXT_INVALID_FROM_PRIOR: &str = r#"
 }
 "#;
 
-pub(crate) const PLAINTEXT_INVALID_FROM_PRIOR_SIGNATURE: &str = r#"
+pub(crate) const PLAINTEXT_FROM_PRIOR_INVALID_SIGNATURE: &str = r#"
 {
     "id": "1234567890",
     "typ": "application/didcomm-plain+json",

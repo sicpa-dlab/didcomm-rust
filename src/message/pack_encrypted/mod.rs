@@ -8,7 +8,7 @@ use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext},
     secrets::SecretsResolver,
-    Message, PackPlaintextMetadata, PackPlaintextOptions, PackSignedMetadata, PackSignedOptions,
+    Message, PackSignedMetadata,
 };
 
 use self::{anoncrypt::anoncrypt, authcrypt::authcrypt};
@@ -87,43 +87,19 @@ impl Message {
         // TODO: Think how to avoid resolving of did multiple times
         // and perform async operations in parallel
 
-        let (msg, sign_by_kid, from_prior_issuer_kid) = if let Some(sign_by) = sign_by {
-            let (
-                msg,
-                PackSignedMetadata {
-                    sign_by_kid,
-                    from_prior_issuer_kid,
-                },
-            ) = self
-                .pack_signed(
-                    sign_by,
-                    did_resolver,
-                    secrets_resolver,
-                    &PackSignedOptions {
-                        from_prior_issuer_kid: options.from_prior_issuer_kid.clone(),
-                    },
-                )
+        let (msg, sign_by_kid) = if let Some(sign_by) = sign_by {
+            let (msg, PackSignedMetadata { sign_by_kid }) = self
+                .pack_signed(sign_by, did_resolver, secrets_resolver)
                 .await
                 .context("Unable produce sign envelope")?;
 
-            (msg, Some(sign_by_kid), from_prior_issuer_kid)
+            (msg, Some(sign_by_kid))
         } else {
-            let (
-                msg,
-                PackPlaintextMetadata {
-                    from_prior_issuer_kid,
-                },
-            ) = self
-                .pack_plaintext(
-                    did_resolver,
-                    secrets_resolver,
-                    &PackPlaintextOptions {
-                        from_prior_issuer_kid: options.from_prior_issuer_kid.clone(),
-                    },
-                )
+            let msg = self
+                .pack_plaintext(did_resolver)
                 .await
                 .context("Unable produce plaintext")?;
-            (msg, None, from_prior_issuer_kid)
+            (msg, None)
         };
 
         let (msg, from_kid, to_kids) = if let Some(from) = from {
@@ -152,7 +128,6 @@ impl Message {
             from_kid,
             sign_by_kid,
             to_kids,
-            from_prior_issuer_kid,
         };
 
         Ok((msg, metadata))
@@ -184,9 +159,6 @@ pub struct PackEncryptedOptions {
 
     /// Algorithm used for anonymous encryption
     pub enc_alg_anon: AnonCryptAlg,
-
-    // Identifier (DID URL) of from_prior issuer key
-    pub from_prior_issuer_kid: Option<String>,
 }
 
 impl Default for PackEncryptedOptions {
@@ -198,7 +170,6 @@ impl Default for PackEncryptedOptions {
             messaging_service: None,
             enc_alg_auth: AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
             enc_alg_anon: AnonCryptAlg::Xc20pEcdhEsA256kw,
-            from_prior_issuer_kid: None,
         }
     }
 }
@@ -219,9 +190,6 @@ pub struct PackEncryptedMetadata {
 
     /// Identifiers (DID URLs) of recipient keys used for message encryption.
     pub to_kids: Vec<String>,
-
-    // Identifier (DID URL) of from_prior issuer key.
-    pub from_prior_issuer_kid: Option<String>,
 }
 
 /// Information about messaging service used for message preparation.
@@ -252,6 +220,7 @@ mod tests {
         sign::KeySigVerify,
     };
 
+    use lazy_static::__Deref;
     use serde_json::Value;
 
     use crate::{
@@ -267,14 +236,11 @@ mod tests {
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519, BOB_DID, BOB_DID_DOC, BOB_SECRETS,
             BOB_SECRET_KEY_AGREEMENT_KEY_P256_1, BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
             BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
-            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, CHARLIE_DID, CHARLIE_DID_DOC,
-            CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519, MESSAGE_FROM_PRIOR,
-            MESSAGE_FROM_PRIOR_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, CHARLIE_DID_DOC,
+            CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519, FROM_PRIOR_FULL,
+            MESSAGE_FROM_PRIOR_FULL, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
         },
-        utils::{
-            crypto::{JoseKDF, KeyWrap},
-            did::did_or_url,
-        },
+        utils::crypto::{JoseKDF, KeyWrap},
         Message, PackEncryptedMetadata, PackEncryptedOptions, UnpackOptions,
     };
 
@@ -432,7 +398,6 @@ mod tests {
                     from_kid: Some(from_key.id.clone()),
                     sign_by_kid: None,
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
-                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -753,7 +718,6 @@ mod tests {
                     from_kid: Some(from_key.id.clone()),
                     sign_by_kid: None,
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
-                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -905,7 +869,6 @@ mod tests {
                     from_kid: Some(from_key.id.clone()),
                     sign_by_kid: Some(sign_by_key.id.clone()),
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
-                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -1036,7 +999,6 @@ mod tests {
                     from_kid: Some(from_key.id.clone()),
                     sign_by_kid: Some(sign_by_key.id.clone()),
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
-                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -1294,7 +1256,6 @@ mod tests {
                     from_kid: None,
                     sign_by_kid: None,
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
-                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -1462,7 +1423,6 @@ mod tests {
                     from_kid: None,
                     sign_by_kid: Some(sign_by_key.id.clone()),
                     to_kids: to_keys.iter().map(|s| s.id.clone()).collect::<Vec<_>>(),
-                    from_prior_issuer_kid: None,
                 }
             );
 
@@ -1473,111 +1433,49 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_from_prior_and_issuer_kid() {
-        _pack_encrypted_works_from_prior_and_issuer_kid(&MESSAGE_FROM_PRIOR_MINIMAL).await;
-        _pack_encrypted_works_from_prior_and_issuer_kid(&MESSAGE_FROM_PRIOR).await;
+    async fn pack_encrypted_works_from_prior() {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
+        let charlie_rotated_to_alice_secrets_resolver =
+            ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+        let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
 
-        async fn _pack_encrypted_works_from_prior_and_issuer_kid(msg: &Message) {
-            let did_resolver = ExampleDIDResolver::new(vec![
-                ALICE_DID_DOC.clone(),
-                BOB_DID_DOC.clone(),
-                CHARLIE_DID_DOC.clone(),
-            ]);
-            let charlie_rotated_to_alice_secrets_resolver =
-                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
-            let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
-
-            let (packed_msg, pack_metadata) = msg
-                .pack_encrypted(
-                    BOB_DID,
-                    Some(ALICE_DID),
-                    None,
-                    &did_resolver,
-                    &charlie_rotated_to_alice_secrets_resolver,
-                    &&PackEncryptedOptions {
-                        from_prior_issuer_kid: Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone()),
-                        forward: false,
-                        ..PackEncryptedOptions::default()
-                    },
-                )
-                .await
-                .expect("Unable pack_encrypted");
-
-            assert_eq!(
-                pack_metadata.from_prior_issuer_kid,
-                Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone())
-            );
-
-            let (unpacked_msg, unpack_metadata) = Message::unpack(
-                &packed_msg,
+        let (packed_msg, _pack_metadata) = MESSAGE_FROM_PRIOR_FULL
+            .pack_encrypted(
+                BOB_DID,
+                Some(ALICE_DID),
+                None,
                 &did_resolver,
-                &bob_secrets_resolver,
-                &UnpackOptions::default(),
+                &charlie_rotated_to_alice_secrets_resolver,
+                &&PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
             )
             .await
-            .expect("Unable unpack");
+            .expect("Unable pack_encrypted");
 
-            assert_eq!(&unpacked_msg, msg);
-            assert_eq!(
-                unpack_metadata.from_prior_issuer_kid,
-                Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone())
-            );
-            assert!(unpack_metadata.from_prior_jwt.is_some());
-        }
-    }
+        let (unpacked_msg, unpack_metadata) = Message::unpack(
+            &packed_msg,
+            &did_resolver,
+            &bob_secrets_resolver,
+            &UnpackOptions::default(),
+        )
+        .await
+        .expect("Unable unpack");
 
-    #[tokio::test]
-    async fn pack_encrypted_works_from_prior_and_no_issuer_kid() {
-        _pack_encrypted_with_from_prior_works_and_no_issuer_kid(&MESSAGE_FROM_PRIOR_MINIMAL).await;
-        _pack_encrypted_with_from_prior_works_and_no_issuer_kid(&MESSAGE_FROM_PRIOR).await;
-
-        async fn _pack_encrypted_with_from_prior_works_and_no_issuer_kid(msg: &Message) {
-            let did_resolver = ExampleDIDResolver::new(vec![
-                ALICE_DID_DOC.clone(),
-                BOB_DID_DOC.clone(),
-                CHARLIE_DID_DOC.clone(),
-            ]);
-            let charlie_rotated_to_alice_secrets_resolver =
-                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
-            let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
-
-            let (packed_msg, pack_metadata) = msg
-                .pack_encrypted(
-                    BOB_DID,
-                    Some(ALICE_DID),
-                    None,
-                    &did_resolver,
-                    &charlie_rotated_to_alice_secrets_resolver,
-                    &&PackEncryptedOptions {
-                        forward: false,
-                        ..PackEncryptedOptions::default()
-                    },
-                )
-                .await
-                .expect("Unable pack_encrypted");
-
-            assert!(pack_metadata.from_prior_issuer_kid.is_some());
-
-            let (did, kid) = did_or_url(pack_metadata.from_prior_issuer_kid.as_deref().unwrap());
-            assert!(kid.is_some());
-            assert_eq!(did, CHARLIE_DID);
-
-            let (unpacked_msg, unpack_metadata) = Message::unpack(
-                &packed_msg,
-                &did_resolver,
-                &bob_secrets_resolver,
-                &UnpackOptions::default(),
-            )
-            .await
-            .expect("Unable unpack");
-
-            assert_eq!(&unpacked_msg, msg);
-            assert_eq!(
-                unpack_metadata.from_prior_issuer_kid,
-                pack_metadata.from_prior_issuer_kid
-            );
-            assert!(unpack_metadata.from_prior_jwt.is_some());
-        }
+        assert_eq!(&unpacked_msg, MESSAGE_FROM_PRIOR_FULL.deref());
+        assert_eq!(
+            unpack_metadata.from_prior_issuer_kid.as_ref(),
+            Some(&CHARLIE_SECRET_AUTH_KEY_ED25519.id)
+        );
+        assert_eq!(
+            unpack_metadata.from_prior.as_ref(),
+            Some(FROM_PRIOR_FULL.deref())
+        );
     }
 
     fn _verify_authcrypt<CE, KDF, KE, KW>(

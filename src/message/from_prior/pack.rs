@@ -1,8 +1,8 @@
-use crate::message::from_prior::JWT_TYP;
 use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
     jws::{self, Algorithm},
+    message::from_prior::JWT_TYP,
     secrets::SecretsResolver,
     utils::{
         crypto::{AsKnownKeyPair, KnownKeyPair},
@@ -113,5 +113,113 @@ impl FromPrior {
         .context("Unable to produce signature")?;
 
         Ok((from_prior_jwt, String::from(kid)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        did::resolvers::ExampleDIDResolver,
+        error::ErrorKind,
+        secrets::resolvers::ExampleSecretsResolver,
+        test_vectors::{
+            ALICE_DID_DOC, CHARLIE_DID, CHARLIE_DID_DOC, CHARLIE_ROTATED_TO_ALICE_SECRETS,
+            CHARLIE_SECRET_AUTH_KEY_ED25519, FROM_PRIOR_FULL, FROM_PRIOR_INVALID_EQUAL_ISS_AND_SUB,
+            FROM_PRIOR_INVALID_ISS, FROM_PRIOR_INVALID_SUB, FROM_PRIOR_MINIMAL,
+        },
+        utils::did::did_or_url,
+        FromPrior,
+    };
+
+    #[tokio::test]
+    async fn from_prior_pack_works_with_issuer_kid() {
+        _from_prior_pack_works_with_issuer_kid(&FROM_PRIOR_MINIMAL).await;
+        _from_prior_pack_works_with_issuer_kid(&FROM_PRIOR_FULL).await;
+
+        async fn _from_prior_pack_works_with_issuer_kid(from_prior: &FromPrior) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), CHARLIE_DID_DOC.clone()]);
+            let charlie_rotated_to_alice_secrets_resolver =
+                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+
+            let (from_prior_jwt, pack_kid) = from_prior
+                .pack(
+                    Some(&CHARLIE_SECRET_AUTH_KEY_ED25519.id),
+                    &did_resolver,
+                    &charlie_rotated_to_alice_secrets_resolver,
+                )
+                .await
+                .expect("Unable to pack FromPrior");
+
+            assert_eq!(pack_kid, CHARLIE_SECRET_AUTH_KEY_ED25519.id);
+
+            let (unpacked_from_prior, unpack_kid) =
+                FromPrior::unpack(&from_prior_jwt, &did_resolver)
+                    .await
+                    .expect("Unable to unpack FromPrior JWT");
+
+            assert_eq!(&unpacked_from_prior, from_prior);
+            assert_eq!(unpack_kid, CHARLIE_SECRET_AUTH_KEY_ED25519.id);
+        }
+    }
+
+    #[tokio::test]
+    async fn from_prior_pack_works_without_issuer_kid() {
+        _from_prior_pack_works_without_issuer_kid(&FROM_PRIOR_MINIMAL).await;
+        _from_prior_pack_works_without_issuer_kid(&FROM_PRIOR_FULL).await;
+
+        async fn _from_prior_pack_works_without_issuer_kid(from_prior: &FromPrior) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), CHARLIE_DID_DOC.clone()]);
+            let charlie_rotated_to_alice_secrets_resolver =
+                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+
+            let (from_prior_jwt, pack_kid) = from_prior
+                .pack(
+                    None,
+                    &did_resolver,
+                    &charlie_rotated_to_alice_secrets_resolver,
+                )
+                .await
+                .expect("Unable to pack FromPrior");
+
+            let (did, kid) = did_or_url(&pack_kid);
+            assert!(kid.is_some());
+            assert_eq!(did, CHARLIE_DID);
+
+            let (unpacked_from_prior, unpack_kid) =
+                FromPrior::unpack(&from_prior_jwt, &did_resolver)
+                    .await
+                    .expect("Unable to unpack FromPrior JWT");
+
+            assert_eq!(&unpacked_from_prior, from_prior);
+            assert_eq!(unpack_kid, pack_kid);
+        }
+    }
+
+    #[ignore = "Must be enabled after FromPrior validation is added"]
+    #[tokio::test]
+    async fn from_prior_pack_works_invalid() {
+        _from_prior_pack_works_invalid(&FROM_PRIOR_INVALID_ISS).await;
+        _from_prior_pack_works_invalid(&FROM_PRIOR_INVALID_SUB).await;
+        _from_prior_pack_works_invalid(&FROM_PRIOR_INVALID_EQUAL_ISS_AND_SUB).await;
+
+        async fn _from_prior_pack_works_invalid(from_prior: &FromPrior) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), CHARLIE_DID_DOC.clone()]);
+            let charlie_rotated_to_alice_secrets_resolver =
+                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+
+            let err = from_prior
+                .pack(
+                    None,
+                    &did_resolver,
+                    &charlie_rotated_to_alice_secrets_resolver,
+                )
+                .await
+                .expect_err("res is ok");
+
+            assert_eq!(err.kind(), ErrorKind::Malformed);
+        }
     }
 }

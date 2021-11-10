@@ -1,8 +1,8 @@
 use lazy_static::lazy_static;
 use serde_json::json;
 
-use super::common::{ALICE_DID, BOB_DID, CHARLIE_DID, DAVE_DID};
-use crate::didcomm::{Attachment, FromPrior, Message, MessageBuilder};
+use super::common::{ALICE_DID, BOB_DID};
+use crate::didcomm::{Attachment, Message, MessageBuilder};
 
 lazy_static! {
     pub(crate) static ref MESSAGE_SIMPLE: Message = _message().finalize();
@@ -18,111 +18,8 @@ lazy_static! {
 }
 
 lazy_static! {
-    pub(crate) static ref MESSAGE_FROM_PRIOR: Message = _message()
-        .from_prior(
-            Some(
-                FromPrior::build(
-                    CHARLIE_DID.into(),
-                    ALICE_DID.into(),
-                )
-                .aud("123".into())
-                .exp(1234)
-                .nbf(12345)
-                .iat(123456)
-                .jti("dfg".into())
-                .finalize()
-            )
-        )
-        .finalize();
-}
-
-lazy_static! {
-    pub(crate) static ref MESSAGE_FROM_PRIOR_MINIMAL: Message = _message()
-        .from_prior(
-            Some(
-                FromPrior::build(
-                    CHARLIE_DID.into(),
-                    ALICE_DID.into(),
-                )
-                .finalize()
-            )
-        )
-        .finalize();
-}
-
-lazy_static! {
-    pub(crate) static ref MESSAGE_FROM_PRIOR_INVALID_FROM_PRIOR_ISS: Message = _message()
-        .from_prior(
-            Some(
-                FromPrior::build(
-                    "invalid".into(),
-                    ALICE_DID.into(),
-                )
-                .aud("123".into())
-                .exp(1234)
-                .nbf(12345)
-                .iat(123456)
-                .jti("dfg".into())
-                .finalize()
-            )
-        )
-        .finalize();
-}
-
-lazy_static! {
-    pub(crate) static ref MESSAGE_FROM_PRIOR_INVALID_FROM_PRIOR_SUB: Message = _message()
-        .from_prior(
-            Some(
-                FromPrior::build(
-                    CHARLIE_DID.into(),
-                    "invalid".into(),
-                )
-                .aud("123".into())
-                .exp(1234)
-                .nbf(12345)
-                .iat(123456)
-                .jti("dfg".into())
-                .finalize()
-            )
-        )
-        .finalize();
-}
-
-lazy_static! {
-    pub(crate) static ref MESSAGE_FROM_PRIOR_FROM_PRIOR_EQUAL_ISS_AND_SUB: Message = _message()
-        .from_prior(
-            Some(
-                FromPrior::build(
-                    ALICE_DID.into(),
-                    ALICE_DID.into(),
-                )
-                .aud("123".into())
-                .exp(1234)
-                .nbf(12345)
-                .iat(123456)
-                .jti("dfg".into())
-                .finalize()
-            )
-        )
-        .finalize();
-}
-
-lazy_static! {
-    pub(crate) static ref MESSAGE_FROM_PRIOR_MISMATCHED_FROM_PRIOR_SUB: Message = _message()
-        .from_prior(
-            Some(
-                FromPrior::build(
-                    CHARLIE_DID.into(),
-                    DAVE_DID.into(),
-                )
-                .aud("123".into())
-                .exp(1234)
-                .nbf(12345)
-                .iat(123456)
-                .jti("dfg".into())
-                .finalize()
-            )
-        )
+    pub(crate) static ref MESSAGE_FROM_PRIOR_FULL: Message = _message()
+        .from_prior("eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImtpZCI6ImRpZDpleGFtcGxlOmNoYXJsaWUja2V5LTEifQ.eyJpc3MiOiJkaWQ6ZXhhbXBsZTpjaGFybGllIiwic3ViIjoiZGlkOmV4YW1wbGU6YWxpY2UiLCJhdWQiOiIxMjMiLCJleHAiOjEyMzQsIm5iZiI6MTIzNDUsImlhdCI6MTIzNDU2LCJqdGkiOiJkZmcifQ.ir0tegXiGJIZIMagO5P853KwhzGTEw0OpFFAyarUV-nQrtbI_ELbxT9l7jPBoPve_-60ifGJ9v3ArmFjELFlDA".into())
         .finalize();
 }
 
