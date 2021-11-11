@@ -32,8 +32,8 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
     let to_ddoc = did_resolver
         .resolve(to_did)
         .await
-        .context("Unable resolve recepient did")?
-        .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Recepient did not found"))?;
+        .context("Unable resolve recipient did")?
+        .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Recipient did not found"))?;
 
     // Initial list of recipient key ids is all key_agreements of recipient did doc
     // or one key if url was explicitly provided
@@ -47,7 +47,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
     if to_kids.is_empty() {
         Err(err_msg(
             ErrorKind::DIDUrlNotFound,
-            "No recepient key agreements found",
+            "No recipient key agreements found",
         ))?
     }
 
@@ -78,7 +78,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
         .ok_or_else(|| {
             err_msg(
                 ErrorKind::InvalidState,
-                "No key agreement keys found for recepient",
+                "No key agreement keys found for recipient",
             )
         })?;
 
@@ -197,7 +197,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
         }
         _ => Err(err_msg(
             ErrorKind::InvalidState,
-            "Unsupported recepient key agreement alg",
+            "Unsupported recipient key agreement alg",
         ))?,
     };
 

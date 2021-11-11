@@ -37,14 +37,14 @@ mod tests {
         // --- Build message ---
 
         let sender = "did:example:1";
-        let recepient = "did:example:2";
+        let recipient = "did:example:2";
 
         let msg = Message::build(
             "example-1".into(),
             "example/v1".into(),
             json!("example-body"),
         )
-        .to(recepient.into())
+        .to(recipient.into())
         .from(sender.into())
         .finalize();
 
@@ -55,7 +55,7 @@ mod tests {
 
         let (packed_msg, metadata) = msg
             .pack_encrypted(
-                recepient,
+                recipient,
                 Some(sender),
                 None,
                 &sender_did_resolver,
@@ -78,13 +78,13 @@ mod tests {
 
         // --- Unpacking message ---
 
-        let recepient_did_resolver = ExampleDIDResolver::new(vec![]);
-        let recepient_secrets_resolver = ExampleSecretsResolver::new(vec![]);
+        let recipient_did_resolver = ExampleDIDResolver::new(vec![]);
+        let recipient_secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
         let (msg, metadata) = Message::unpack(
             &packed_msg,
-            &recepient_did_resolver,
-            &recepient_secrets_resolver,
+            &recipient_did_resolver,
+            &recipient_secrets_resolver,
             &UnpackOptions {
                 ..UnpackOptions::default()
             },
@@ -95,10 +95,10 @@ mod tests {
         assert!(metadata.encrypted);
         assert!(metadata.authenticated);
         assert!(metadata.encrypted_from_kid.is_some());
-        assert!(metadata.encrypted_from_kid.unwrap().starts_with(&recepient));
+        assert!(metadata.encrypted_from_kid.unwrap().starts_with(&recipient));
 
         assert_eq!(msg.from, Some(sender.into()));
-        assert_eq!(msg.to, Some(vec![recepient.into()]));
+        assert_eq!(msg.to, Some(vec![recipient.into()]));
         assert_eq!(msg.body, json!("example-body"));
     }
 }

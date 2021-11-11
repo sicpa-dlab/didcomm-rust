@@ -10,6 +10,11 @@ use crate::{
     utils::crypto::{AsKnownKeyPair, KnownKeyAlg, KnownKeyPair},
 };
 
+pub(crate) fn is_did(did: &str) -> bool {
+    let parts: Vec<_> = did.split(':').collect();
+    return parts.len() >= 3 && parts.get(0).unwrap() == &"did";
+}
+
 pub(crate) fn did_or_url(did_or_url: &str) -> (&str, Option<&str>) {
     // TODO: does it make sense to validate DID here?
 
@@ -26,7 +31,7 @@ impl AsKnownKeyPair for VerificationMethod {
                 match (jwk["kty"].as_str(), jwk["crv"].as_str()) {
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
                         P256KeyPair::from_jwk_value(jwk)
-                            .kind(ErrorKind::Malformed, "Unable parse jwk")
+                            .kind(ErrorKind::Malformed, "Unable parse jwk") //TODO test
                             .map(KnownKeyPair::P256)
                     }
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
@@ -141,7 +146,7 @@ impl AsKnownKeyPair for Secret {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::did::did_or_url;
+    use crate::utils::did::{did_or_url, is_did};
 
     #[test]
     fn did_or_url_works() {
@@ -156,5 +161,14 @@ mod tests {
 
         let res = did_or_url("#");
         assert_eq!(res, ("", Some("#")));
+    }
+
+    #[test]
+    fn is_did_works() {
+        assert_eq!(is_did(""), false);
+        assert_eq!(is_did("did:example:alice"), true);
+        assert_eq!(is_did("did::"), true); //TODO is this ok?
+        assert_eq!(is_did("example:example:alice"), false);
+        assert_eq!(is_did("example:alice"), false);
     }
 }
