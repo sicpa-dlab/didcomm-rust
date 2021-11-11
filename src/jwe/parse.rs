@@ -1,5 +1,6 @@
 use sha2::{Digest, Sha256};
 
+use crate::error::ToResult;
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
     jwe::envelope::{ProtectedHeader, JWE},
@@ -14,31 +15,39 @@ pub(crate) struct ParsedJWE<'a, 'b> {
 }
 
 pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<ParsedJWE<'a, 'b>> {
-    let jwe: JWE = serde_json::from_str(jwe).kind(ErrorKind::Malformed, "Unable parse jwe")?;
+    JWE::from_str(jwe)?.parse(buf)
+}
 
-    base64::decode_config_buf(jwe.protected, base64::URL_SAFE_NO_PAD, buf)
-        .kind(ErrorKind::Malformed, "Unable decode protected header")?;
+impl<'a> JWE<'a> {
+    pub(crate) fn from_str(s: &str) -> Result<JWE> {
+        serde_json::from_str(s).to_didcomm("Unable parse jwe")
+    }
 
-    let protected: ProtectedHeader =
-        serde_json::from_slice(buf).kind(ErrorKind::Malformed, "Unable parse protected header")?;
+    pub(crate) fn parse<'b>(self, buf: &'b mut Vec<u8>) -> Result<ParsedJWE<'a, 'b>> {
+        base64::decode_config_buf(self.protected, base64::URL_SAFE_NO_PAD, buf)
+            .kind(ErrorKind::Malformed, "Unable decode protected header")?;
 
-    let apv = base64::decode_config(protected.apv, base64::URL_SAFE_NO_PAD)
-        .kind(ErrorKind::Malformed, "Unable decode apv")?;
+        let protected: ProtectedHeader =
+            serde_json::from_slice(buf).to_didcomm("Unable parse protected header")?;
 
-    let apu = protected
-        .apu
-        .map(|apu| base64::decode_config(apu, base64::URL_SAFE_NO_PAD))
-        .transpose()
-        .kind(ErrorKind::Malformed, "Unable decode apv")?;
+        let apv = base64::decode_config(protected.apv, base64::URL_SAFE_NO_PAD)
+            .kind(ErrorKind::Malformed, "Unable decode apv")?;
 
-    let jwe = ParsedJWE {
-        jwe,
-        protected,
-        apu,
-        apv,
-    };
+        let apu = protected
+            .apu
+            .map(|apu| base64::decode_config(apu, base64::URL_SAFE_NO_PAD))
+            .transpose()
+            .kind(ErrorKind::Malformed, "Unable decode apu")?;
 
-    Ok(jwe)
+        let jwe = ParsedJWE {
+            jwe: self,
+            protected,
+            apu,
+            apv,
+        };
+
+        Ok(jwe)
+    }
 }
 
 impl<'a, 'b> ParsedJWE<'a, 'b> {
@@ -803,7 +812,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Malformed: Unable decode apv: Encoded text cannot have a 6-bit remainder."
+            "Malformed: Unable decode apu: Encoded text cannot have a 6-bit remainder."
         );
     }
 

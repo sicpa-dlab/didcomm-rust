@@ -1,10 +1,10 @@
-mod anoncrypt;
-mod authcrypt;
-mod plaintext;
-mod sign;
-
 use serde::{Deserialize, Serialize};
 
+use anoncrypt::_try_unpack_anoncrypt;
+use authcrypt::_try_unpack_authcrypt;
+use sign::_try_unapck_sign;
+
+use crate::message::unpack::plaintext::_try_unpack_plaintext;
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
@@ -13,10 +13,10 @@ use crate::{
     FromPrior, Message,
 };
 
-use crate::message::unpack::plaintext::unpack_plaintext;
-use anoncrypt::_try_unpack_anoncrypt;
-use authcrypt::_try_unpack_authcrypt;
-use sign::_try_unapck_sign;
+mod anoncrypt;
+mod authcrypt;
+mod plaintext;
+mod sign;
 
 impl Message {
     /// Unpacks the packed message by doing decryption and verifying the signatures.
@@ -80,20 +80,24 @@ impl Message {
 
         let anoncryted =
             _try_unpack_anoncrypt(msg, secrets_resolver, options, &mut metadata).await?;
-
         let msg = anoncryted.as_deref().unwrap_or(msg);
 
         let authcrypted =
             _try_unpack_authcrypt(msg, did_resolver, secrets_resolver, options, &mut metadata)
                 .await?;
-
         let msg = authcrypted.as_deref().unwrap_or(msg);
 
         let signed = _try_unapck_sign(msg, did_resolver, options, &mut metadata).await?;
-
         let msg = signed.as_deref().unwrap_or(msg);
 
-        let msg: Self = unpack_plaintext(msg, did_resolver, &mut metadata).await?;
+        let msg = _try_unpack_plaintext(msg, did_resolver, &mut metadata)
+            .await?
+            .ok_or_else(|| {
+                err_msg(
+                    ErrorKind::Malformed,
+                    "Message is not a valid JWE, JWS or JWM",
+                )
+            })?;
 
         Ok((msg, metadata))
     }
@@ -172,8 +176,10 @@ pub struct UnpackMetadata {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
+    use crate::test_vectors::{
+        remove_field, remove_protected_field, update_field, update_protected_field,
+        INVALID_ENCRYPTED_MSG_ANON_P256_EPK_WRONG_POINT,
+    };
     use crate::{
         did::resolvers::ExampleDIDResolver,
         secrets::resolvers::ExampleSecretsResolver,
@@ -186,9 +192,19 @@ mod test {
             BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, CHARLIE_AUTH_METHOD_25519, CHARLIE_DID_DOC,
             ENCRYPTED_MSG_ANON_XC20P_1, ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256,
             ENCRYPTED_MSG_AUTH_P256_SIGNED, ENCRYPTED_MSG_AUTH_X25519, FROM_PRIOR_FULL,
-            MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS,
-            MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_FROM_PRIOR_FULL,
-            MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_FROM_PRIOR,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_INT_ARRAY,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_STRING,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_EMPTY_DATA,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_LINKS_NO_HASH,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_NO_DATA, INVALID_PLAINTEXT_MSG_ATTACHMENTS_NULL_DATA,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_WRONG_DATA,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_WRONG_ID, INVALID_PLAINTEXT_MSG_EMPTY,
+            INVALID_PLAINTEXT_MSG_EMPTY_ATTACHMENTS, INVALID_PLAINTEXT_MSG_NO_BODY,
+            INVALID_PLAINTEXT_MSG_NO_ID, INVALID_PLAINTEXT_MSG_NO_TYP,
+            INVALID_PLAINTEXT_MSG_NO_TYPE, INVALID_PLAINTEXT_MSG_STRING,
+            INVALID_PLAINTEXT_MSG_WRONG_TYP, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
+            MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2,
+            MESSAGE_FROM_PRIOR_FULL, MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_FROM_PRIOR,
             PLAINTEXT_FROM_PRIOR_INVALID_SIGNATURE, PLAINTEXT_INVALID_FROM_PRIOR,
             PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
             PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
@@ -197,6 +213,8 @@ mod test {
         },
         PackEncryptedOptions,
     };
+
+    use super::*;
 
     #[tokio::test]
     async fn unpack_works_plaintext() {
@@ -1382,6 +1400,279 @@ mod test {
     }
 
     #[tokio::test]
+    async fn unpack_works_invalid_epk_point() {
+        _verify_unpack_malformed(
+            &INVALID_ENCRYPTED_MSG_ANON_P256_EPK_WRONG_POINT,
+            "Malformed: Unable instantiate epk: Unable produce jwk: Invalid key data",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_malformed_anoncrypt_msg() {
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_ANON_XC20P_1, "protected", "invalid").as_str(),
+            "Malformed: Unable decode protected header: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "protected").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_ANON_XC20P_1, "iv", "invalid").as_str(),
+            "Malformed: Unable decode iv: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "iv").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_ANON_XC20P_1, "ciphertext", "invalid").as_str(),
+            "Malformed: Unable decode ciphertext: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "ciphertext").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_ANON_XC20P_1, "tag", "invalid").as_str(),
+            "Malformed: Unable decode tag: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_ANON_XC20P_1, "tag").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_protected_field(ENCRYPTED_MSG_ANON_XC20P_1, "apv", "invalid").as_str(),
+            "Malformed: Unable decode apv: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_protected_field(ENCRYPTED_MSG_ANON_XC20P_1, "apv").as_str(),
+            "Malformed: Unable parse protected header: missing field `apv` at line 1 column 166",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_malformed_authcrypt_msg() {
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_AUTH_X25519, "protected", "invalid").as_str(),
+            "Malformed: Unable decode protected header: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_AUTH_X25519, "protected").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_AUTH_X25519, "iv", "invalid").as_str(),
+            "Malformed: Unable decode iv: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_AUTH_X25519, "iv").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_AUTH_X25519, "ciphertext", "invalid").as_str(),
+            "Malformed: Unable decode ciphertext: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_AUTH_X25519, "ciphertext").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(ENCRYPTED_MSG_AUTH_X25519, "tag", "invalid").as_str(),
+            "Malformed: Unable decode tag: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(ENCRYPTED_MSG_AUTH_X25519, "tag").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_protected_field(ENCRYPTED_MSG_AUTH_X25519, "apv", "invalid").as_str(),
+            "Malformed: Unable decode apv: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_protected_field(ENCRYPTED_MSG_AUTH_X25519, "apv").as_str(),
+            "Malformed: Unable parse protected header: missing field `apv` at line 1 column 264",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_protected_field(ENCRYPTED_MSG_AUTH_X25519, "apu", "invalid").as_str(),
+            "Malformed: Unable decode apu: Invalid last symbol 100, offset 6.",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_protected_field(ENCRYPTED_MSG_AUTH_X25519, "apu").as_str(),
+            "Malformed: SKID present, but no apu",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_malformed_signed_msg() {
+        _verify_unpack_malformed(
+            update_field(SIGNED_MSG_ALICE_KEY_1, "payload", "invalid").as_str(),
+            "Malformed: Wrong signature",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(SIGNED_MSG_ALICE_KEY_1, "payload").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            update_field(SIGNED_MSG_ALICE_KEY_1, "signatures", "invalid").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            remove_field(SIGNED_MSG_ALICE_KEY_1, "signatures").as_str(),
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_malformed_plaintext_msg() {
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_EMPTY,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_STRING,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_NO_ID,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_NO_TYP,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_NO_TYPE,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_NO_BODY,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_WRONG_TYP,
+            "Malformed: `typ` must be \"application/didcomm-plain+json\"",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_EMPTY_ATTACHMENTS,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_NO_DATA,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_EMPTY_DATA,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_LINKS_NO_HASH,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_STRING,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_INT_ARRAY,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_WRONG_DATA,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_WRONG_ID,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+
+        _verify_unpack_malformed(
+            &INVALID_PLAINTEXT_MSG_ATTACHMENTS_NULL_DATA,
+            "Malformed: Message is not a valid JWE, JWS or JWM",
+        )
+        .await;
+    }
+
+    #[tokio::test]
     async fn unpack_plaintext_works_from_prior() {
         let exp_metadata = UnpackMetadata {
             anonymous_sender: false,
@@ -1425,7 +1716,7 @@ mod test {
             ErrorKind::Malformed,
             "Malformed: Unable to verify from_prior signature: Unable decode signature: Invalid last symbol 66, offset 85.",
         )
-        .await;
+            .await;
     }
 
     async fn _verify_unpack(msg: &str, exp_msg: &Message, exp_metadata: &UnpackMetadata) {
@@ -1477,6 +1768,10 @@ mod test {
 
         metadata.signed_message = exp_metadata.signed_message.clone();
         assert_eq!(&metadata, exp_metadata);
+    }
+
+    async fn _verify_unpack_malformed(msg: &str, exp_error_str: &str) {
+        _verify_unpack_returns_error(msg, ErrorKind::Malformed, exp_error_str).await
     }
 
     async fn _verify_unpack_returns_error(msg: &str, exp_err_kind: ErrorKind, exp_err_msg: &str) {
