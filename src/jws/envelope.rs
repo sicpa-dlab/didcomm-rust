@@ -86,9 +86,10 @@ impl Algorithm {
             Algorithm::EdDSA => SignatureType::EdDSA,
             Algorithm::Es256 => SignatureType::ES256,
             Algorithm::Es256K => SignatureType::ES256K,
-            Algorithm::Other(_) => {
-                Err(err_msg(ErrorKind::Unsupported, "Unsupported signature type"))?
-            }
+            Algorithm::Other(_) => Err(err_msg(
+                ErrorKind::Unsupported,
+                "Unsupported signature type",
+            ))?,
         };
 
         Ok(sig_type)

@@ -2,7 +2,7 @@ use askar_crypto::sign::KeySign;
 
 use crate::{
     error::{ErrorKind, Result, ResultExt},
-    jws::envelope::{Algorithm, Header, ProtectedHeader, CompactHeader, Signature, JWS},
+    jws::envelope::{Algorithm, CompactHeader, Header, ProtectedHeader, Signature, JWS},
 };
 
 pub(crate) fn sign<Key: KeySign>(
@@ -68,11 +68,7 @@ pub(crate) fn sign_compact<Key: KeySign>(
     let sig_type = alg.sig_type()?;
 
     let header = {
-        let header = CompactHeader {
-            typ,
-            alg,
-            kid,
-        };
+        let header = CompactHeader { typ, alg, kid };
 
         let header = serde_json::to_string(&header)
             .kind(ErrorKind::InvalidState, "Unable serialize header")?;
@@ -326,14 +322,12 @@ mod tests {
             alg: Algorithm,
             payload: &str,
         ) {
-            let res =
-                _sign_compact::<K>(kid, key, typ, alg.clone(), payload);
+            let res = _sign_compact::<K>(kid, key, typ, alg.clone(), payload);
 
             let msg = res.expect("Unable _sign_compact");
 
             let mut buf = vec![];
-            let msg = jws::parse_compact(&msg, &mut buf)
-                .expect("Unable parse_compact.");
+            let msg = jws::parse_compact(&msg, &mut buf).expect("Unable parse_compact.");
 
             assert_eq!(
                 msg.payload,

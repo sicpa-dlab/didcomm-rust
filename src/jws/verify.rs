@@ -269,8 +269,7 @@ mod tests {
 
     #[test]
     fn verify_compact_works() {
-        let res =
-            _verify_compact::<Ed25519KeyPair>(ALICE_PKEY_ED25519, ALICE_COMPACT_MSG_ED25519);
+        let res = _verify_compact::<Ed25519KeyPair>(ALICE_PKEY_ED25519, ALICE_COMPACT_MSG_ED25519);
         let res = res.expect("res is err");
         assert_eq!(res, true);
     }
@@ -286,35 +285,32 @@ mod tests {
 
     #[test]
     fn verify_compact_works_changed_payload() {
-        let res =
-            _verify_compact::<Ed25519KeyPair>(
-                ALICE_PKEY_ED25519,
-                ALICE_COMPACT_MSG_ED25519_CHANGED_PAYLOAD
-            );
+        let res = _verify_compact::<Ed25519KeyPair>(
+            ALICE_PKEY_ED25519,
+            ALICE_COMPACT_MSG_ED25519_CHANGED_PAYLOAD,
+        );
         let res = res.expect("res is err");
         assert_eq!(res, false);
     }
 
     #[test]
     fn verify_compact_works_different_curve() {
-        let res =
-            _verify_compact::<P256KeyPair>(ALICE_PKEY_P256, ALICE_COMPACT_MSG_ED25519);
-            let err = res.expect_err("res is ok");
-            assert_eq!(err.kind(), ErrorKind::Malformed);
+        let res = _verify_compact::<P256KeyPair>(ALICE_PKEY_P256, ALICE_COMPACT_MSG_ED25519);
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
 
-            assert_eq!(
-                format!("{}", err),
-                "Malformed: Unable verify signature: Unsupported signature type"
-            );
+        assert_eq!(
+            format!("{}", err),
+            "Malformed: Unable verify signature: Unsupported signature type"
+        );
     }
 
     #[test]
     fn verify_compact_works_undecodable_sig() {
-        let res =
-            _verify_compact::<Ed25519KeyPair>(
-                ALICE_PKEY_ED25519,
-                ALICE_COMPACT_MSG_ED25519_UNDECODABLE_SIG
-            );
+        let res = _verify_compact::<Ed25519KeyPair>(
+            ALICE_PKEY_ED25519,
+            ALICE_COMPACT_MSG_ED25519_UNDECODABLE_SIG,
+        );
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
 
@@ -337,10 +333,7 @@ mod tests {
         msg.verify((kid, &key))
     }
 
-    fn _verify_compact<Key: FromJwk + KeySigVerify>(
-        key: &str,
-        msg: &str,
-    ) -> Result<bool, Error> {
+    fn _verify_compact<Key: FromJwk + KeySigVerify>(key: &str, msg: &str) -> Result<bool, Error> {
         let key = Key::from_jwk(key).expect("unable from_jwk.");
 
         let mut buf = vec![];

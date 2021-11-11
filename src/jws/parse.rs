@@ -78,6 +78,7 @@ pub(crate) fn parse_compact<'a>(
 
 #[cfg(test)]
 mod tests {
+    use crate::jws::{CompactHeader, ParsedCompactJWS};
     use crate::{
         error::ErrorKind,
         jws::{
@@ -86,7 +87,6 @@ mod tests {
             ParsedJWS,
         },
     };
-    use crate::jws::{CompactHeader, ParsedCompactJWS};
 
     #[test]
     fn parse_works() {
@@ -597,8 +597,7 @@ mod tests {
 
     #[test]
     fn parse_compact_works_misstructured_header() {
-        let msg =
-            "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwia2lkIjoiZGlkOmV4YW1wbGU6YWxpY2Uja2V5LTEifQ\
+        let msg = "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwia2lkIjoiZGlkOmV4YW1wbGU6YWxpY2Uja2V5LTEifQ\
              .\
              eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
              eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
