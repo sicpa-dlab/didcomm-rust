@@ -142,7 +142,7 @@ mod tests {
     };
     use serde_json::Value;
 
-    use crate::did::resolvers::mock::MockDidResolver;
+    use crate::did::resolvers::MockDidResolver;
     use crate::error::{err_msg, ErrorKind};
     use crate::secrets::{Secret, SecretMaterial, SecretType};
     use crate::{
