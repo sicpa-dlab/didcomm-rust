@@ -289,6 +289,7 @@ mod tests {
             ALICE_PKEY_ED25519,
             ALICE_COMPACT_MSG_ED25519_CHANGED_PAYLOAD,
         );
+
         let res = res.expect("res is err");
         assert_eq!(res, false);
     }
@@ -311,6 +312,7 @@ mod tests {
             ALICE_PKEY_ED25519,
             ALICE_COMPACT_MSG_ED25519_UNDECODABLE_SIG,
         );
+
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
 

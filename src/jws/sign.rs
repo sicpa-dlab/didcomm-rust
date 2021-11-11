@@ -21,7 +21,7 @@ pub(crate) fn sign<Key: KeySign>(
         };
 
         let protected = serde_json::to_string(&protected)
-            .kind(ErrorKind::InvalidState, "Unable serialize protectd header")?;
+            .kind(ErrorKind::InvalidState, "Unable serialize protected header")?;
 
         base64::encode_config(protected, base64::URL_SAFE_NO_PAD)
     };
@@ -147,7 +147,7 @@ mod tests {
             let msg = res.expect("Unable _sign");
 
             let mut buf = vec![];
-            let msg = jws::parse(&msg, &mut buf).expect("Unable parse.");
+            let msg = jws::parse(&msg, &mut buf).expect("Unable parse");
 
             assert_eq!(
                 msg.jws.payload,
@@ -161,7 +161,7 @@ mod tests {
             assert_eq!(msg.protected[0].alg, alg);
             assert_eq!(msg.protected[0].typ, "application/didcomm-signed+json");
 
-            let pkey = K::from_jwk(pkey).expect("unable from_jwk");
+            let pkey = K::from_jwk(pkey).expect("Unable from_jwk");
             let valid = msg.verify::<K>((kid, &pkey)).expect("Unable verify");
 
             assert!(valid);
@@ -327,7 +327,7 @@ mod tests {
             let msg = res.expect("Unable _sign_compact");
 
             let mut buf = vec![];
-            let msg = jws::parse_compact(&msg, &mut buf).expect("Unable parse_compact.");
+            let msg = jws::parse_compact(&msg, &mut buf).expect("Unable parse_compact");
 
             assert_eq!(
                 msg.payload,
@@ -338,7 +338,7 @@ mod tests {
             assert_eq!(msg.parsed_header.alg, alg);
             assert_eq!(msg.parsed_header.kid, kid);
 
-            let pkey = K::from_jwk(pkey).expect("unable from_jwk");
+            let pkey = K::from_jwk(pkey).expect("Unable from_jwk");
             let valid = msg.verify::<K>(&pkey).expect("Unable verify");
 
             assert!(valid);
@@ -481,7 +481,7 @@ mod tests {
         alg: Algorithm,
         payload: &str,
     ) -> Result<String> {
-        let key = K::from_jwk(key).expect("unable from_jwk.");
+        let key = K::from_jwk(key).expect("Unable from_jwk");
         jws::sign(payload.as_bytes(), (&kid, &key), alg.clone())
     }
 
@@ -492,7 +492,7 @@ mod tests {
         alg: Algorithm,
         payload: &str,
     ) -> Result<String> {
-        let key = K::from_jwk(key).expect("unable from_jwk.");
+        let key = K::from_jwk(key).expect("Unable from_jwk");
         jws::sign_compact(payload.as_bytes(), (&kid, &key), typ, alg.clone())
     }
 

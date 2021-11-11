@@ -32,8 +32,8 @@ impl FromPrior {
                 )
             })?;
 
-        let authentication_kids: Vec<&str> = if let Some(v) = issuer_kid {
-            let (did, kid_opt) = did_or_url(v);
+        let authentication_kids: Vec<&str> = if let Some(issuer_kid) = issuer_kid {
+            let (did, kid_opt) = did_or_url(issuer_kid);
 
             let kid = kid_opt.ok_or_else(|| {
                 err_msg(ErrorKind::Malformed, "issuer_kid content is not DID URL")
