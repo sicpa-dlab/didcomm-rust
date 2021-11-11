@@ -111,13 +111,6 @@ impl<T> ResultContext<T> for Result<T> {
     }
 }
 
-pub trait ResultInvalidStateWrapper<T> {
-    fn ok_or_invalid_state(self) -> Result<Option<T>>;
-    fn wrap_err_or_invalid_state<D>(self, kind: ErrorKind, msg: D) -> Result<T>
-    where
-        D: fmt::Display + fmt::Debug + Send + Sync + 'static;
-}
-
 pub trait ToResult<T> {
     fn to_didcomm<D>(self, msg: D) -> Result<T>
     where
