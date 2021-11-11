@@ -4,7 +4,6 @@ mod sign;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::ResultInvalidStateWrapper;
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
@@ -89,12 +88,15 @@ impl Message {
 
         let msg: Result<Self> = Message::from_str(msg);
 
-        let msg = msg
-            .wrap_err_or_invalid_state(
+        let msg = match msg {
+            Ok(m) => m,
+            Err(e) if e.kind() == ErrorKind::Malformed => Err(err_msg(
                 ErrorKind::Malformed,
                 "Message is not a valid JWE, JWS or JWM",
-            )?
-            .validate()?;
+            ))?,
+            Err(e) => Err(e)?,
+        }
+        .validate()?;
 
         Ok((msg, metadata))
     }

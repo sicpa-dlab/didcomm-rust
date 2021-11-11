@@ -8,7 +8,6 @@ use askar_crypto::{
     kdf::ecdh_es::EcdhEs,
 };
 
-use crate::error::ResultInvalidStateWrapper;
 use crate::jwe::envelope::JWE;
 use crate::{
     algorithms::AnonCryptAlg,
@@ -28,9 +27,10 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
     opts: &UnpackOptions,
     metadata: &mut UnpackMetadata,
 ) -> Result<Option<String>> {
-    let jwe = match JWE::from_str(msg).ok_or_invalid_state()? {
-        Some(msg) => msg,
-        None => return Ok(None),
+    let jwe = match JWE::from_str(msg) {
+        Ok(m) => m,
+        Err(e) if e.kind() == ErrorKind::Malformed => return Ok(None),
+        Err(e) => Err(e)?,
     };
 
     let mut buf = vec![];
