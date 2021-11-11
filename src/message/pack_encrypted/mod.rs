@@ -98,7 +98,10 @@ impl Message {
 
             (msg, Some(sign_by_kid))
         } else {
-            let msg = self.pack_plaintext().context("Unable produce plaintext")?;
+            let msg = self
+                .pack_plaintext(did_resolver)
+                .await
+                .context("Unable produce plaintext")?;
             (msg, None)
         };
 
@@ -275,13 +278,13 @@ mod tests {
         repr::{KeyGen, KeySecretBytes},
         sign::KeySigVerify,
     };
+
     use serde_json::Value;
 
-    use crate::error::ErrorKind;
-    use crate::test_vectors::CHARLIE_DID;
     use crate::{
         algorithms::AnonCryptAlg,
         did::{resolvers::ExampleDIDResolver, VerificationMaterial, VerificationMethod},
+        error::ErrorKind,
         jwe,
         jwk::{FromJwkValue, ToJwkValue},
         jws,
@@ -290,13 +293,15 @@ mod tests {
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
             ALICE_DID, ALICE_DID_DOC, ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS,
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256, ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
-            BOB_DID, BOB_DID_DOC, BOB_DID_DOC_NO_SECRETS, BOB_SECRET_KEY_AGREEMENT_KEY_P256_1,
-            BOB_SECRET_KEY_AGREEMENT_KEY_P256_2, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1,
-            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3,
-            MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
+            BOB_DID, BOB_DID_DOC, BOB_DID_DOC_NO_SECRETS, BOB_SECRETS,
+            BOB_SECRET_KEY_AGREEMENT_KEY_P256_1, BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, CHARLIE_DID, CHARLIE_DID_DOC,
+            CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519, FROM_PRIOR_FULL,
+            MESSAGE_FROM_PRIOR_FULL, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
         },
         utils::crypto::{JoseKDF, KeyWrap},
-        PackEncryptedMetadata, PackEncryptedOptions,
+        Message, PackEncryptedMetadata, PackEncryptedOptions, UnpackOptions,
     };
 
     #[tokio::test]
@@ -2162,6 +2167,49 @@ mod tests {
                 "No compatible crypto: No common keys between sender and recipient found"
             );
         }
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_from_prior() {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
+        let charlie_rotated_to_alice_secrets_resolver =
+            ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+        let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+
+        let (packed_msg, _pack_metadata) = MESSAGE_FROM_PRIOR_FULL
+            .pack_encrypted(
+                BOB_DID,
+                Some(ALICE_DID),
+                None,
+                &did_resolver,
+                &charlie_rotated_to_alice_secrets_resolver,
+                &&PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await
+            .expect("Unable pack_encrypted");
+
+        let (unpacked_msg, unpack_metadata) = Message::unpack(
+            &packed_msg,
+            &did_resolver,
+            &bob_secrets_resolver,
+            &UnpackOptions::default(),
+        )
+        .await
+        .expect("Unable unpack");
+
+        assert_eq!(&unpacked_msg, &*MESSAGE_FROM_PRIOR_FULL);
+        assert_eq!(
+            unpack_metadata.from_prior_issuer_kid.as_ref(),
+            Some(&CHARLIE_SECRET_AUTH_KEY_ED25519.id)
+        );
+        assert_eq!(unpack_metadata.from_prior.as_ref(), Some(&*FROM_PRIOR_FULL));
     }
 
     fn _verify_authcrypt<CE, KDF, KE, KW>(

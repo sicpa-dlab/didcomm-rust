@@ -1,12 +1,11 @@
-use crate::utils::did::is_did;
 use crate::{
     did::DIDResolver,
-    error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
+    error::{err_msg, ErrorKind, Result, ResultContext},
     jws::{self, Algorithm},
     secrets::SecretsResolver,
     utils::{
         crypto::{AsKnownKeyPair, KnownKeyPair},
-        did::did_or_url,
+        did::{did_or_url, is_did},
     },
     Message,
 };
@@ -91,8 +90,7 @@ impl Message {
             .as_key_pair()
             .context("Unable instantiate sign key")?;
 
-        let payload = serde_json::to_string(self)
-            .kind(ErrorKind::InvalidState, "Unable serialize message")?;
+        let payload = self.pack_plaintext(did_resolver).await?;
 
         let msg = match sign_key {
             KnownKeyPair::Ed25519(ref key) => {
@@ -140,22 +138,28 @@ mod tests {
         alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair},
         sign::KeySigVerify,
     };
+
     use serde_json::Value;
 
-    use crate::did::resolvers::MockDidResolver;
-    use crate::error::{err_msg, ErrorKind};
-    use crate::secrets::{Secret, SecretMaterial, SecretType};
     use crate::{
-        did::{resolvers::ExampleDIDResolver, DIDResolver, VerificationMaterial},
+        did::{
+            resolvers::{ExampleDIDResolver, MockDidResolver},
+            DIDResolver, VerificationMaterial,
+        },
+        error::{err_msg, ErrorKind},
         jwk::FromJwkValue,
         jws::{self, Algorithm, Header, ProtectedHeader},
-        secrets::{resolvers::ExampleSecretsResolver, SecretsResolver},
+        secrets::{
+            resolvers::ExampleSecretsResolver, Secret, SecretMaterial, SecretType, SecretsResolver,
+        },
         test_vectors::{
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
-            ALICE_DID, ALICE_DID_DOC, ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS, MESSAGE_SIMPLE,
-            PLAINTEXT_MSG_SIMPLE,
+            ALICE_DID, ALICE_DID_DOC, ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS, BOB_DID_DOC,
+            BOB_SECRETS, CHARLIE_DID_DOC, CHARLIE_ROTATED_TO_ALICE_SECRETS,
+            CHARLIE_SECRET_AUTH_KEY_ED25519, FROM_PRIOR_FULL, MESSAGE_FROM_PRIOR_FULL,
+            MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
         },
-        Message, PackSignedMetadata,
+        Message, PackSignedMetadata, UnpackOptions,
     };
 
     #[tokio::test]
@@ -229,7 +233,7 @@ mod tests {
             assert_eq!(
                 metadata,
                 PackSignedMetadata {
-                    sign_by_kid: sign_by_kid.into()
+                    sign_by_kid: sign_by_kid.into(),
                 }
             );
 
@@ -413,5 +417,42 @@ mod tests {
             format!("{}", err),
             "Unsupported crypto or method: Unable instantiate sign key: Unsupported key type or curve"
         );
+    }
+
+    #[tokio::test]
+    async fn pack_signed_works_from_prior() {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
+        let charlie_rotated_to_alice_secrets_resolver =
+            ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+        let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+
+        let (packed_msg, _pack_metadata) = MESSAGE_FROM_PRIOR_FULL
+            .pack_signed(
+                ALICE_DID,
+                &did_resolver,
+                &charlie_rotated_to_alice_secrets_resolver,
+            )
+            .await
+            .expect("Unable pack_signed");
+
+        let (unpacked_msg, unpack_metadata) = Message::unpack(
+            &packed_msg,
+            &did_resolver,
+            &bob_secrets_resolver,
+            &UnpackOptions::default(),
+        )
+        .await
+        .expect("Unable unpack");
+
+        assert_eq!(&unpacked_msg, &*MESSAGE_FROM_PRIOR_FULL);
+        assert_eq!(
+            unpack_metadata.from_prior_issuer_kid.as_ref(),
+            Some(&CHARLIE_SECRET_AUTH_KEY_ED25519.id)
+        );
+        assert_eq!(unpack_metadata.from_prior.as_ref(), Some(&*FROM_PRIOR_FULL));
     }
 }

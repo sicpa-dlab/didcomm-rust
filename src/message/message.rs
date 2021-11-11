@@ -63,6 +63,10 @@ pub struct Message {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_time: Option<u64>,
 
+    /// from_prior is a compactly serialized signed JWT containing FromPrior value
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from_prior: Option<String>,
+
     /// Message attachments
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attachments: Option<Vec<Attachment>>,
@@ -85,6 +89,7 @@ pub struct MessageBuilder {
     extra_headers: HashMap<String, Value>,
     created_time: Option<u64>,
     expires_time: Option<u64>,
+    from_prior: Option<String>,
     attachments: Option<Vec<Attachment>>,
 }
 
@@ -101,6 +106,7 @@ impl MessageBuilder {
             extra_headers: HashMap::new(),
             created_time: None,
             expires_time: None,
+            from_prior: None,
             attachments: None,
         }
     }
@@ -156,6 +162,11 @@ impl MessageBuilder {
         self
     }
 
+    pub fn from_prior(mut self, from_prior: String) -> Self {
+        self.from_prior = Some(from_prior);
+        self
+    }
+
     pub fn attachement(mut self, attachement: Attachment) -> Self {
         if let Some(ref mut attachments) = self.attachments {
             attachments.push(attachement);
@@ -190,6 +201,7 @@ impl MessageBuilder {
             extra_headers: self.extra_headers,
             created_time: self.created_time,
             expires_time: self.expires_time,
+            from_prior: self.from_prior,
             attachments: self.attachments,
         }
     }
