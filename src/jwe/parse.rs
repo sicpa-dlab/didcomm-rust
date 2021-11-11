@@ -14,42 +14,40 @@ pub(crate) struct ParsedJWE<'a, 'b> {
     pub(crate) apv: Vec<u8>,
 }
 
-pub(crate) fn to_jwe(jwe: &str) -> Result<JWE> {
-    serde_json::from_str(jwe).to_didcomm("Unable parse jwe")
-}
-
-pub(crate) fn to_parsed_jwe<'a, 'b>(
-    jwe: JWE<'a>,
-    buf: &'b mut Vec<u8>,
-) -> Result<ParsedJWE<'a, 'b>> {
-    base64::decode_config_buf(jwe.protected, base64::URL_SAFE_NO_PAD, buf)
-        .kind(ErrorKind::Malformed, "Unable decode protected header")?;
-
-    let protected: ProtectedHeader =
-        serde_json::from_slice(buf).to_didcomm("Unable parse protected header")?;
-
-    let apv = base64::decode_config(protected.apv, base64::URL_SAFE_NO_PAD)
-        .kind(ErrorKind::Malformed, "Unable decode apv")?;
-
-    let apu = protected
-        .apu
-        .map(|apu| base64::decode_config(apu, base64::URL_SAFE_NO_PAD))
-        .transpose()
-        .kind(ErrorKind::Malformed, "Unable decode apu")?;
-
-    let jwe = ParsedJWE {
-        jwe,
-        protected,
-        apu,
-        apv,
-    };
-
-    Ok(jwe)
-}
-
 pub(crate) fn parse<'a, 'b>(jwe: &'a str, buf: &'b mut Vec<u8>) -> Result<ParsedJWE<'a, 'b>> {
-    let jwe: JWE = to_jwe(jwe)?;
-    to_parsed_jwe(jwe, buf)
+    JWE::from_str(jwe)?.parse(buf)
+}
+
+impl<'a> JWE<'a> {
+    pub(crate) fn from_str(s: &str) -> Result<JWE> {
+        serde_json::from_str(s).to_didcomm("Unable parse jwe")
+    }
+
+    pub(crate) fn parse<'b>(self, buf: &'b mut Vec<u8>) -> Result<ParsedJWE<'a, 'b>> {
+        base64::decode_config_buf(self.protected, base64::URL_SAFE_NO_PAD, buf)
+            .kind(ErrorKind::Malformed, "Unable decode protected header")?;
+
+        let protected: ProtectedHeader =
+            serde_json::from_slice(buf).to_didcomm("Unable parse protected header")?;
+
+        let apv = base64::decode_config(protected.apv, base64::URL_SAFE_NO_PAD)
+            .kind(ErrorKind::Malformed, "Unable decode apv")?;
+
+        let apu = protected
+            .apu
+            .map(|apu| base64::decode_config(apu, base64::URL_SAFE_NO_PAD))
+            .transpose()
+            .kind(ErrorKind::Malformed, "Unable decode apu")?;
+
+        let jwe = ParsedJWE {
+            jwe: self,
+            protected,
+            apu,
+            apv,
+        };
+
+        Ok(jwe)
+    }
 }
 
 impl<'a, 'b> ParsedJWE<'a, 'b> {

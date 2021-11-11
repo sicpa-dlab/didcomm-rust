@@ -10,43 +10,44 @@ pub(crate) struct ParsedJWS<'a, 'b> {
     pub(crate) protected: Vec<ProtectedHeader<'b>>,
 }
 
-pub(crate) fn to_jws(jws: &str) -> Result<JWS> {
-    serde_json::from_str(jws).to_didcomm("Unable parse jws")
-}
-
-pub(crate) fn to_parsed_jws<'a, 'b>(
-    jws: JWS<'a>,
-    buf: &'b mut Vec<Vec<u8>>,
-) -> Result<ParsedJWS<'a, 'b>> {
-    let protected = {
-        let len = jws.signatures.len();
-        let mut protected = Vec::<ProtectedHeader>::with_capacity(len);
-        buf.resize(len, vec![]);
-
-        for (i, b) in buf.iter_mut().enumerate() {
-            let signature = jws
-                .signatures
-                .get(i)
-                .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Invalid signature index"))?;
-
-            base64::decode_config_buf(signature.protected, base64::URL_SAFE_NO_PAD, b)
-                .kind(ErrorKind::Malformed, "Unable decode protected header")?;
-
-            let p: ProtectedHeader =
-                serde_json::from_slice(b).to_didcomm("Unable parse protected header")?;
-
-            protected.push(p);
-        }
-
-        protected
-    };
-
-    Ok(ParsedJWS { jws, protected })
-}
-
 pub(crate) fn parse<'a, 'b>(jws: &'a str, buf: &'b mut Vec<Vec<u8>>) -> Result<ParsedJWS<'a, 'b>> {
-    let jws: JWS = to_jws(jws)?;
-    to_parsed_jws(jws, buf)
+    JWS::from_str(jws)?.parse(buf)
+}
+
+impl<'a> JWS<'a> {
+    pub(crate) fn from_str(s: &str) -> Result<JWS> {
+        serde_json::from_str(s).to_didcomm("Unable parse jws")
+    }
+
+    pub(crate) fn parse<'b>(self, buf: &'b mut Vec<Vec<u8>>) -> Result<ParsedJWS<'a, 'b>> {
+        let protected = {
+            let len = self.signatures.len();
+            let mut protected = Vec::<ProtectedHeader>::with_capacity(len);
+            buf.resize(len, vec![]);
+
+            for (i, b) in buf.iter_mut().enumerate() {
+                let signature = self
+                    .signatures
+                    .get(i)
+                    .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Invalid signature index"))?;
+
+                base64::decode_config_buf(signature.protected, base64::URL_SAFE_NO_PAD, b)
+                    .kind(ErrorKind::Malformed, "Unable decode protected header")?;
+
+                let p: ProtectedHeader =
+                    serde_json::from_slice(b).to_didcomm("Unable parse protected header")?;
+
+                protected.push(p);
+            }
+
+            protected
+        };
+
+        Ok(ParsedJWS {
+            jws: self,
+            protected,
+        })
+    }
 }
 
 #[cfg(test)]

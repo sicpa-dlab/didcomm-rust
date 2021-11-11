@@ -3,7 +3,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use super::Attachment;
-use crate::error::{err_msg, ErrorKind, Result};
+use crate::error::{err_msg, ErrorKind, Result, ToResult};
 
 ///  Wrapper for plain message. Provides helpers for message building and packing/unpacking.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
@@ -76,14 +76,18 @@ impl Message {
         MessageBuilder::new(id, type_, body)
     }
 
-    pub fn validate(&self) -> Result<()> {
+    pub(crate) fn from_str(s: &str) -> Result<Message> {
+        serde_json::from_str(s).to_didcomm("Unable deserialize jwm")
+    }
+
+    pub fn validate(self) -> Result<Self> {
         if self.typ != PLAINTEXT_TYP {
             Err(err_msg(
                 ErrorKind::Malformed,
                 format!("`typ` must be \"{}\"", PLAINTEXT_TYP),
             ))?;
         }
-        Ok(())
+        Ok(self)
     }
 }
 

@@ -2,6 +2,7 @@ mod anoncrypt;
 mod authcrypt;
 mod sign;
 
+use crate::error::ResultInvalidStateWrapper;
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
@@ -10,7 +11,6 @@ use crate::{
     Message,
 };
 
-use crate::error::ToResult;
 use anoncrypt::_try_unpack_anoncrypt;
 use authcrypt::_try_unpack_authcrypt;
 use sign::_try_unapck_sign;
@@ -85,17 +85,14 @@ impl Message {
         let signed = _try_unapck_sign(msg, did_resolver, options, &mut metadata).await?;
         let msg = signed.as_deref().unwrap_or(msg);
 
-        let msg: Result<Self> = serde_json::from_str(msg).to_didcomm("Unable deserialize jwm");
+        let msg: Result<Self> = Message::from_str(msg);
 
-        let msg = match msg {
-            Ok(msg) => msg,
-            Err(_) => Err(err_msg(
+        let msg = msg
+            .wrap_err_or_invalid_state(
                 ErrorKind::Malformed,
                 "Message is not a valid JWE, JWS or JWM",
-            ))?,
-        };
-
-        msg.validate()?;
+            )?
+            .validate()?;
 
         Ok((msg, metadata))
     }
@@ -165,8 +162,6 @@ pub struct UnpackMetadata {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
     use crate::test_vectors::{
         remove_field, remove_protected_field, update_field, update_protected_field,
         INVALID_ENCRYPTED_MSG_ANON_P256_EPK_WRONG_POINT,
@@ -202,6 +197,8 @@ mod test {
         },
         PackEncryptedOptions,
     };
+
+    use super::*;
 
     #[tokio::test]
     async fn unpack_works_plaintext() {
@@ -1676,6 +1673,10 @@ mod test {
     }
 
     async fn _verify_unpack_malformed(msg: &str, exp_error_str: &str) {
+        _verify_unpack_error(msg, ErrorKind::Malformed, exp_error_str).await
+    }
+
+    async fn _verify_unpack_error(msg: &str, kind: ErrorKind, exp_error_str: &str) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
@@ -1690,7 +1691,7 @@ mod test {
         .await;
 
         let err = res.expect_err("res is ok");
-        assert_eq!(err.kind(), ErrorKind::Malformed);
+        assert_eq!(err.kind(), kind);
         assert_eq!(format!("{}", err), exp_error_str);
     }
 }

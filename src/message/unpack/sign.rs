@@ -1,5 +1,7 @@
 use askar_crypto::alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair};
 
+use crate::error::ResultInvalidStateWrapper;
+use crate::jws::JWS;
 use crate::{
     algorithms::SignAlg,
     did::DIDResolver,
@@ -17,14 +19,13 @@ pub(crate) async fn _try_unapck_sign<'dr>(
 ) -> Result<Option<String>> {
     let jws_json = msg;
 
-    let jws = if let Ok(msg) = jws::to_jws(msg) {
-        msg
-    } else {
-        return Ok(None);
+    let jws = match JWS::from_str(msg).ok_or_invalid_state()? {
+        Some(msg) => msg,
+        None => return Ok(None),
     };
 
     let mut buf = vec![];
-    let parsed_jws = jws::to_parsed_jws(jws, &mut buf)?;
+    let parsed_jws = jws.parse(&mut buf)?;
 
     if parsed_jws.protected.len() != 1 {
         Err(err_msg(

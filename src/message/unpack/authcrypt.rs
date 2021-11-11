@@ -7,6 +7,8 @@ use askar_crypto::{
     kdf::ecdh_1pu::Ecdh1PU,
 };
 
+use crate::error::ResultInvalidStateWrapper;
+use crate::jwe::envelope::JWE;
 use crate::{
     algorithms::AuthCryptAlg,
     did::DIDResolver,
@@ -27,14 +29,13 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     opts: &UnpackOptions,
     metadata: &mut UnpackMetadata,
 ) -> Result<Option<String>> {
-    let jwe = if let Ok(msg) = jwe::to_jwe(msg) {
-        msg
-    } else {
-        return Ok(None);
+    let jwe = match JWE::from_str(msg).ok_or_invalid_state()? {
+        Some(msg) => msg,
+        None => return Ok(None),
     };
 
     let mut buf = vec![];
-    let parsed_jwe = jwe::to_parsed_jwe(jwe, &mut buf)?;
+    let parsed_jwe = jwe.parse(&mut buf)?;
 
     if parsed_jwe.protected.alg != jwe::Algorithm::Ecdh1puA256kw {
         return Ok(None);
