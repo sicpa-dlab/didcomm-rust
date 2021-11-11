@@ -2,7 +2,7 @@ use askar_crypto::sign::KeySigVerify;
 
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
-    jws::ParsedJWS,
+    jws::{ParsedCompactJWS, ParsedJWS},
 };
 
 impl<'a, 'b> ParsedJWS<'a, 'b> {
@@ -26,6 +26,22 @@ impl<'a, 'b> ParsedJWS<'a, 'b> {
         let sign_input = format!("{}.{}", signature.protected, self.jws.payload);
 
         let signature = base64::decode_config(&signature.signature, base64::URL_SAFE_NO_PAD)
+            .kind(ErrorKind::Malformed, "Unable decode signature")?;
+
+        let valid = key
+            .verify_signature(sign_input.as_bytes(), &signature, Some(sig_type))
+            .kind(ErrorKind::Malformed, "Unable verify signature")?;
+
+        Ok(valid)
+    }
+}
+
+impl<'a> ParsedCompactJWS<'a> {
+    pub(crate) fn verify<Key: KeySigVerify>(&self, key: &Key) -> Result<bool> {
+        let sig_type = self.parsed_header.alg.sig_type()?;
+        let sign_input = format!("{}.{}", self.header, self.payload);
+
+        let signature = base64::decode_config(self.signature, base64::URL_SAFE_NO_PAD)
             .kind(ErrorKind::Malformed, "Unable decode signature")?;
 
         let valid = key
@@ -251,6 +267,61 @@ mod tests {
         }
     }
 
+    #[test]
+    fn verify_compact_works() {
+        let res = _verify_compact::<Ed25519KeyPair>(ALICE_PKEY_ED25519, ALICE_COMPACT_MSG_ED25519);
+        let res = res.expect("res is err");
+        assert_eq!(res, true);
+    }
+
+    #[test]
+    fn verify_compact_works_different_key() {
+        // use Dave's public key instead of Alice's one
+        let res =
+            _verify_compact::<Ed25519KeyPair>(CHARLIE_PKEY_ED25519, ALICE_COMPACT_MSG_ED25519);
+        let res = res.expect("res is err");
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn verify_compact_works_changed_payload() {
+        let res = _verify_compact::<Ed25519KeyPair>(
+            ALICE_PKEY_ED25519,
+            ALICE_COMPACT_MSG_ED25519_CHANGED_PAYLOAD,
+        );
+
+        let res = res.expect("res is err");
+        assert_eq!(res, false);
+    }
+
+    #[test]
+    fn verify_compact_works_different_curve() {
+        let res = _verify_compact::<P256KeyPair>(ALICE_PKEY_P256, ALICE_COMPACT_MSG_ED25519);
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
+
+        assert_eq!(
+            format!("{}", err),
+            "Malformed: Unable verify signature: Unsupported signature type"
+        );
+    }
+
+    #[test]
+    fn verify_compact_works_undecodable_sig() {
+        let res = _verify_compact::<Ed25519KeyPair>(
+            ALICE_PKEY_ED25519,
+            ALICE_COMPACT_MSG_ED25519_UNDECODABLE_SIG,
+        );
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::Malformed);
+
+        assert_eq!(
+            format!("{}", err),
+            "Malformed: Unable decode signature: Invalid byte 33, offset 0."
+        );
+    }
+
     fn _verify<Key: FromJwk + KeySigVerify>(
         kid: &str,
         key: &str,
@@ -262,6 +333,15 @@ mod tests {
         let msg = jws::parse(&msg, &mut buf).expect("unable parse.");
 
         msg.verify((kid, &key))
+    }
+
+    fn _verify_compact<Key: FromJwk + KeySigVerify>(key: &str, msg: &str) -> Result<bool, Error> {
+        let key = Key::from_jwk(key).expect("unable from_jwk.");
+
+        let mut buf = vec![];
+        let msg = jws::parse_compact(&msg, &mut buf).expect("unable parse.");
+
+        msg.verify(&key)
     }
 
     const ALICE_KID_ED25519: &str = "did:example:alice#key-1";
@@ -489,6 +569,45 @@ mod tests {
     }
     "#;
 
+    const ALICE_COMPACT_MSG_ED25519: &str =
+        "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+         ZSNrZXktMSJ9\
+         .\
+         eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+         eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+         bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+         dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+         YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+         .\
+         iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+         bHgtCg";
+
+    const ALICE_COMPACT_MSG_ED25519_CHANGED_PAYLOAD: &str =
+        "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+         ZSNrZXktMSJ9\
+         .\
+         eyJpZCI6IjAyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+         eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+         bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+         dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+         YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+         .\
+         iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+         bHgtCg";
+
+    const ALICE_COMPACT_MSG_ED25519_UNDECODABLE_SIG: &str =
+        "eyJ0eXAiOiJleGFtcGxlLXR5cC0xIiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6ZXhhbXBsZTphbGlj\
+         ZSNrZXktMSJ9\
+         .\
+         eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0\
+         eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3Nh\
+         bCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVh\
+         dGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNz\
+         YWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19\
+         .\
+         !iMi3kOWHTWoKiuTT4JxD9CkcUwSby9ekpOQk0Xdm9_H6jDpLPuhfX4U2EYgdPIJERl95MIecEhrufvO4\
+         bHgtCg";
+
     /*
     Bob key Ed25519
     {"crv":"Ed25519","kty":"OKP","x":"ECEdOp9caYYVMgGomcV-bHjvJcRvh68COWd_GO-npGI","d":"CKMS_Kt8x6to6jD88d6EGo_H_fSG3L2SAEccLBGQG3U"}
@@ -539,6 +658,14 @@ mod tests {
             "signature":"Jym1ZSzMJBq9hjOx0I0wG03I0nf2NySLt8GostuIQ3JE9hGluwhBBGeFaSATJt4OUEFsB_k0YuwPGSwbo3nKUw"
         }],
         "payload":"eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3NhbCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVhdGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNzYWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19"
+    }
+    "#;
+
+    const CHARLIE_PKEY_ED25519: &str = r#"
+    {
+        "kty":"OKP",
+        "crv":"Ed25519",
+        "x":"VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE"
     }
     "#;
 }

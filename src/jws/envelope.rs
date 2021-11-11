@@ -50,6 +50,19 @@ pub(crate) struct Header<'a> {
     pub kid: &'a str,
 }
 
+/// Header of compactly serialized JWS.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+pub(crate) struct CompactHeader<'a> {
+    /// Media type of this complete JWS.
+    pub typ: &'a str,
+
+    /// Cryptographic algorithm used to produce signature.
+    pub alg: Algorithm,
+
+    /// KID used to produce signature as DID URL.
+    pub kid: &'a str,
+}
+
 /// Represents possible values for `alg` header.
 /// Cryptographic algorithm used to produce signature over JWS payload.
 #[derive(Deserialize_enum_str, Serialize_enum_str, Debug, Clone, Eq, PartialEq)]
@@ -73,9 +86,10 @@ impl Algorithm {
             Algorithm::EdDSA => SignatureType::EdDSA,
             Algorithm::Es256 => SignatureType::ES256,
             Algorithm::Es256K => SignatureType::ES256K,
-            Algorithm::Other(_) => {
-                Err(err_msg(ErrorKind::Unsupported, "Unsuported signature type"))?
-            }
+            Algorithm::Other(_) => Err(err_msg(
+                ErrorKind::Unsupported,
+                "Unsupported signature type",
+            ))?,
         };
 
         Ok(sig_type)

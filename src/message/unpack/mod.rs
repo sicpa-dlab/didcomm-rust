@@ -1,5 +1,6 @@
 mod anoncrypt;
 mod authcrypt;
+mod plaintext;
 mod sign;
 
 use serde::{Deserialize, Serialize};
@@ -9,9 +10,10 @@ use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result},
     secrets::SecretsResolver,
-    Message,
+    FromPrior, Message,
 };
 
+use crate::message::unpack::plaintext::unpack_plaintext;
 use anoncrypt::_try_unpack_anoncrypt;
 use authcrypt::_try_unpack_authcrypt;
 use sign::_try_unapck_sign;
@@ -68,10 +70,12 @@ impl Message {
             encrypted_from_kid: None,
             encrypted_to_kids: None,
             sign_from: None,
+            from_prior_issuer_kid: None,
             enc_alg_auth: None,
             enc_alg_anon: None,
             sign_alg: None,
             signed_message: None,
+            from_prior: None,
         };
 
         let anoncryted =
@@ -85,6 +89,8 @@ impl Message {
 
         let signed = _try_unapck_sign(msg, did_resolver, options, &mut metadata).await?;
         let msg = signed.as_deref().unwrap_or(msg);
+
+        let msg: Self = unpack_plaintext(msg, did_resolver, &mut metadata).await?;
 
         let msg: Result<Self> = Message::from_str(msg);
 
@@ -154,6 +160,9 @@ pub struct UnpackMetadata {
     /// Key ID used for signature if the plaintext has been signed
     pub sign_from: Option<String>,
 
+    /// Key ID used for from_prior header signature if from_prior header is present
+    pub from_prior_issuer_kid: Option<String>,
+
     /// Algorithm used for authenticated encryption
     pub enc_alg_auth: Option<AuthCryptAlg>,
 
@@ -165,6 +174,9 @@ pub struct UnpackMetadata {
 
     /// If the plaintext has been signed, the JWS is returned for non-repudiation purposes
     pub signed_message: Option<String>,
+
+    /// If plaintext contains from_prior header, its unpacked value is returned
+    pub from_prior: Option<FromPrior>,
 }
 
 #[cfg(test)]
@@ -221,6 +233,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior: None,
             re_wrapped_in_forward: false,
         };
 
@@ -275,7 +289,12 @@ mod test {
         _unpack_works_plaintext_2way(&MESSAGE_ATTACHMENT_MULTI_2).await;
 
         async fn _unpack_works_plaintext_2way(msg: &Message) {
-            let packed = msg.pack_plaintext().expect("Unable pack_plaintext");
+            let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
+
+            let packed = msg
+                .pack_plaintext(&did_resolver)
+                .await
+                .expect("Unable pack_plaintext");
 
             _verify_unpack(
                 &packed,
@@ -292,6 +311,8 @@ mod test {
                     encrypted_to_kids: None,
                     sign_from: None,
                     signed_message: None,
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -313,6 +334,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior: None,
             re_wrapped_in_forward: false,
         };
 
@@ -416,6 +439,8 @@ mod test {
                     enc_alg_anon: None,
                     encrypted_from_kid: None,
                     encrypted_to_kids: None,
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -437,6 +462,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior: None,
             re_wrapped_in_forward: false,
         };
 
@@ -637,6 +664,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg),
                     encrypted_from_kid: None,
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -769,6 +798,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg),
                     encrypted_from_kid: None,
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -790,6 +821,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior: None,
             re_wrapped_in_forward: false,
         };
 
@@ -955,6 +988,8 @@ mod test {
                     enc_alg_anon: None,
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1130,6 +1165,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg_anon),
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1240,6 +1277,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg_anon),
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1354,6 +1393,8 @@ mod test {
                     enc_alg_anon: None,
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1634,9 +1675,59 @@ mod test {
         .await;
     }
 
+    #[tokio::test]
+    async fn unpack_plaintext_works_from_prior() {
+        let exp_metadata = UnpackMetadata {
+            anonymous_sender: false,
+            authenticated: false,
+            non_repudiation: false,
+            encrypted: false,
+            enc_alg_auth: None,
+            enc_alg_anon: None,
+            sign_alg: None,
+            encrypted_from_kid: None,
+            encrypted_to_kids: None,
+            sign_from: None,
+            signed_message: None,
+            from_prior_issuer_kid: Some(CHARLIE_AUTH_METHOD_25519.id.clone()),
+            from_prior: Some(FROM_PRIOR_FULL.clone()),
+            re_wrapped_in_forward: false,
+        };
+
+        _verify_unpack(
+            PLAINTEXT_FROM_PRIOR,
+            &MESSAGE_FROM_PRIOR_FULL,
+            &exp_metadata,
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_plaintext_works_invalid_from_prior() {
+        _verify_unpack_returns_error(
+            PLAINTEXT_INVALID_FROM_PRIOR,
+            ErrorKind::Malformed,
+            "Malformed: Unable to parse compactly serialized JWS",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_plaintext_works_invalid_from_prior_signature() {
+        _verify_unpack_returns_error(
+            PLAINTEXT_FROM_PRIOR_INVALID_SIGNATURE,
+            ErrorKind::Malformed,
+            "Malformed: Unable to verify from_prior signature: Unable decode signature: Invalid last symbol 66, offset 85.",
+        )
+        .await;
+    }
+
     async fn _verify_unpack(msg: &str, exp_msg: &Message, exp_metadata: &UnpackMetadata) {
-        let did_resolver =
-            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
 
         let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
 
@@ -1659,8 +1750,11 @@ mod test {
         exp_msg: &Message,
         exp_metadata: &UnpackMetadata,
     ) {
-        let did_resolver =
-            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
 
         let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
 
@@ -1683,22 +1777,25 @@ mod test {
         _verify_unpack_error(msg, ErrorKind::Malformed, exp_error_str).await
     }
 
-    async fn _verify_unpack_error(msg: &str, kind: ErrorKind, exp_error_str: &str) {
-        let did_resolver =
-            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+    async fn _verify_unpack_returns_error(msg: &str, exp_err_kind: ErrorKind, exp_err_msg: &str) {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
 
         let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
 
-        let res = Message::unpack(
+        let err = Message::unpack(
             msg,
             &did_resolver,
             &secrets_resolver,
             &UnpackOptions::default(),
         )
-        .await;
+        .await
+        .expect_err("res is ok");
 
-        let err = res.expect_err("res is ok");
-        assert_eq!(err.kind(), kind);
-        assert_eq!(format!("{}", err), exp_error_str);
+        assert_eq!(err.kind(), exp_err_kind);
+        assert_eq!(format!("{}", err), exp_err_msg);
     }
 }

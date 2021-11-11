@@ -17,9 +17,9 @@ pub mod error;
 pub mod secrets;
 
 pub use message::{
-    Attachment, AttachmentBuilder, AttachmentData, Base64AttachmentData, JsonAttachmentData,
-    LinksAttachmentData, Message, MessageBuilder, PackEncryptedMetadata, PackEncryptedOptions,
-    PackSignedMetadata, UnpackMetadata, UnpackOptions,
+    Attachment, AttachmentBuilder, AttachmentData, Base64AttachmentData, FromPrior,
+    JsonAttachmentData, LinksAttachmentData, Message, MessageBuilder, PackEncryptedMetadata,
+    PackEncryptedOptions, PackSignedMetadata, UnpackMetadata, UnpackOptions,
 };
 
 #[cfg(test)]
