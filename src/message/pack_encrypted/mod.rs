@@ -142,14 +142,14 @@ impl Message {
         if !is_did(to) {
             Err(err_msg(
                 ErrorKind::IllegalArgument,
-                "`to` value is not a valid DID of DID URL",
+                "`to` value is not a valid DID or DID URL",
             ))?;
         }
 
         match from {
             Some(from) if !is_did(from) => Err(err_msg(
                 ErrorKind::IllegalArgument,
-                "`from` value is not a valid DID of DID URL",
+                "`from` value is not a valid DID or DID URL",
             ))?,
             _ => {}
         }
@@ -157,7 +157,7 @@ impl Message {
         match sign_by {
             Some(sign_by) if !is_did(sign_by) => Err(err_msg(
                 ErrorKind::IllegalArgument,
-                "`sign_from` value is not a valid DID of DID URL",
+                "`sign_from` value is not a valid DID or DID URL",
             ))?,
             _ => {}
         }
@@ -1513,7 +1513,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `from` value is not a valid DID of DID URL"
+            "Illegal argument: `from` value is not a valid DID or DID URL"
         );
     }
 
@@ -1543,7 +1543,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `to` value is not a valid DID of DID URL"
+            "Illegal argument: `to` value is not a valid DID or DID URL"
         );
     }
 
@@ -1573,7 +1573,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `sign_from` value is not a valid DID of DID URL"
+            "Illegal argument: `sign_from` value is not a valid DID or DID URL"
         );
     }
 
@@ -1693,7 +1693,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `from` value is not a valid DID of DID URL"
+            "Illegal argument: `from` value is not a valid DID or DID URL"
         );
     }
 
@@ -1725,7 +1725,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "Illegal argument: `to` value is not a valid DID of DID URL"
+            "Illegal argument: `to` value is not a valid DID or DID URL"
         );
     }
 
