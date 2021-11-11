@@ -1,3 +1,4 @@
+use crate::error::ToResult;
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
     jws::envelope::{CompactHeader, ProtectedHeader, JWS},
@@ -10,32 +11,43 @@ pub(crate) struct ParsedJWS<'a, 'b> {
 }
 
 pub(crate) fn parse<'a, 'b>(jws: &'a str, buf: &'b mut Vec<Vec<u8>>) -> Result<ParsedJWS<'a, 'b>> {
-    let jws: JWS = serde_json::from_str(jws).kind(ErrorKind::Malformed, "Unable parse jws")?;
+    JWS::from_str(jws)?.parse(buf)
+}
 
-    let protected = {
-        let len = jws.signatures.len();
-        let mut protected = Vec::<ProtectedHeader>::with_capacity(len);
-        buf.resize(len, vec![]);
+impl<'a> JWS<'a> {
+    pub(crate) fn from_str(s: &str) -> Result<JWS> {
+        serde_json::from_str(s).to_didcomm("Unable parse jws")
+    }
 
-        for (i, b) in buf.iter_mut().enumerate() {
-            let signature = jws
-                .signatures
-                .get(i)
-                .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Invalid signature index"))?;
+    pub(crate) fn parse<'b>(self, buf: &'b mut Vec<Vec<u8>>) -> Result<ParsedJWS<'a, 'b>> {
+        let protected = {
+            let len = self.signatures.len();
+            let mut protected = Vec::<ProtectedHeader>::with_capacity(len);
+            buf.resize(len, vec![]);
 
-            base64::decode_config_buf(signature.protected, base64::URL_SAFE_NO_PAD, b)
-                .kind(ErrorKind::Malformed, "Unable decode protected header")?;
+            for (i, b) in buf.iter_mut().enumerate() {
+                let signature = self
+                    .signatures
+                    .get(i)
+                    .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Invalid signature index"))?;
 
-            let p: ProtectedHeader = serde_json::from_slice(b)
-                .kind(ErrorKind::Malformed, "Unable parse protected header")?;
+                base64::decode_config_buf(signature.protected, base64::URL_SAFE_NO_PAD, b)
+                    .kind(ErrorKind::Malformed, "Unable decode protected header")?;
 
-            protected.push(p);
-        }
+                let p: ProtectedHeader =
+                    serde_json::from_slice(b).to_didcomm("Unable parse protected header")?;
 
-        protected
-    };
+                protected.push(p);
+            }
 
-    Ok(ParsedJWS { jws, protected })
+            protected
+        };
+
+        Ok(ParsedJWS {
+            jws: self,
+            protected,
+        })
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

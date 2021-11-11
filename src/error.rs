@@ -1,5 +1,7 @@
-use serde::Serialize;
 use std::fmt;
+
+use serde::Serialize;
+use serde_json::error::Category;
 
 #[derive(thiserror::Error, Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub enum ErrorKind {
@@ -109,11 +111,33 @@ impl<T> ResultContext<T> for Result<T> {
     }
 }
 
+pub trait ToResult<T> {
+    fn to_didcomm<D>(self, msg: D) -> Result<T>
+    where
+        D: fmt::Display + fmt::Debug + Send + Sync + 'static;
+}
+
+impl<T> ToResult<T> for serde_json::Result<T> {
+    fn to_didcomm<D>(self, msg: D) -> Result<T>
+    where
+        D: fmt::Display + fmt::Debug + Send + Sync + 'static,
+    {
+        ResultContext::context(self.map_err(|e| e.into()), msg)
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
+        match err.classify() {
+            Category::Io | Category::Eof => Error::msg(ErrorKind::InvalidState, err.to_string()),
+            _ => Error::msg(ErrorKind::Malformed, err.to_string()),
+        }
+    }
+}
+
 pub fn err_msg<D>(kind: ErrorKind, msg: D) -> Error
 where
     D: fmt::Display + fmt::Debug + Send + Sync + 'static,
 {
     Error::msg(kind, msg)
 }
-
-// TODO: Provide `From` implementation for serde and base64 errors to explicitly split malformed and no-memory errors

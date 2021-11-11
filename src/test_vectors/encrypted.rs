@@ -89,3 +89,19 @@ pub(crate) const ENCRYPTED_MSG_AUTH_P256: &str = r#"
 "#;
 
 pub(crate) const ENCRYPTED_MSG_AUTH_P256_SIGNED: &str = r#"{"payload":"eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3NhbCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVhdGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNzYWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19","signatures":[{"protected":"eyJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXNpZ25lZCtqc29uIiwiYWxnIjoiRWREU0EifQ","signature":"FW33NnvOHV0Ted9-F7GZbkia-vYAfBKtH4oBxbrttWAhBZ6UFJMxcGjL3lwOl4YohI3kyyd08LHPWNMgP2EVCQ","header":{"kid":"did:example:alice#key-1"}}]}"#;
+
+pub(crate) const INVALID_ENCRYPTED_MSG_ANON_P256_EPK_WRONG_POINT: &str = r#"
+{
+    "protected": "eyJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLWVuY3J5cHRlZCtqc29uIiwiYWxnIjoiRUNESC1FUytBMjU2S1ciLCJlbmMiOiJYQzIwUCIsImFwdSI6bnVsbCwiYXB2Ijoiei1McXB2VlhEYl9zR1luM21qUUxwdXUyQ1FMZXdZdVpvVFdPSVhQSDNGTSIsImVwayI6eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6IkZSQW1UQmljUFZJXy1aRnF2WEJwNzZhV2pZM0gzYlpGZlhocHRUNm1ETnciLCJ5IjoiLXZ0LTFIaHRvVjBwN2xrbGIxTnRvMWRhU0lqQnV3cVZzbGIwcC1uOWRrdyJ9fQ==",
+    "recipients": [{
+            "header": {"kid": "did:example:bob#key-p256-1"},
+            "encrypted_key": "scQxV9YQ4mQrUHgl6yAnBFDXNZAiIs_15bmoErUmoYm0HtuRclPoQg"
+        },{
+            "header": {"kid": "did:example:bob#key-p256-2"},
+            "encrypted_key": "CqZ-HDH2j0NC-eoUueNLKyAuMQXjQyw8bJHYM2f-lxJVm3eXCdmm2g"
+        }],
+    "iv": "Vg1uyuQKrU6Kw8OJK38WCpYFxW0suAP9",
+    "ciphertext": "2nIm3xQcFR3HXbUPF1HS_D92OGVDvL0nIi6O5ol5tnMIa09NxJtbVAYIG7ZrkT9314PqXn_Rq77hgGE6FAOgO7aNYLyUJh0JCC_i2p_XOWuk20BYyBsmmRvVpg0DY3I1Lb-Vg1pT9pEy09gsMSLhbfqk0_TFJB1rcqzR8W0YZB5mX_53nMRf1ZatDEg4rDogSekWEGTBnlTNRua8-zoI4573SfgJ-ONt7Z_KbGO-sdRkmqXhfYNcbUyoMF9JSa-kraVuWHZP9hTz8-7R020EXfb4jodMWVOMMAiJYk1Cd7tetHXpLPdtuokaapofmtL_SNftAX2CB6ULf0axrHUNtvUyjAPvpgvSuvQuMrDlaXn16MQJ_q55",
+    "tag": "etLTQvKsTvF629fykLiUDg"
+}
+"#;
