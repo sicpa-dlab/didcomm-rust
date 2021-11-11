@@ -1,5 +1,9 @@
 mod example;
-pub(crate) mod mock;
+
+#[cfg(test)]
+mod mock;
 
 pub use example::ExampleDIDResolver;
-pub use mock::MockDidResolver;
+
+#[cfg(test)]
+pub(crate) use mock::MockDidResolver;
