@@ -1,3 +1,4 @@
+use crate::error::ToResult;
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
     jws::envelope::{ProtectedHeader, JWS},
@@ -10,7 +11,7 @@ pub(crate) struct ParsedJWS<'a, 'b> {
 }
 
 pub(crate) fn to_jws(jws: &str) -> Result<JWS> {
-    serde_json::from_str(jws).kind(ErrorKind::Malformed, "Unable parse jws")
+    serde_json::from_str(jws).to_didcomm("Unable parse jws")
 }
 
 pub(crate) fn to_parsed_jws<'a, 'b>(
@@ -31,8 +32,8 @@ pub(crate) fn to_parsed_jws<'a, 'b>(
             base64::decode_config_buf(signature.protected, base64::URL_SAFE_NO_PAD, b)
                 .kind(ErrorKind::Malformed, "Unable decode protected header")?;
 
-            let p: ProtectedHeader = serde_json::from_slice(b)
-                .kind(ErrorKind::Malformed, "Unable parse protected header")?;
+            let p: ProtectedHeader =
+                serde_json::from_slice(b).to_didcomm("Unable parse protected header")?;
 
             protected.push(p);
         }

@@ -5,11 +5,12 @@ mod sign;
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
-    error::{err_msg, ErrorKind, Result, ResultExt},
+    error::{err_msg, ErrorKind, Result},
     secrets::SecretsResolver,
     Message,
 };
 
+use crate::error::ToResult;
 use anoncrypt::_try_unpack_anoncrypt;
 use authcrypt::_try_unpack_authcrypt;
 use sign::_try_unapck_sign;
@@ -84,8 +85,7 @@ impl Message {
         let signed = _try_unapck_sign(msg, did_resolver, options, &mut metadata).await?;
         let msg = signed.as_deref().unwrap_or(msg);
 
-        let msg: Result<Self> =
-            serde_json::from_str(msg).kind(ErrorKind::Malformed, "Unable deserialize jwm");
+        let msg: Result<Self> = serde_json::from_str(msg).to_didcomm("Unable deserialize jwm");
 
         let msg = match msg {
             Ok(msg) => msg,

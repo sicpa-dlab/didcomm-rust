@@ -1,5 +1,6 @@
 use sha2::{Digest, Sha256};
 
+use crate::error::ToResult;
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
     jwe::envelope::{ProtectedHeader, JWE},
@@ -14,7 +15,7 @@ pub(crate) struct ParsedJWE<'a, 'b> {
 }
 
 pub(crate) fn to_jwe(jwe: &str) -> Result<JWE> {
-    serde_json::from_str(jwe).kind(ErrorKind::Malformed, "Unable parse jwe")
+    serde_json::from_str(jwe).to_didcomm("Unable parse jwe")
 }
 
 pub(crate) fn to_parsed_jwe<'a, 'b>(
@@ -25,7 +26,7 @@ pub(crate) fn to_parsed_jwe<'a, 'b>(
         .kind(ErrorKind::Malformed, "Unable decode protected header")?;
 
     let protected: ProtectedHeader =
-        serde_json::from_slice(buf).kind(ErrorKind::Malformed, "Unable parse protected header")?;
+        serde_json::from_slice(buf).to_didcomm("Unable parse protected header")?;
 
     let apv = base64::decode_config(protected.apv, base64::URL_SAFE_NO_PAD)
         .kind(ErrorKind::Malformed, "Unable decode apv")?;
