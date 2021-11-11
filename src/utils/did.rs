@@ -45,18 +45,22 @@ impl AsKnownKeyPair for VerificationMethod {
                     _ => KnownKeyAlg::Unsupported,
                 }
             }
-            (VerificationMethodType::X25519KeyAgreementKey2019, VerificationMaterial::Base58(ref b58_value)) => {
-                KnownKeyAlg::X25519
-            }
-            (VerificationMethodType::Ed25519VerificationKey2018, VerificationMaterial::Base58(ref b58_value)) => {
-                KnownKeyAlg::Ed25519
-            }
-            (VerificationMethodType::X25519KeyAgreementKey2020, VerificationMaterial::Multibase(ref multibase_value)) => {
-                KnownKeyAlg::X25519
-            }
-            (VerificationMethodType::Ed25519VerificationKey2020, VerificationMaterial::Multibase(ref multibase_value)) => {
-                KnownKeyAlg::Ed25519
-            }
+            (
+                VerificationMethodType::X25519KeyAgreementKey2019,
+                VerificationMaterial::Base58(ref _b58_value),
+            ) => KnownKeyAlg::X25519,
+            (
+                VerificationMethodType::Ed25519VerificationKey2018,
+                VerificationMaterial::Base58(ref _b58_value),
+            ) => KnownKeyAlg::Ed25519,
+            (
+                VerificationMethodType::X25519KeyAgreementKey2020,
+                VerificationMaterial::Multibase(ref _multibase_value),
+            ) => KnownKeyAlg::X25519,
+            (
+                VerificationMethodType::Ed25519VerificationKey2020,
+                VerificationMaterial::Multibase(ref _multibase_value),
+            ) => KnownKeyAlg::Ed25519,
             _ => KnownKeyAlg::Unsupported,
         }
     }
@@ -249,18 +253,20 @@ impl AsKnownKeyPair for Secret {
                     _ => KnownKeyAlg::Unsupported,
                 }
             }
-            (SecretType::X25519KeyAgreementKey2019, SecretMaterial::Base58(ref b58_value)) => {
+            (SecretType::X25519KeyAgreementKey2019, SecretMaterial::Base58(ref _b58_value)) => {
                 KnownKeyAlg::X25519
             }
-            (SecretType::Ed25519VerificationKey2018, SecretMaterial::Base58(ref b58_value)) => {
+            (SecretType::Ed25519VerificationKey2018, SecretMaterial::Base58(ref _b58_value)) => {
                 KnownKeyAlg::Ed25519
             }
-            (SecretType::X25519KeyAgreementKey2020, SecretMaterial::Multibase(ref multibase_value)) => {
-                KnownKeyAlg::X25519
-            }
-            (SecretType::Ed25519VerificationKey2020, SecretMaterial::Multibase(ref multibase_value)) => {
-                KnownKeyAlg::Ed25519
-            }
+            (
+                SecretType::X25519KeyAgreementKey2020,
+                SecretMaterial::Multibase(ref _multibase_value),
+            ) => KnownKeyAlg::X25519,
+            (
+                SecretType::Ed25519VerificationKey2020,
+                SecretMaterial::Multibase(ref _multibase_value),
+            ) => KnownKeyAlg::Ed25519,
             _ => KnownKeyAlg::Unsupported,
         }
     }
@@ -501,8 +507,8 @@ mod tests {
             "x": "piw5XSMkceDeklaHQZXPBLQySyAwF8eZ-vddihdURS0",
             "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg"
         }))
-            .map(KnownKeyPair::X25519)
-            .unwrap();
+        .map(KnownKeyPair::X25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -520,8 +526,8 @@ mod tests {
             "x": "VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE",
             "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg"
         }))
-            .map(KnownKeyPair::Ed25519)
-            .unwrap();
+        .map(KnownKeyPair::Ed25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -539,8 +545,8 @@ mod tests {
             "x": "piw5XSMkceDeklaHQZXPBLQySyAwF8eZ-vddihdURS0",
             "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg"
         }))
-            .map(KnownKeyPair::X25519)
-            .unwrap();
+        .map(KnownKeyPair::X25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -558,8 +564,8 @@ mod tests {
             "x": "VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE",
             "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg"
         }))
-            .map(KnownKeyPair::Ed25519)
-            .unwrap();
+        .map(KnownKeyPair::Ed25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -573,16 +579,16 @@ mod tests {
                 "JhNWeSVLMYccCk7iopQW4guaSJTojqpMEELgSLhKwRr".to_string(),
             )),
         }
-            .as_key_pair()
-            .unwrap();
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = X25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
             "crv": "X25519",
             "x": "BIiFcQEn3dfvB2pjlhOQQour6jXy9d5s2FKEJNTOJik",
         }))
-            .map(KnownKeyPair::X25519)
-            .unwrap();
+        .map(KnownKeyPair::X25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -596,16 +602,16 @@ mod tests {
                 "ByHnpUCFb1vAfh9CFZ8ZkmUZguURW8nSw889hy6rD8L7".to_string(),
             )),
         }
-            .as_key_pair()
-            .unwrap();
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = Ed25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
             "crv": "Ed25519",
             "x": "owBhCbktDjkfS6PdQddT0D3yjSitaSysP3YimJ_YgmA",
         }))
-            .map(KnownKeyPair::Ed25519)
-            .unwrap();
+        .map(KnownKeyPair::Ed25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -619,16 +625,16 @@ mod tests {
                 "z6LSbysY2xFMRpGMhb7tFTLMpeuPRaqaWM1yECx2AtzE3KCc".to_string(),
             )),
         }
-            .as_key_pair()
-            .unwrap();
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = X25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
             "crv": "X25519",
             "x": "BIiFcQEn3dfvB2pjlhOQQour6jXy9d5s2FKEJNTOJik",
         }))
-            .map(KnownKeyPair::X25519)
-            .unwrap();
+        .map(KnownKeyPair::X25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -642,16 +648,16 @@ mod tests {
                 "z6MkqRYqQiSgvZQdnBytw86Qbs2ZWUkGv22od935YF4s8M7V".to_string(),
             )),
         }
-            .as_key_pair()
-            .unwrap();
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = Ed25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
             "crv": "Ed25519",
             "x": "owBhCbktDjkfS6PdQddT0D3yjSitaSysP3YimJ_YgmA",
         }))
-            .map(KnownKeyPair::Ed25519)
-            .unwrap();
+        .map(KnownKeyPair::Ed25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
