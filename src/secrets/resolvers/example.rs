@@ -15,7 +15,7 @@ impl ExampleSecretsResolver {
     }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl SecretsResolver for ExampleSecretsResolver {
     async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>> {
         Ok(self

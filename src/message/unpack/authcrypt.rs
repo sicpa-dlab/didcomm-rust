@@ -47,7 +47,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
         parsed_jwe
             .apu
             .as_deref()
-            .ok_or_else(|| err_msg(ErrorKind::Malformed, "No apu presend for authcryot"))?,
+            .ok_or_else(|| err_msg(ErrorKind::Malformed, "No apu presented for authcrypt"))?,
     )
     .kind(ErrorKind::Malformed, "apu is invalid utf8")?;
 
@@ -94,7 +94,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     let to_kid = to_kids
         .first()
         .map(|&k| k)
-        .ok_or_else(|| err_msg(ErrorKind::Malformed, "No recepient keys found"))?;
+        .ok_or_else(|| err_msg(ErrorKind::Malformed, "No recipient keys found"))?;
 
     let (to_did, _) = did_or_url(to_kid);
 
@@ -104,7 +104,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     }) {
         Err(err_msg(
             ErrorKind::Malformed,
-            "Recepient keys are outside of one did or can't be resolved to key agreement",
+            "Recipient keys are outside of one did or can't be resolved to key agreement",
         ))?;
     }
 
@@ -123,7 +123,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     if to_kids_found.is_empty() {
         Err(err_msg(
             ErrorKind::SecretNotFound,
-            "No recepient secrets found",
+            "No recipient secrets found",
         ))?;
     }
 
@@ -136,7 +136,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
             .ok_or_else(|| {
                 err_msg(
                     ErrorKind::InvalidState,
-                    "Recepient secret not found after existence checking",
+                    "Recipient secret not found after existence checking",
                 )
             })?
             .as_key_pair()?;
@@ -150,11 +150,11 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
 
                 parsed_jwe.decrypt::<
-                        AesKey<A256CbcHs512>,
-                        Ecdh1PU<'_, X25519KeyPair>,
-                        X25519KeyPair,
-                        AesKey<A256Kw>,
-                    >(Some((from_kid, from_key)), (to_kid, to_key))?
+                    AesKey<A256CbcHs512>,
+                    Ecdh1PU<'_, X25519KeyPair>,
+                    X25519KeyPair,
+                    AesKey<A256Kw>,
+                >(Some((from_kid, from_key)), (to_kid, to_key))?
             }
             (
                 KnownKeyPair::P256(ref from_key),
@@ -164,19 +164,19 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
 
                 parsed_jwe.decrypt::<
-                        AesKey<A256CbcHs512>,
-                        Ecdh1PU<'_, P256KeyPair>,
-                        P256KeyPair,
-                        AesKey<A256Kw>,
-                    >(Some((from_kid, from_key)), (to_kid, to_key))?
+                    AesKey<A256CbcHs512>,
+                    Ecdh1PU<'_, P256KeyPair>,
+                    P256KeyPair,
+                    AesKey<A256Kw>,
+                >(Some((from_kid, from_key)), (to_kid, to_key))?
             }
             (KnownKeyPair::X25519(_), KnownKeyPair::P256(_), _) => Err(err_msg(
                 ErrorKind::Malformed,
-                "Incompatible sender and recepient key agreement curves",
+                "Incompatible sender and recipient key agreement curves",
             ))?,
             (KnownKeyPair::P256(_), KnownKeyPair::X25519(_), _) => Err(err_msg(
                 ErrorKind::Malformed,
-                "Incompatible sender and recepient key agreement curves",
+                "Incompatible sender and recipient key agreement curves",
             ))?,
             _ => Err(err_msg(
                 ErrorKind::Unsupported,
