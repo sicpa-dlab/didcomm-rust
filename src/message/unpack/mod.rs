@@ -1,10 +1,10 @@
-mod anoncrypt;
-mod authcrypt;
-mod plaintext;
-mod sign;
-
 use serde::{Deserialize, Serialize};
 
+use anoncrypt::_try_unpack_anoncrypt;
+use authcrypt::_try_unpack_authcrypt;
+use sign::_try_unapck_sign;
+
+use crate::message::unpack::plaintext::_try_unpack_plaintext;
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
@@ -13,10 +13,10 @@ use crate::{
     FromPrior, Message,
 };
 
-use crate::message::unpack::plaintext::unpack_plaintext;
-use anoncrypt::_try_unpack_anoncrypt;
-use authcrypt::_try_unpack_authcrypt;
-use sign::_try_unapck_sign;
+mod anoncrypt;
+mod authcrypt;
+mod plaintext;
+mod sign;
 
 impl Message {
     /// Unpacks the packed message by doing decryption and verifying the signatures.
@@ -90,19 +90,14 @@ impl Message {
         let signed = _try_unapck_sign(msg, did_resolver, options, &mut metadata).await?;
         let msg = signed.as_deref().unwrap_or(msg);
 
-        let msg: Self = unpack_plaintext(msg, did_resolver, &mut metadata).await?;
-
-        let msg: Result<Self> = Message::from_str(msg);
-
-        let msg = match msg {
-            Ok(m) => m,
-            Err(e) if e.kind() == ErrorKind::Malformed => Err(err_msg(
-                ErrorKind::Malformed,
-                "Message is not a valid JWE, JWS or JWM",
-            ))?,
-            Err(e) => Err(e)?,
-        }
-        .validate()?;
+        let msg = _try_unpack_plaintext(msg, did_resolver, &mut metadata)
+            .await?
+            .ok_or_else(|| {
+                err_msg(
+                    ErrorKind::Malformed,
+                    "Message is not a valid JWE, JWS or JWM",
+                )
+            })?;
 
         Ok((msg, metadata))
     }
@@ -194,9 +189,10 @@ mod test {
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519, BOB_DID, BOB_DID_DOC, BOB_SECRETS,
             BOB_SECRET_KEY_AGREEMENT_KEY_P256_1, BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
             BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
-            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, ENCRYPTED_MSG_ANON_XC20P_1,
-            ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256, ENCRYPTED_MSG_AUTH_P256_SIGNED,
-            ENCRYPTED_MSG_AUTH_X25519, INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_INT_ARRAY,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, CHARLIE_AUTH_METHOD_25519, CHARLIE_DID_DOC,
+            ENCRYPTED_MSG_ANON_XC20P_1, ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256,
+            ENCRYPTED_MSG_AUTH_P256_SIGNED, ENCRYPTED_MSG_AUTH_X25519, FROM_PRIOR_FULL,
+            INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_INT_ARRAY,
             INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_STRING,
             INVALID_PLAINTEXT_MSG_ATTACHMENTS_EMPTY_DATA,
             INVALID_PLAINTEXT_MSG_ATTACHMENTS_LINKS_NO_HASH,
@@ -208,11 +204,12 @@ mod test {
             INVALID_PLAINTEXT_MSG_NO_TYPE, INVALID_PLAINTEXT_MSG_STRING,
             INVALID_PLAINTEXT_MSG_WRONG_TYP, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
             MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2,
-            MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64,
-            PLAINTEXT_MSG_ATTACHMENT_JSON, PLAINTEXT_MSG_ATTACHMENT_LINKS,
-            PLAINTEXT_MSG_ATTACHMENT_MULTI_1, PLAINTEXT_MSG_ATTACHMENT_MULTI_2,
-            PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE, SIGNED_MSG_ALICE_KEY_1,
-            SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
+            MESSAGE_FROM_PRIOR_FULL, MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_FROM_PRIOR,
+            PLAINTEXT_FROM_PRIOR_INVALID_SIGNATURE, PLAINTEXT_INVALID_FROM_PRIOR,
+            PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
+            PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
+            SIGNED_MSG_ALICE_KEY_1, SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
         },
         PackEncryptedOptions,
     };
@@ -1719,7 +1716,7 @@ mod test {
             ErrorKind::Malformed,
             "Malformed: Unable to verify from_prior signature: Unable decode signature: Invalid last symbol 66, offset 85.",
         )
-        .await;
+            .await;
     }
 
     async fn _verify_unpack(msg: &str, exp_msg: &Message, exp_metadata: &UnpackMetadata) {
@@ -1774,7 +1771,7 @@ mod test {
     }
 
     async fn _verify_unpack_malformed(msg: &str, exp_error_str: &str) {
-        _verify_unpack_error(msg, ErrorKind::Malformed, exp_error_str).await
+        _verify_unpack_returns_error(msg, ErrorKind::Malformed, exp_error_str).await
     }
 
     async fn _verify_unpack_returns_error(msg: &str, exp_err_kind: ErrorKind, exp_err_msg: &str) {
