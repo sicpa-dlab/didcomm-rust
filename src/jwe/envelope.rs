@@ -11,7 +11,7 @@ pub(crate) struct JWE<'a> {
     pub protected: &'a str,
 
     /// Array of recipient-specific objects
-    pub recipients: Vec<Recepient<'a>>,
+    pub recipients: Vec<Recipient<'a>>,
 
     /// BASE64URL(JWE Initialization Vector)
     pub iv: &'a str,
@@ -57,7 +57,7 @@ pub(crate) struct ProtectedHeader<'a> {
 }
 /// Recipient part of authcrypt/anoncrypt-specific JWE
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub(crate) struct Recepient<'a> {
+pub(crate) struct Recipient<'a> {
     /// Per-recipient header
     /// Note it isn't serialized and not integrity protected
     pub header: PerRecipientHeader<'a>,

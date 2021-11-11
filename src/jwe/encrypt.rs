@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 
 use crate::{
     error::{ErrorKind, Result, ResultExt},
-    jwe::envelope::{Algorithm, EncAlgorithm, PerRecipientHeader, ProtectedHeader, Recepient, JWE},
+    jwe::envelope::{Algorithm, EncAlgorithm, PerRecipientHeader, ProtectedHeader, Recipient, JWE},
     jwk::ToJwkValue,
     utils::crypto::{JoseKDF, KeyWrap},
 };
@@ -104,7 +104,7 @@ where
                 &tag_raw,
                 false,
             )
-            .kind(ErrorKind::InvalidState, "Unable derive kw")?;
+            .kind(ErrorKind::InvalidState, "Unable derive kw")?; //TODO Check this test and move to decrypt
 
             let encrypted_key = kw
                 .wrap_key(&cek)
@@ -119,7 +119,7 @@ where
 
     let recipients: Vec<_> = encrypted_keys
         .iter()
-        .map(|(kid, encrypted_key)| Recepient {
+        .map(|(kid, encrypted_key)| Recipient {
             header: PerRecipientHeader { kid },
             encrypted_key: &encrypted_key,
         })
@@ -336,6 +336,15 @@ mod tests {
             EncAlgorithm::Xc20P,
         );
 
+        _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
+            None,
+            &[
+                (BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1),
+                (BOB_KID_P256_2, BOB_KEY_P256_2, BOB_PKEY_P256_2),
+            ],
+            Algorithm::Other("otherAlg".to_owned()),
+            EncAlgorithm::A256Gcm,
+        );
         /// TODO: P-384 and P-521 support after solving https://github.com/hyperledger/aries-askar/issues/10
 
         fn _encrypt_works<CE, KDF, KE, KW>(
@@ -399,7 +408,7 @@ mod tests {
                 let bob_edge_priv = bob_priv
                     .iter()
                     .find(|b| recipient.header.kid == b.0)
-                    .expect("recepint not found.");
+                    .expect("recipient not found.");
 
                 let plaintext_ = msg
                     .decrypt::<CE, KDF, KE, KW>(alice_pub, *bob_edge_priv)

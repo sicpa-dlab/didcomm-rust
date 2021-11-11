@@ -21,7 +21,7 @@ pub(crate) fn sign<Key: KeySign>(
         };
 
         let protected = serde_json::to_string(&protected)
-            .kind(ErrorKind::InvalidState, "Unable serialize protectd header")?;
+            .kind(ErrorKind::InvalidState, "Unable serialize protected header")?;
 
         base64::encode_config(protected, base64::URL_SAFE_NO_PAD)
     };
