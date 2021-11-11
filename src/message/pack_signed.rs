@@ -1,4 +1,3 @@
-use crate::utils::did::is_did;
 use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext},
@@ -6,7 +5,7 @@ use crate::{
     secrets::SecretsResolver,
     utils::{
         crypto::{AsKnownKeyPair, KnownKeyPair},
-        did::did_or_url,
+        did::{did_or_url, is_did},
     },
     Message,
 };
@@ -142,19 +141,23 @@ mod tests {
 
     use serde_json::Value;
 
-    use crate::did::resolvers::MockDidResolver;
-    use crate::error::{err_msg, ErrorKind};
-    use crate::secrets::{Secret, SecretMaterial, SecretType};
     use crate::{
-        did::{resolvers::ExampleDIDResolver, DIDResolver, VerificationMaterial},
+        did::{
+            resolvers::{ExampleDIDResolver, MockDidResolver},
+            DIDResolver, VerificationMaterial,
+        },
+        error::{err_msg, ErrorKind},
         jwk::FromJwkValue,
         jws::{self, Algorithm, Header, ProtectedHeader},
-        secrets::{resolvers::ExampleSecretsResolver, SecretsResolver},
+        secrets::{
+            resolvers::ExampleSecretsResolver, Secret, SecretMaterial, SecretType, SecretsResolver,
+        },
         test_vectors::{
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
-            ALICE_DID, ALICE_DID_DOC, ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS, BOB_DID_DOC, BOB_SECRETS, CHARLIE_DID_DOC,
-            CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519, FROM_PRIOR_FULL,
-            MESSAGE_FROM_PRIOR_FULL, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
+            ALICE_DID, ALICE_DID_DOC, ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS, BOB_DID_DOC,
+            BOB_SECRETS, CHARLIE_DID_DOC, CHARLIE_ROTATED_TO_ALICE_SECRETS,
+            CHARLIE_SECRET_AUTH_KEY_ED25519, FROM_PRIOR_FULL, MESSAGE_FROM_PRIOR_FULL,
+            MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
         },
         Message, PackSignedMetadata, UnpackOptions,
     };
