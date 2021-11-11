@@ -18,6 +18,12 @@ lazy_static! {
 }
 
 lazy_static! {
+    pub(crate) static ref MESSAGE_FROM_PRIOR_FULL: Message = _message()
+        .from_prior("eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImtpZCI6ImRpZDpleGFtcGxlOmNoYXJsaWUja2V5LTEifQ.eyJpc3MiOiJkaWQ6ZXhhbXBsZTpjaGFybGllIiwic3ViIjoiZGlkOmV4YW1wbGU6YWxpY2UiLCJhdWQiOiIxMjMiLCJleHAiOjEyMzQsIm5iZiI6MTIzNDUsImlhdCI6MTIzNDU2LCJqdGkiOiJkZmcifQ.ir0tegXiGJIZIMagO5P853KwhzGTEw0OpFFAyarUV-nQrtbI_ELbxT9l7jPBoPve_-60ifGJ9v3ArmFjELFlDA".into())
+        .finalize();
+}
+
+lazy_static! {
     pub(crate) static ref MESSAGE_ATTACHMENT_BASE64: Message = _message()
         .attachement(
             Attachment::base64("qwerty".to_owned())

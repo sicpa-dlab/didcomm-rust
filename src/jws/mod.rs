@@ -16,15 +16,15 @@ mod verify;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use envelope::{Algorithm, Header, ProtectedHeader, Signature, JWS};
+pub(crate) use envelope::{Algorithm, CompactHeader, Header, ProtectedHeader, Signature, JWS};
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use sign::sign;
+pub(crate) use sign::{sign, sign_compact};
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use parse::{parse, ParsedJWS};
+pub(crate) use parse::{parse, parse_compact, ParsedCompactJWS, ParsedJWS};
 
 #[cfg(test)]
 mod tests {

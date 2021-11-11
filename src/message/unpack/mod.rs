@@ -1,5 +1,6 @@
 mod anoncrypt;
 mod authcrypt;
+mod plaintext;
 mod sign;
 
 use serde::{Deserialize, Serialize};
@@ -7,11 +8,12 @@ use serde::{Deserialize, Serialize};
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
-    error::{err_msg, ErrorKind, Result, ResultExt},
+    error::{err_msg, ErrorKind, Result},
     secrets::SecretsResolver,
-    Message,
+    FromPrior, Message,
 };
 
+use crate::message::unpack::plaintext::unpack_plaintext;
 use anoncrypt::_try_unpack_anoncrypt;
 use authcrypt::_try_unpack_authcrypt;
 use sign::_try_unapck_sign;
@@ -68,10 +70,12 @@ impl Message {
             encrypted_from_kid: None,
             encrypted_to_kids: None,
             sign_from: None,
+            from_prior_issuer_kid: None,
             enc_alg_auth: None,
             enc_alg_anon: None,
             sign_alg: None,
             signed_message: None,
+            from_prior: None,
         };
 
         let anoncryted =
@@ -89,8 +93,7 @@ impl Message {
 
         let msg = signed.as_deref().unwrap_or(msg);
 
-        let msg: Self =
-            serde_json::from_str(msg).kind(ErrorKind::Malformed, "Unable deserialize jwm")?;
+        let msg: Self = unpack_plaintext(msg, did_resolver, &mut metadata).await?;
 
         Ok((msg, metadata))
     }
@@ -148,6 +151,9 @@ pub struct UnpackMetadata {
     /// Key ID used for signature if the plaintext has been signed
     pub sign_from: Option<String>,
 
+    /// Key ID used for from_prior header signature if from_prior header is present
+    pub from_prior_issuer_kid: Option<String>,
+
     /// Algorithm used for authenticated encryption
     pub enc_alg_auth: Option<AuthCryptAlg>,
 
@@ -159,6 +165,9 @@ pub struct UnpackMetadata {
 
     /// If the plaintext has been signed, the JWS is returned for non-repudiation purposes
     pub signed_message: Option<String>,
+
+    /// If plaintext contains from_prior header, its unpacked value is returned
+    pub from_prior: Option<FromPrior>,
 }
 
 #[cfg(test)]
@@ -174,15 +183,17 @@ mod test {
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519, BOB_DID, BOB_DID_DOC, BOB_SECRETS,
             BOB_SECRET_KEY_AGREEMENT_KEY_P256_1, BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
             BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
-            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, ENCRYPTED_MSG_ANON_XC20P_1,
-            ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256, ENCRYPTED_MSG_AUTH_P256_SIGNED,
-            ENCRYPTED_MSG_AUTH_X25519, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
-            MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2,
-            MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_MSG_ATTACHMENT_BASE64,
-            PLAINTEXT_MSG_ATTACHMENT_JSON, PLAINTEXT_MSG_ATTACHMENT_LINKS,
-            PLAINTEXT_MSG_ATTACHMENT_MULTI_1, PLAINTEXT_MSG_ATTACHMENT_MULTI_2,
-            PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE, SIGNED_MSG_ALICE_KEY_1,
-            SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, CHARLIE_AUTH_METHOD_25519, CHARLIE_DID_DOC,
+            ENCRYPTED_MSG_ANON_XC20P_1, ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256,
+            ENCRYPTED_MSG_AUTH_P256_SIGNED, ENCRYPTED_MSG_AUTH_X25519, FROM_PRIOR_FULL,
+            MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS,
+            MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_FROM_PRIOR_FULL,
+            MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_FROM_PRIOR,
+            PLAINTEXT_FROM_PRIOR_INVALID_SIGNATURE, PLAINTEXT_INVALID_FROM_PRIOR,
+            PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
+            PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
+            PLAINTEXT_MSG_ATTACHMENT_MULTI_2, PLAINTEXT_MSG_MINIMAL, PLAINTEXT_MSG_SIMPLE,
+            SIGNED_MSG_ALICE_KEY_1, SIGNED_MSG_ALICE_KEY_2, SIGNED_MSG_ALICE_KEY_3,
         },
         PackEncryptedOptions,
     };
@@ -201,6 +212,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior: None,
             re_wrapped_in_forward: false,
         };
 
@@ -255,7 +268,12 @@ mod test {
         _unpack_works_plaintext_2way(&MESSAGE_ATTACHMENT_MULTI_2).await;
 
         async fn _unpack_works_plaintext_2way(msg: &Message) {
-            let packed = msg.pack_plaintext().expect("Unable pack_plaintext");
+            let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
+
+            let packed = msg
+                .pack_plaintext(&did_resolver)
+                .await
+                .expect("Unable pack_plaintext");
 
             _verify_unpack(
                 &packed,
@@ -272,6 +290,8 @@ mod test {
                     encrypted_to_kids: None,
                     sign_from: None,
                     signed_message: None,
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -293,6 +313,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior: None,
             re_wrapped_in_forward: false,
         };
 
@@ -396,6 +418,8 @@ mod test {
                     enc_alg_anon: None,
                     encrypted_from_kid: None,
                     encrypted_to_kids: None,
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -417,6 +441,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior: None,
             re_wrapped_in_forward: false,
         };
 
@@ -617,6 +643,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg),
                     encrypted_from_kid: None,
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -749,6 +777,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg),
                     encrypted_from_kid: None,
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -770,6 +800,8 @@ mod test {
             encrypted_to_kids: None,
             sign_from: None,
             signed_message: None,
+            from_prior_issuer_kid: None,
+            from_prior: None,
             re_wrapped_in_forward: false,
         };
 
@@ -935,6 +967,8 @@ mod test {
                     enc_alg_anon: None,
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1110,6 +1144,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg_anon),
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1220,6 +1256,8 @@ mod test {
                     enc_alg_anon: Some(enc_alg_anon),
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1334,6 +1372,8 @@ mod test {
                     enc_alg_anon: None,
                     encrypted_from_kid: Some(from_kid.into()),
                     encrypted_to_kids: Some(to_kids.iter().map(|&k| k.to_owned()).collect()),
+                    from_prior_issuer_kid: None,
+                    from_prior: None,
                     re_wrapped_in_forward: false,
                 },
             )
@@ -1341,9 +1381,59 @@ mod test {
         }
     }
 
+    #[tokio::test]
+    async fn unpack_plaintext_works_from_prior() {
+        let exp_metadata = UnpackMetadata {
+            anonymous_sender: false,
+            authenticated: false,
+            non_repudiation: false,
+            encrypted: false,
+            enc_alg_auth: None,
+            enc_alg_anon: None,
+            sign_alg: None,
+            encrypted_from_kid: None,
+            encrypted_to_kids: None,
+            sign_from: None,
+            signed_message: None,
+            from_prior_issuer_kid: Some(CHARLIE_AUTH_METHOD_25519.id.clone()),
+            from_prior: Some(FROM_PRIOR_FULL.clone()),
+            re_wrapped_in_forward: false,
+        };
+
+        _verify_unpack(
+            PLAINTEXT_FROM_PRIOR,
+            &MESSAGE_FROM_PRIOR_FULL,
+            &exp_metadata,
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_plaintext_works_invalid_from_prior() {
+        _verify_unpack_returns_error(
+            PLAINTEXT_INVALID_FROM_PRIOR,
+            ErrorKind::Malformed,
+            "Malformed: Unable to parse compactly serialized JWS",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_plaintext_works_invalid_from_prior_signature() {
+        _verify_unpack_returns_error(
+            PLAINTEXT_FROM_PRIOR_INVALID_SIGNATURE,
+            ErrorKind::Malformed,
+            "Malformed: Unable to verify from_prior signature: Unable decode signature: Invalid last symbol 66, offset 85.",
+        )
+        .await;
+    }
+
     async fn _verify_unpack(msg: &str, exp_msg: &Message, exp_metadata: &UnpackMetadata) {
-        let did_resolver =
-            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
 
         let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
 
@@ -1366,8 +1456,11 @@ mod test {
         exp_msg: &Message,
         exp_metadata: &UnpackMetadata,
     ) {
-        let did_resolver =
-            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
 
         let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
 
@@ -1384,5 +1477,27 @@ mod test {
 
         metadata.signed_message = exp_metadata.signed_message.clone();
         assert_eq!(&metadata, exp_metadata);
+    }
+
+    async fn _verify_unpack_returns_error(msg: &str, exp_err_kind: ErrorKind, exp_err_msg: &str) {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
+
+        let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+
+        let err = Message::unpack(
+            msg,
+            &did_resolver,
+            &secrets_resolver,
+            &UnpackOptions::default(),
+        )
+        .await
+        .expect_err("res is ok");
+
+        assert_eq!(err.kind(), exp_err_kind);
+        assert_eq!(format!("{}", err), exp_err_msg);
     }
 }
