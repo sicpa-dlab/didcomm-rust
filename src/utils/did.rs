@@ -140,8 +140,9 @@ impl AsKnownKeyPair for VerificationMethod {
                         "Multibase value must start with 'z'",
                     ))?
                 };
-                let decoded_value =
-                    bs58::decode(multibase_value.split_at(1).1).into_vec().kind(
+                let decoded_value = bs58::decode(multibase_value.split_at(1).1)
+                    .into_vec()
+                    .kind(
                         ErrorKind::IllegalArgument,
                         "Wrong multibase value in verification material",
                     )?;
@@ -180,8 +181,9 @@ impl AsKnownKeyPair for VerificationMethod {
                         "Multibase must start with 'z'",
                     ))?
                 }
-                let decoded_value =
-                    bs58::decode(multibase_value.split_at(1).1).into_vec().kind(
+                let decoded_value = bs58::decode(multibase_value.split_at(1).1)
+                    .into_vec()
+                    .kind(
                         ErrorKind::IllegalArgument,
                         "Wrong multibase value in verification material",
                     )?;
@@ -325,8 +327,9 @@ impl AsKnownKeyPair for Secret {
                         "Multibase must start with 'z'",
                     ))?
                 }
-                let decoded_multibase_value =
-                    bs58::decode(multibase_value.split_at(1).1).into_vec().kind(
+                let decoded_multibase_value = bs58::decode(multibase_value.split_at(1).1)
+                    .into_vec()
+                    .kind(
                         ErrorKind::IllegalArgument,
                         "Wrong multibase value in secret material",
                     )?;
@@ -369,8 +372,9 @@ impl AsKnownKeyPair for Secret {
                         "Multibase must start with 'z'",
                     ))?
                 }
-                let decoded_multibase_value =
-                    bs58::decode(multibase_value.split_at(1).1).into_vec().kind(
+                let decoded_multibase_value = bs58::decode(multibase_value.split_at(1).1)
+                    .into_vec()
+                    .kind(
                         ErrorKind::IllegalArgument,
                         "Wrong multibase value in secret material",
                     )?;
@@ -473,8 +477,8 @@ mod tests {
             "x": "piw5XSMkceDeklaHQZXPBLQySyAwF8eZ-vddihdURS0",
             "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg"
         }))
-            .map(KnownKeyPair::X25519)
-            .unwrap();
+        .map(KnownKeyPair::X25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -492,8 +496,8 @@ mod tests {
             "x": "VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE",
             "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg"
         }))
-            .map(KnownKeyPair::Ed25519)
-            .unwrap();
+        .map(KnownKeyPair::Ed25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -511,8 +515,8 @@ mod tests {
             "x": "piw5XSMkceDeklaHQZXPBLQySyAwF8eZ-vddihdURS0",
             "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg"
         }))
-            .map(KnownKeyPair::X25519)
-            .unwrap();
+        .map(KnownKeyPair::X25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -530,8 +534,8 @@ mod tests {
             "x": "VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE",
             "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg"
         }))
-            .map(KnownKeyPair::Ed25519)
-            .unwrap();
+        .map(KnownKeyPair::Ed25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -545,16 +549,16 @@ mod tests {
                 "JhNWeSVLMYccCk7iopQW4guaSJTojqpMEELgSLhKwRr".to_string(),
             )),
         }
-            .as_key_pair()
-            .unwrap();
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = X25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
             "crv": "X25519",
             "x": "BIiFcQEn3dfvB2pjlhOQQour6jXy9d5s2FKEJNTOJik",
         }))
-            .map(KnownKeyPair::X25519)
-            .unwrap();
+        .map(KnownKeyPair::X25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -568,16 +572,16 @@ mod tests {
                 "ByHnpUCFb1vAfh9CFZ8ZkmUZguURW8nSw889hy6rD8L7".to_string(),
             )),
         }
-            .as_key_pair()
-            .unwrap();
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = Ed25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
             "crv": "Ed25519",
             "x": "owBhCbktDjkfS6PdQddT0D3yjSitaSysP3YimJ_YgmA",
         }))
-            .map(KnownKeyPair::Ed25519)
-            .unwrap();
+        .map(KnownKeyPair::Ed25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -591,16 +595,16 @@ mod tests {
                 "z6LSbysY2xFMRpGMhb7tFTLMpeuPRaqaWM1yECx2AtzE3KCc".to_string(),
             )),
         }
-            .as_key_pair()
-            .unwrap();
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = X25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
             "crv": "X25519",
             "x": "BIiFcQEn3dfvB2pjlhOQQour6jXy9d5s2FKEJNTOJik",
         }))
-            .map(KnownKeyPair::X25519)
-            .unwrap();
+        .map(KnownKeyPair::X25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
@@ -614,16 +618,16 @@ mod tests {
                 "z6MkqRYqQiSgvZQdnBytw86Qbs2ZWUkGv22od935YF4s8M7V".to_string(),
             )),
         }
-            .as_key_pair()
-            .unwrap();
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = Ed25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
             "crv": "Ed25519",
             "x": "owBhCbktDjkfS6PdQddT0D3yjSitaSysP3YimJ_YgmA",
         }))
-            .map(KnownKeyPair::Ed25519)
-            .unwrap();
+        .map(KnownKeyPair::Ed25519)
+        .unwrap();
         assert_eq!(format!("{:?}", actual_key), format!("{:?}", expected_key));
     }
 
