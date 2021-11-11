@@ -12,6 +12,7 @@ use crate::{
     secrets::{Secret, SecretMaterial, SecretType},
     utils::crypto::{AsKnownKeyPair, KnownKeyAlg, KnownKeyPair},
 };
+use crate::error::ToResult;
 
 pub(crate) fn is_did(did: &str) -> bool {
     let parts: Vec<_> = did.split(':').collect();
@@ -100,8 +101,7 @@ impl AsKnownKeyPair for VerificationMethod {
                 VerificationMethodType::X25519KeyAgreementKey2019,
                 VerificationMaterial::Base58(ref b58_value),
             ) => {
-                let decoded_value = bs58::decode(b58_value).into_vec().kind(
-                    ErrorKind::IllegalArgument,
+                let decoded_value = bs58::decode(b58_value).into_vec().to_didcomm(
                     "Wrong base58 value in verification material",
                 )?;
                 let base64_url_value =
@@ -125,8 +125,7 @@ impl AsKnownKeyPair for VerificationMethod {
                 VerificationMethodType::Ed25519VerificationKey2018,
                 VerificationMaterial::Base58(ref b58_value),
             ) => {
-                let decoded_value = bs58::decode(b58_value).into_vec().kind(
-                    ErrorKind::IllegalArgument,
+                let decoded_value = bs58::decode(b58_value).into_vec().to_didcomm(
                     "Wrong base58 value in verification material",
                 )?;
                 let base64_url_value =
@@ -158,8 +157,7 @@ impl AsKnownKeyPair for VerificationMethod {
                 };
                 let decoded_value = bs58::decode(multibase_value.split_at(1).1)
                     .into_vec()
-                    .kind(
-                        ErrorKind::IllegalArgument,
+                    .to_didcomm(
                         "Wrong multibase value in verification material",
                     )?;
 
@@ -199,8 +197,7 @@ impl AsKnownKeyPair for VerificationMethod {
                 }
                 let decoded_value = bs58::decode(multibase_value.split_at(1).1)
                     .into_vec()
-                    .kind(
-                        ErrorKind::IllegalArgument,
+                    .to_didcomm(
                         "Wrong multibase value in verification material",
                     )?;
 
@@ -303,8 +300,7 @@ impl AsKnownKeyPair for Secret {
             }
 
             (SecretType::X25519KeyAgreementKey2019, SecretMaterial::Base58(ref b58_value)) => {
-                let decoded_value = bs58::decode(b58_value).into_vec().kind(
-                    ErrorKind::IllegalArgument,
+                let decoded_value = bs58::decode(b58_value).into_vec().to_didcomm(
                     "Wrong base58 value in secret material",
                 )?;
 
@@ -326,8 +322,7 @@ impl AsKnownKeyPair for Secret {
             }
 
             (SecretType::Ed25519VerificationKey2018, SecretMaterial::Base58(ref b58_value)) => {
-                let decoded_value = bs58::decode(b58_value).into_vec().kind(
-                    ErrorKind::IllegalArgument,
+                let decoded_value = bs58::decode(b58_value).into_vec().to_didcomm(
                     "Wrong base58 value in secret material",
                 )?;
 
@@ -359,8 +354,7 @@ impl AsKnownKeyPair for Secret {
                 }
                 let decoded_multibase_value = bs58::decode(multibase_value.split_at(1).1)
                     .into_vec()
-                    .kind(
-                        ErrorKind::IllegalArgument,
+                    .to_didcomm(
                         "Wrong multibase value in secret material",
                     )?;
 
@@ -404,8 +398,7 @@ impl AsKnownKeyPair for Secret {
                 }
                 let decoded_multibase_value = bs58::decode(multibase_value.split_at(1).1)
                     .into_vec()
-                    .kind(
-                        ErrorKind::IllegalArgument,
+                    .to_didcomm(
                         "Wrong multibase value in secret material",
                     )?;
 
