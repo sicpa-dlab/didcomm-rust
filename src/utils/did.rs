@@ -5,6 +5,7 @@ use serde_json::json;
 use std::io::Cursor;
 use varint::{VarintRead, VarintWrite};
 
+use crate::error::ToResult;
 use crate::{
     did::{did_doc::VerificationMethodType, VerificationMaterial, VerificationMethod},
     error::{err_msg, ErrorKind, Result, ResultExt},
@@ -12,7 +13,6 @@ use crate::{
     secrets::{Secret, SecretMaterial, SecretType},
     utils::crypto::{AsKnownKeyPair, KnownKeyAlg, KnownKeyPair},
 };
-use crate::error::ToResult;
 
 pub(crate) fn is_did(did: &str) -> bool {
     let parts: Vec<_> = did.split(':').collect();
@@ -101,9 +101,9 @@ impl AsKnownKeyPair for VerificationMethod {
                 VerificationMethodType::X25519KeyAgreementKey2019,
                 VerificationMaterial::Base58(ref b58_value),
             ) => {
-                let decoded_value = bs58::decode(b58_value).into_vec().to_didcomm(
-                    "Wrong base58 value in verification material",
-                )?;
+                let decoded_value = bs58::decode(b58_value)
+                    .into_vec()
+                    .to_didcomm("Wrong base58 value in verification material")?;
                 let base64_url_value =
                     base64::encode_config(&decoded_value, base64::URL_SAFE_NO_PAD);
 
@@ -125,9 +125,9 @@ impl AsKnownKeyPair for VerificationMethod {
                 VerificationMethodType::Ed25519VerificationKey2018,
                 VerificationMaterial::Base58(ref b58_value),
             ) => {
-                let decoded_value = bs58::decode(b58_value).into_vec().to_didcomm(
-                    "Wrong base58 value in verification material",
-                )?;
+                let decoded_value = bs58::decode(b58_value)
+                    .into_vec()
+                    .to_didcomm("Wrong base58 value in verification material")?;
                 let base64_url_value =
                     base64::encode_config(&decoded_value, base64::URL_SAFE_NO_PAD);
 
@@ -155,11 +155,9 @@ impl AsKnownKeyPair for VerificationMethod {
                         "Multibase value must start with 'z'",
                     ))?
                 };
-                let decoded_value = bs58::decode(multibase_value.split_at(1).1)
+                let decoded_value = bs58::decode(&multibase_value[1..])
                     .into_vec()
-                    .to_didcomm(
-                        "Wrong multibase value in verification material",
-                    )?;
+                    .to_didcomm("Wrong multibase value in verification material")?;
 
                 let (codec, decoded_value) = _from_multicodec(&decoded_value)?;
                 if codec != Codec::X25519Pub {
@@ -195,11 +193,9 @@ impl AsKnownKeyPair for VerificationMethod {
                         "Multibase must start with 'z'",
                     ))?
                 }
-                let decoded_value = bs58::decode(multibase_value.split_at(1).1)
+                let decoded_value = bs58::decode(&multibase_value[1..])
                     .into_vec()
-                    .to_didcomm(
-                        "Wrong multibase value in verification material",
-                    )?;
+                    .to_didcomm("Wrong multibase value in verification material")?;
 
                 let (codec, decoded_value) = _from_multicodec(&decoded_value)?;
                 if codec != Codec::Ed25519Pub {
@@ -300,9 +296,9 @@ impl AsKnownKeyPair for Secret {
             }
 
             (SecretType::X25519KeyAgreementKey2019, SecretMaterial::Base58(ref b58_value)) => {
-                let decoded_value = bs58::decode(b58_value).into_vec().to_didcomm(
-                    "Wrong base58 value in secret material",
-                )?;
+                let decoded_value = bs58::decode(b58_value)
+                    .into_vec()
+                    .to_didcomm("Wrong base58 value in secret material")?;
 
                 let curve25519_point_size = 32;
                 let (d_value, x_value) = decoded_value.split_at(curve25519_point_size);
@@ -322,9 +318,9 @@ impl AsKnownKeyPair for Secret {
             }
 
             (SecretType::Ed25519VerificationKey2018, SecretMaterial::Base58(ref b58_value)) => {
-                let decoded_value = bs58::decode(b58_value).into_vec().to_didcomm(
-                    "Wrong base58 value in secret material",
-                )?;
+                let decoded_value = bs58::decode(b58_value)
+                    .into_vec()
+                    .to_didcomm("Wrong base58 value in secret material")?;
 
                 let curve25519_point_size = 32;
                 let (d_value, x_value) = decoded_value.split_at(curve25519_point_size);
@@ -352,11 +348,9 @@ impl AsKnownKeyPair for Secret {
                         "Multibase must start with 'z'",
                     ))?
                 }
-                let decoded_multibase_value = bs58::decode(multibase_value.split_at(1).1)
+                let decoded_multibase_value = bs58::decode(&multibase_value[1..])
                     .into_vec()
-                    .to_didcomm(
-                        "Wrong multibase value in secret material",
-                    )?;
+                    .to_didcomm("Wrong multibase value in secret material")?;
 
                 let (codec, decoded_value) = _from_multicodec(&decoded_multibase_value)?;
                 if codec != Codec::X25519Priv {
@@ -396,11 +390,9 @@ impl AsKnownKeyPair for Secret {
                         "Multibase must start with 'z'",
                     ))?
                 }
-                let decoded_multibase_value = bs58::decode(multibase_value.split_at(1).1)
+                let decoded_multibase_value = bs58::decode(&multibase_value[1..])
                     .into_vec()
-                    .to_didcomm(
-                        "Wrong multibase value in secret material",
-                    )?;
+                    .to_didcomm("Wrong multibase value in secret material")?;
 
                 let (codec, decoded_value) = _from_multicodec(&decoded_multibase_value)?;
                 if codec != Codec::Ed25519Priv {
@@ -447,7 +439,7 @@ pub enum Codec {
 }
 
 impl Codec {
-    fn codec_by_prefix(value: &u32) -> Result<Codec> {
+    fn codec_by_prefix(value: u32) -> Result<Codec> {
         return match value {
             0xEC => Ok(Codec::X25519Pub),
             0xED => Ok(Codec::Ed25519Pub),
@@ -464,7 +456,7 @@ fn _from_multicodec(value: &Vec<u8>) -> Result<(Codec, &[u8])> {
         ErrorKind::IllegalArgument,
         "Wrong prefix in verification material",
     )?;
-    let codec = Codec::codec_by_prefix(&prefix_int)?;
+    let codec = Codec::codec_by_prefix(prefix_int)?;
 
     let mut prefix: Cursor<Vec<u8>> = Cursor::new(Vec::new());
     prefix.write_unsigned_varint_32(prefix_int).kind(

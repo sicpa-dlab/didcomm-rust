@@ -128,8 +128,8 @@ impl<T> ToResult<T> for serde_json::Result<T> {
 
 impl<T> ToResult<T> for bs58::decode::Result<T> {
     fn to_didcomm<D>(self, msg: D) -> Result<T>
-        where
-            D: fmt::Display + fmt::Debug + Send + Sync + 'static,
+    where
+        D: fmt::Display + fmt::Debug + Send + Sync + 'static,
     {
         ResultContext::context(self.map_err(|e| e.into()), msg)
     }
@@ -137,8 +137,8 @@ impl<T> ToResult<T> for bs58::decode::Result<T> {
 
 impl<T> ToResult<T> for bs58::encode::Result<T> {
     fn to_didcomm<D>(self, msg: D) -> Result<T>
-        where
-            D: fmt::Display + fmt::Debug + Send + Sync + 'static,
+    where
+        D: fmt::Display + fmt::Debug + Send + Sync + 'static,
     {
         ResultContext::context(self.map_err(|e| e.into()), msg)
     }
@@ -156,9 +156,14 @@ impl From<serde_json::Error> for Error {
 impl From<bs58::decode::Error> for Error {
     fn from(err: bs58::decode::Error) -> Self {
         match err {
-            bs58::decode::Error::BufferTooSmall
-            | bs58::decode::Error::InvalidCharacter
-            | bs58::decode::Error::NonAsciiCharacter => {
+            bs58::decode::Error::BufferTooSmall => {
+                Error::msg(ErrorKind::InvalidState, err.to_string())
+            }
+            bs58::decode::Error::InvalidCharacter {
+                character: _,
+                index: _,
+            } => Error::msg(ErrorKind::InvalidState, err.to_string()),
+            bs58::decode::Error::NonAsciiCharacter { index: _ } => {
                 Error::msg(ErrorKind::InvalidState, err.to_string())
             }
             _ => Error::msg(ErrorKind::Malformed, err.to_string()),
