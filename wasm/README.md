@@ -6,10 +6,12 @@
 wasm-pack build
 ```
 
-### 🔬 Test in Headless Browsers with `wasm-pack test`
+### 🔬 Test in NodeJS
 
-```
-wasm-pack test --headless --firefox
+```bash
+wasm-pack build --target nodejs
+cd ./tests-js
+npm install && npm test
 ```
 
 ### 🎁 Publish to NPM with `wasm-pack publish`

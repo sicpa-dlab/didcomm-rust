@@ -61,7 +61,7 @@ async function main() {
 
     // --- Packing encrypted and authenticated message ---
 
-    let did_resolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
+    let did_resolver = new ExampleDIDResolver([ALICE_DID_DOC]);
     let secrets_resolver = new ExampleSecretsResolver(ALICE_SECRETS);
 
     let [encrypted_msg, encrypt_metadata] = await msg.pack_encrypted(
