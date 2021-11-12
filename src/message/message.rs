@@ -261,8 +261,6 @@ mod tests {
         ])
         .finalize();
 
-        println!("{}", serde_json::to_string(&message).unwrap());
-
         assert_eq!(message.id, "example-1");
         assert_eq!(message.typ, "application/didcomm-plain+json");
         assert_eq!(message.type_, "example/v1");
