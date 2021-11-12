@@ -11,7 +11,7 @@ wasm-pack build
 ```bash
 wasm-pack build --target nodejs
 cd ./tests-js
-npm uninstall didcomm-js && npm install && npm test
+npm install && npm test
 ```
 
 ### 🎁 Publish to NPM with `wasm-pack publish`
