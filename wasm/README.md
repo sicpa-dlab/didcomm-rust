@@ -14,6 +14,8 @@ cd ./tests-js
 npm install && npm test
 ```
 
+*Note tests will be executed with jest+puppeteer in Chromium installed inside node_modules.*
+
 ### 🔬 Test in NodeJS
 
 ```bash
