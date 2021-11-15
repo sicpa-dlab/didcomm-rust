@@ -1,18 +1,15 @@
 use async_trait::async_trait;
 use didcomm::did::{DIDDoc, DIDResolver};
-use didcomm::error::{ErrorKind, Result, ToResult, err_msg};
-
+use didcomm::error::{err_msg, ErrorKind, Result, ToResult};
 
 #[async_trait]
 pub trait FFIDIDResolver: Sync + Send {
     fn resolve(&self, did: String) -> Result<Option<String>>;
 }
 
-
 pub struct DIDResolverAdapter {
     did_resolver: Box<dyn FFIDIDResolver>,
 }
-
 
 impl DIDResolverAdapter {
     pub fn new(did_resolver: Box<dyn FFIDIDResolver>) -> Self {
@@ -32,11 +29,10 @@ impl DIDResolver for DIDResolverAdapter {
         })?;
 
         match ddoc {
-            Some(ddoc) => Ok(
-                serde_json::from_str(&ddoc).to_didcomm(
-                    "Unable deserialize DIDDoc from JsValue",
-                )?
-            ),    
+            Some(ddoc) => {
+                Ok(serde_json::from_str(&ddoc)
+                    .to_didcomm("Unable deserialize DIDDoc from JsValue")?)
+            }
             None => Ok(None),
         }
     }
@@ -62,9 +58,6 @@ impl FFIDIDResolver for ExampleFFIDIDResolver {
                 d
             })
             .find(|ddoc| ddoc.did == did)
-            .map(|ddoc| serde_json::to_string(&ddoc).unwrap())
-        )
+            .map(|ddoc| serde_json::to_string(&ddoc).unwrap()))
     }
 }
-
-

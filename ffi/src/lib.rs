@@ -1,5 +1,5 @@
-mod message;
 mod did_resolver;
+mod message;
 mod secrets_resolver;
 
 #[cfg(test)]

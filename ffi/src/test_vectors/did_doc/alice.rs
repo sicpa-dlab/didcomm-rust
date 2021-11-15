@@ -1,9 +1,7 @@
 use lazy_static::lazy_static;
 use serde_json::json;
 
-use didcomm::did::{
-    DIDDoc, VerificationMaterial, VerificationMethod, VerificationMethodType,
-};
+use didcomm::did::{DIDDoc, VerificationMaterial, VerificationMethod, VerificationMethodType};
 
 lazy_static! {
     pub(crate) static ref ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET: VerificationMethod =
@@ -95,9 +93,7 @@ lazy_static! {
             "y": "JAGX94caA21WKreXwYUaOCYTBMrqaX4KWIlsQZTHWCk",
         })),
     };
-    pub(crate) static ref ALICE_DID_DOC: String = 
-    serde_json::to_string(
-    &DIDDoc {
+    pub(crate) static ref ALICE_DID_DOC: String = serde_json::to_string(&DIDDoc {
         did: "did:example:alice".into(),
         authentications: vec![
             "did:example:alice#key-1".into(),
@@ -120,11 +116,9 @@ lazy_static! {
             ALICE_AUTH_METHOD_P256.clone(),
             ALICE_AUTH_METHOD_SECPP256K1.clone(),
         ],
-    }
-).unwrap();
-    pub(crate) static ref ALICE_DID_DOC_WITH_NO_SECRETS: String = 
-    serde_json::to_string(
-    &DIDDoc {
+    })
+    .unwrap();
+    pub(crate) static ref ALICE_DID_DOC_WITH_NO_SECRETS: String = serde_json::to_string(&DIDDoc {
         did: "did:example:alice".into(),
         authentications: vec![
             "did:example:alice#key-not-in-secrets-1".into(),
@@ -149,5 +143,6 @@ lazy_static! {
             ALICE_AUTH_METHOD_P256.clone(),
             ALICE_AUTH_METHOD_SECPP256K1.clone(),
         ],
-    }).unwrap();
+    })
+    .unwrap();
 }

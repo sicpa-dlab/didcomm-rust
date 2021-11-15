@@ -1,9 +1,7 @@
 use lazy_static::lazy_static;
 use serde_json::json;
 
-use didcomm::did::{
-    DIDDoc, VerificationMaterial, VerificationMethod, VerificationMethodType,
-};
+use didcomm::did::{DIDDoc, VerificationMaterial, VerificationMethod, VerificationMethodType};
 
 lazy_static! {
     pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_1: VerificationMethod =
@@ -171,7 +169,7 @@ lazy_static! {
                 "y": "AEJipR0Dc-aBZYDqN51SKHYSWs9hM58SmRY1MxgXANgZrPaq1EeGMGOjkbLMEJtBThdjXhkS5VlXMkF0cYhZELiH",
             })),
         };
-    pub(crate) static ref BOB_DID_DOC: String = 
+    pub(crate) static ref BOB_DID_DOC: String =
     serde_json::to_string(
     &DIDDoc {
         did: "did:example:bob".into(),
@@ -200,7 +198,7 @@ lazy_static! {
             BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_2.clone(),
         ],
     }).unwrap();
-    pub(crate) static ref BOB_DID_DOC_NO_SECRETS: String = 
+    pub(crate) static ref BOB_DID_DOC_NO_SECRETS: String =
     serde_json::to_string(
     &DIDDoc {
         did: "did:example:bob".into(),

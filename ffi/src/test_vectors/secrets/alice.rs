@@ -4,7 +4,7 @@ use serde_json::json;
 use didcomm::secrets::{Secret, SecretMaterial, SecretType};
 
 lazy_static! {
-    pub(crate) static ref ALICE_SECRET_AUTH_KEY_ED25519: String = 
+    pub(crate) static ref ALICE_SECRET_AUTH_KEY_ED25519: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:alice#key-1".into(),
@@ -16,7 +16,7 @@ lazy_static! {
             "x": "G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww",
         })),
     }).unwrap();
-    pub(crate) static ref ALICE_SECRET_AUTH_KEY_P256: String = 
+    pub(crate) static ref ALICE_SECRET_AUTH_KEY_P256: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:alice#key-2".into(),
@@ -42,7 +42,7 @@ lazy_static! {
             "y": "JAGX94caA21WKreXwYUaOCYTBMrqaX4KWIlsQZTHWCk",
         })),
     }).unwrap();
-    pub(crate) static ref ALICE_SECRET_KEY_AGREEMENT_KEY_X25519: String = 
+    pub(crate) static ref ALICE_SECRET_KEY_AGREEMENT_KEY_X25519: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:alice#key-x25519-1".into(),
@@ -54,7 +54,7 @@ lazy_static! {
             "x": "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
         }),)
     }).unwrap();
-    pub(crate) static ref ALICE_SECRET_KEY_AGREEMENT_KEY_P256: String = 
+    pub(crate) static ref ALICE_SECRET_KEY_AGREEMENT_KEY_P256: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:alice#key-p256-1".into(),
@@ -67,7 +67,7 @@ lazy_static! {
             "y": "SxYgE7CmEJYi7IDhgK5jI4ZiajO8jPRZDldVhqFpYoo",
         }))
     }).unwrap();
-    pub(crate) static ref ALICE_SECRET_KEY_AGREEMENT_KEY_P521: String = 
+    pub(crate) static ref ALICE_SECRET_KEY_AGREEMENT_KEY_P521: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:alice#key-p521-1".into(),

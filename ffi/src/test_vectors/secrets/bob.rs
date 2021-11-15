@@ -4,7 +4,7 @@ use serde_json::json;
 use didcomm::secrets::{Secret, SecretMaterial, SecretType};
 
 lazy_static! {
-    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1: String = 
+    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:bob#key-x25519-1".into(),
@@ -17,7 +17,7 @@ lazy_static! {
             "x": "GDTrI66K0pFfO54tlCSvfjjNapIs44dzpneBgyx0S3E",
         })),
     }).unwrap();
-    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2: String = 
+    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:bob#key-x25519-2".into(),
@@ -43,7 +43,7 @@ lazy_static! {
             "x": "82k2BTUiywKv49fKLZa-WwDi8RBf0tB0M8bvSAUQ3yY",
         })),
     }).unwrap();
-    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_P256_1: String = 
+    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_P256_1: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:bob#key-p256-1".into(),
@@ -71,7 +71,7 @@ lazy_static! {
             "y": "ov0buZJ8GHzV128jmCw1CaFbajZoFFmiJDbMrceCXIw",
         })),
     }).unwrap();
-    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_P384_1: String = 
+    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_P384_1: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:bob#key-p384-1".into(),
@@ -85,7 +85,7 @@ lazy_static! {
             "y": "X_3HJBcKFQEG35PZbEOBn8u9_z8V1F9V1Kv-Vh0aSzmH-y9aOuDJUE3D4Hvmi5l7",
         })),
     }).unwrap();
-    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_P384_2: String = 
+    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_P384_2: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:bob#key-p384-2".into(),
@@ -113,7 +113,7 @@ lazy_static! {
             "y": "ATZVigRQ7UdGsQ9j-omyff6JIeeUv3CBWYsZ0l6x3C_SYqhqVV7dEG-TafCCNiIxs8qeUiXQ8cHWVclqkH4Lo1qH",
         })),
     }).unwrap();
-    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_P521_2: String = 
+    pub(crate) static ref BOB_SECRET_KEY_AGREEMENT_KEY_P521_2: String =
     serde_json::to_string(
     &Secret {
         id: "did:example:bob#key-p521-2".into(),
