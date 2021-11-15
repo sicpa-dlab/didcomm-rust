@@ -6,12 +6,22 @@
 wasm-pack build
 ```
 
-### 🔬 Test in NodeJS
+### 🔬 Test in Browser
 
 ```bash
 wasm-pack build --target nodejs
 cd ./tests-js
 npm install && npm test
+```
+
+*Note tests will be executed with jest+puppeteer in Chromium installed inside node_modules.*
+
+### 🔬 Test in NodeJS
+
+```bash
+wasm-pack build --target nodejs
+cd ./tests-js
+npm install && npm test -- --config=jest.config.node.js
 ```
 
 ### 🎁 Publish to NPM with `wasm-pack publish`

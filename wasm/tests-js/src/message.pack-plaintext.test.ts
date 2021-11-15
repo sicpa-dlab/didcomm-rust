@@ -15,7 +15,7 @@ test.each([
   },
   {
     message: MESSAGE_MINIMAL,
-    plaintext_exp: PLAINTEXT_MSG_SIMPLE,
+    plaintext_exp: PLAINTEXT_MSG_MINIMAL,
     case: "Minimal message",
   },
 ])(
