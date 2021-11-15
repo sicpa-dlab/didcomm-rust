@@ -1,12 +1,4 @@
-// TODO: typing mist be in d.ts file for didcomm-js
-
-export type Secret = any;
-
-export interface SecretsResolver {
-  get_secret(secret_id: String): Promise<Secret | null>;
-
-  find_secrets(secret_ids: Array<String>): Promise<Array<String>>;
-}
+import { Secret, SecretsResolver } from "didcomm-js";
 
 export class ExampleSecretsResolver implements SecretsResolver {
   known_secrets: Array<Secret>;
