@@ -1,7 +1,7 @@
-import { Message } from "didcomm-js";
+import { Message, IMessage } from "didcomm-js";
 
 test("Message.new works", () => {
-  let msg_val = {
+  let msg_val: IMessage = {
     id: "example-1",
     typ: "application/didcomm-plain+json",
     type: "example/v1",
@@ -37,6 +37,5 @@ test("Message.new works", () => {
   };
 
   let msg = new Message(msg_val);
-
   expect(msg.as_value()).toStrictEqual(msg_val);
 });
