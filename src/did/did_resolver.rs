@@ -5,8 +5,8 @@ use async_trait::async_trait;
 use crate::{did::did_doc::DIDDoc, error::Result};
 
 /// Represents DID Doc resolver (https://www.w3.org/TR/did-core/#did-resolution).
-#[async_trait(?Send)]
-pub trait DIDResolver {
+#[async_trait]
+pub trait DIDResolver: Sync + Send {
     /// Resolves a DID document by the given DID.
     ///
     /// # Params

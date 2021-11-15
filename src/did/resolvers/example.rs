@@ -16,7 +16,7 @@ impl ExampleDIDResolver {
     }
 }
 
-#[async_trait(?Send)]
+#[async_trait]
 impl DIDResolver for ExampleDIDResolver {
     async fn resolve(&self, did: &str) -> Result<Option<DIDDoc>> {
         Ok(self

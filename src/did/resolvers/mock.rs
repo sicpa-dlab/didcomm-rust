@@ -15,7 +15,7 @@ impl MockDidResolver {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 impl DIDResolver for MockDidResolver {
     async fn resolve(&self, _did: &str) -> crate::error::Result<Option<DIDDoc>> {
         self.results.lock().unwrap().borrow_mut().pop().unwrap()

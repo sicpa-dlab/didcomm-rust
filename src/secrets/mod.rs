@@ -10,8 +10,8 @@ use crate::error::Result;
 
 /// Interface for secrets resolver.
 /// Resolves secrets such as private keys to be used for signing and encryption.
-#[async_trait(?Send)]
-pub trait SecretsResolver {
+#[async_trait]
+pub trait SecretsResolver: Sync {
     /// Finds secret (usually private key) identified by the given key ID.
     ///
     /// # Parameters
