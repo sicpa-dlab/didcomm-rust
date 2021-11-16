@@ -1,4 +1,6 @@
-export const ALICE_DID_DOC = {
+import { DIDDoc } from "didcomm-js";
+
+export const ALICE_DID_DOC: DIDDoc = {
   did: "did:example:alice",
   key_agreements: [
     "did:example:alice#key-x25519-not-in-secrets-1",

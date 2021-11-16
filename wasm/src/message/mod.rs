@@ -9,11 +9,13 @@ use wasm_bindgen::prelude::*;
 use crate::{error::JsResult, utils::set_panic_hook};
 
 #[wasm_bindgen]
+/// Wrapper for plain message. Provides helpers for message building and packing/unpacking.
 pub struct Message(pub(crate) didcomm::Message);
 
 #[wasm_bindgen]
 impl Message {
     #[wasm_bindgen(constructor)]
+    /// Instantiates message from plain object
     pub fn new(value: IMessage) -> Result<Message, JsValue> {
         // TODO: Better place?
         set_panic_hook();

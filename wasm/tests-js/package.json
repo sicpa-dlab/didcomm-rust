@@ -3,7 +3,8 @@
   "version": "0.2.0",
   "description": "JS tests for didcomm",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test-puppeteer": "jest --config=jest.config.puppeteer.js"
   },
   "author": "",
   "license": "Apache-2.0",

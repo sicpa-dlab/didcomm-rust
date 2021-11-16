@@ -5,8 +5,6 @@ use didcomm::{
 };
 use wasm_bindgen::prelude::*;
 
-/// TODO: Provide description
-/// Promise resolves to JsValue(object) that can be deserialized to DIDDoc
 #[wasm_bindgen]
 extern "C" {
     pub type DIDResolver;
@@ -16,12 +14,6 @@ extern "C" {
     pub async fn resolve(this: &DIDResolver, did: &str) -> Result<JsValue, JsValue>;
 }
 
-// TODO: Provide correct typing for DIDDoc
-#[wasm_bindgen(typescript_custom_section)]
-const DID_DOC_TS: &'static str = r#"
-type DIDDoc = any
-"#;
-
 #[wasm_bindgen(typescript_custom_section)]
 const DID_RESOLVER_TS: &'static str = r#"
 interface DIDResolver {
@@ -29,7 +21,6 @@ interface DIDResolver {
 }
 "#;
 
-// TODO: think is it possible to avoid ownership on DIDResolver
 pub(crate) struct JsDIDResolver(pub(crate) DIDResolver);
 
 #[async_trait(?Send)]

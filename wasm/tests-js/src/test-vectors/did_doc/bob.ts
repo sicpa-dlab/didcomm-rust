@@ -1,4 +1,6 @@
-export const BOB_DID_DOC = {
+import { DIDDoc } from "didcomm-js";
+
+export const BOB_DID_DOC: DIDDoc = {
   did: "did:example:bob",
   key_agreements: [
     "did:example:bob#key-x25519-1",

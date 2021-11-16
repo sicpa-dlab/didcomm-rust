@@ -2,8 +2,19 @@
 
 ### 🛠️ Build with `wasm-pack build`
 
+```bash
+wasm-pack build # Will output modules best-suited to be bundled with webpack
+wasm-pack build --targed=nodejs # Will output modules that can be directly consumed by NodeJS
+wasm-pack build --targed=web # Will output modules that can be directly consumed in browser without bundler usage
 ```
-wasm-pack build
+
+### 🔬 Test in NodeJS
+
+```bash
+wasm-pack build --target nodejs
+cd ./tests-js
+npm install
+npm test
 ```
 
 ### 🔬 Test in Browser
@@ -11,17 +22,16 @@ wasm-pack build
 ```bash
 wasm-pack build --target nodejs
 cd ./tests-js
-npm install && npm test
+npm install
+npm run test-puppeteer
 ```
 
 *Note tests will be executed with jest+puppeteer in Chromium installed inside node_modules.*
 
-### 🔬 Test in NodeJS
+### JS code formatting
 
 ```bash
-wasm-pack build --target nodejs
-cd ./tests-js
-npm install && npm test -- --config=jest.config.node.js
+npx prettier --write .
 ```
 
 ### 🎁 Publish to NPM with `wasm-pack publish`

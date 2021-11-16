@@ -1,4 +1,6 @@
-export const BOB_SECRETS = [
+import { Secret } from "didcomm-js";
+
+export const BOB_SECRETS: Array<Secret> = [
   {
     id: "did:example:bob#key-x25519-1",
     type: "JsonWebKey2020",

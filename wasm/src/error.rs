@@ -44,7 +44,6 @@ impl From<_ErrorKind> for ErrorKind {
             _ErrorKind::NoCompatibleCrypto => Self::NoCompatibleCrypto,
             _ErrorKind::Unsupported => Self::Unsupported,
             _ErrorKind::IllegalArgument => Self::IllegalArgument,
-
         }
     }
 }
