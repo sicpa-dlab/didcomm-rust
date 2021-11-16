@@ -2,7 +2,7 @@ use js_sys::Promise;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
-use crate::{did_resolver::JsDIDResolver, error::JsResult, DIDResolver, Message};
+use crate::{error::JsResult, DIDResolver, JsDIDResolver, Message};
 
 #[wasm_bindgen(skip_typescript)]
 impl Message {
