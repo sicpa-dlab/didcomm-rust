@@ -1,10 +1,4 @@
-// TODO: typing mist be in d.ts file for didcomm-js
-
-export type DIDDoc = any;
-
-export interface DIDResolver {
-  resolve(did: String): Promise<DIDDoc | null>;
-}
+import { DIDResolver, DIDDoc } from "didcomm-js";
 
 export class ExampleDIDResolver implements DIDResolver {
   known_dids: Array<DIDDoc>;
