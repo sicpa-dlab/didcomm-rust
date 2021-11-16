@@ -452,17 +452,15 @@ impl Codec {
 
 fn _from_multicodec(value: &Vec<u8>) -> Result<(Codec, &[u8])> {
     let mut val: Cursor<Vec<u8>> = Cursor::new(value.clone());
-    let prefix_int = val.read_unsigned_varint_32().kind(
-        ErrorKind::InvalidState,
-        "Cannot read varint",
-    )?;
+    let prefix_int = val
+        .read_unsigned_varint_32()
+        .kind(ErrorKind::InvalidState, "Cannot read varint")?;
     let codec = Codec::codec_by_prefix(prefix_int)?;
 
     let mut prefix: Cursor<Vec<u8>> = Cursor::new(Vec::new());
-    prefix.write_unsigned_varint_32(prefix_int).kind(
-        ErrorKind::InvalidState,
-        "Cannot write varint",
-    )?;
+    prefix
+        .write_unsigned_varint_32(prefix_int)
+        .kind(ErrorKind::InvalidState, "Cannot write varint")?;
 
     return Ok((codec, value.split_at(prefix.into_inner().len()).1));
 }
