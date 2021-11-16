@@ -159,13 +159,6 @@ impl From<bs58::decode::Error> for Error {
             bs58::decode::Error::BufferTooSmall => {
                 Error::msg(ErrorKind::InvalidState, err.to_string())
             }
-            bs58::decode::Error::InvalidCharacter {
-                character: _,
-                index: _,
-            } => Error::msg(ErrorKind::InvalidState, err.to_string()),
-            bs58::decode::Error::NonAsciiCharacter { index: _ } => {
-                Error::msg(ErrorKind::InvalidState, err.to_string())
-            }
             _ => Error::msg(ErrorKind::Malformed, err.to_string()),
         }
     }
@@ -174,10 +167,7 @@ impl From<bs58::decode::Error> for Error {
 impl From<bs58::encode::Error> for Error {
     fn from(err: bs58::encode::Error) -> Self {
         match err {
-            bs58::encode::Error::BufferTooSmall => {
-                Error::msg(ErrorKind::InvalidState, err.to_string())
-            }
-            _ => Error::msg(ErrorKind::Malformed, err.to_string()),
+            _ => Error::msg(ErrorKind::InvalidState, err.to_string()),
         }
     }
 }
