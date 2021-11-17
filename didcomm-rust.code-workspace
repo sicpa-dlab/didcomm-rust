@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "wasm"
+		},
+		{
+			"path": "wasm/tests-js"
+		}
+	],
+	"settings": {}
+}

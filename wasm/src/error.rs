@@ -29,6 +29,7 @@ pub enum ErrorKind {
     InvalidState,
     NoCompatibleCrypto,
     Unsupported,
+    IllegalArgument,
 }
 
 impl From<_ErrorKind> for ErrorKind {
@@ -42,6 +43,7 @@ impl From<_ErrorKind> for ErrorKind {
             _ErrorKind::InvalidState => Self::InvalidState,
             _ErrorKind::NoCompatibleCrypto => Self::NoCompatibleCrypto,
             _ErrorKind::Unsupported => Self::Unsupported,
+            _ErrorKind::IllegalArgument => Self::IllegalArgument,
         }
     }
 }

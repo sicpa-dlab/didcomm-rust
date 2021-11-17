@@ -25,6 +25,15 @@ extern "C" {
     ) -> Result<JsValue, JsValue>;
 }
 
+#[wasm_bindgen(typescript_custom_section)]
+const SECRET_RESOLVER_TS: &'static str = r#"
+interface SecretsResolver {
+    get_secret(secret_id: String): Promise<Secret | null>;
+
+    find_secrets(secret_ids: Array<String>): Promise<Array<String>>;
+}
+"#;
+
 // TODO: think is it possible to avoid ownership on DIDResolver
 pub(crate) struct JsSecretsResolver(pub(crate) SecretsResolver);
 
