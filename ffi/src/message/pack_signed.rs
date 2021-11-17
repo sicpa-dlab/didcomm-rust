@@ -1,9 +1,7 @@
 use didcomm::{error::ErrorKind, PackSignedMetadata};
 
-use crate::{
-    did_resolver::{DIDResolverAdapter, FFIDIDResolver},
-    secrets_resolver::{FFISecretsResolver, SecretResolverAdapter},
-};
+use crate::did::{FFIDIDResolver, did_resolver_adapter::FFIDIDResolverAdapter};
+use crate::secrets::{FFISecretsResolver, secrets_resolver_adapter::FFISecretsResolverAdapter};
 
 use super::{ErrorCode, Message, EXECUTOR};
 
@@ -22,8 +20,8 @@ impl Message {
     ) -> ErrorCode {
         let msg = self.0.clone();
         let sign_by = String::from(sign_by);
-        let did_resolver = DIDResolverAdapter::new(did_resolver);
-        let secret_resolver = SecretResolverAdapter::new(secret_resolver);
+        let did_resolver = FFIDIDResolverAdapter::new(did_resolver);
+        let secret_resolver = FFISecretsResolverAdapter::new(secret_resolver);
 
         let future = async move {
             msg.pack_signed(&sign_by, &did_resolver, &secret_resolver)
@@ -42,13 +40,13 @@ impl Message {
 
 #[cfg(test)]
 mod tests {
-    use crate::did_resolver::ExampleFFIDIDResolver;
+    use crate::did::resolvers::ExampleFFIDIDResolver;
     use crate::message::Message as FFIMessage;
+    use crate::secrets::resolvers::ExampleFFISecretsResolver;
     use didcomm::error::ErrorKind;
     use didcomm::{Message, PackSignedMetadata};
     use serde_json::json;
 
-    use crate::secrets_resolver::ExampleFFISecretResolver;
     use crate::test_vectors::{ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC};
 
     use super::OnPackSignedResult;
@@ -61,7 +59,7 @@ mod tests {
         }
 
         fn error(&self, err: ErrorKind, err_msg: String) {
-            println!("error: {}", err_msg)
+            println!("error: {}: {}", err.to_string(), err_msg)
         }
     }
 
@@ -80,7 +78,7 @@ mod tests {
 
         let did_resolver =
             ExampleFFIDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleFFISecretResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleFFISecretsResolver::new(ALICE_SECRETS.clone());
 
         msg.pack_signed(
             ALICE_DID,
@@ -89,6 +87,7 @@ mod tests {
             Box::new(PrintCallback {}),
         );
 
-        ::std::thread::sleep(std::time::Duration::from_secs(5));
+        // FIXME
+        std::thread::sleep(std::time::Duration::from_secs(3));
     }
 }

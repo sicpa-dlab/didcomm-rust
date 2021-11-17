@@ -1,11 +1,9 @@
-mod did_resolver;
 mod message;
-mod secrets_resolver;
-
-#[cfg(test)]
-pub(crate) use crate as didcomm;
+mod did;
+mod secrets;
 
 #[cfg(test)]
 mod test_vectors;
+
 
 uniffi_macros::include_scaffolding!("didcomm");
