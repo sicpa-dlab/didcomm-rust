@@ -3,6 +3,7 @@ mod jwk;
 mod jws;
 mod message;
 mod utils;
+mod protocols;
 
 // Allows share test vectors between unit and integration tests
 #[cfg(test)]

@@ -335,7 +335,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "DID not resolved: Signer key id not found in did doc"
+            "DID URL not found: Signer key id not found in did doc"
         );
     }
 

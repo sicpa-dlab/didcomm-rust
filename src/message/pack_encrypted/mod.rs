@@ -4,16 +4,19 @@ mod authcrypt;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::utils::did::{did_or_url, is_did};
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg},
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext},
+    protocols::routing::wrap_in_forward_if_needed,
     secrets::SecretsResolver,
+    utils::did::{did_or_url, is_did},
     Message, PackSignedMetadata,
 };
 
-use self::{anoncrypt::anoncrypt, authcrypt::authcrypt};
+pub(crate) use self::anoncrypt::anoncrypt;
+
+use self::authcrypt::authcrypt;
 
 impl Message {
     /// Produces `DIDComm Encrypted Message`
@@ -78,14 +81,6 @@ impl Message {
         secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
         options: &PackEncryptedOptions,
     ) -> Result<(String, PackEncryptedMetadata)> {
-        // TODO: Support `forward` protocol wrapping
-        if options.forward {
-            Err(err_msg(
-                ErrorKind::Unsupported,
-                "Forward protocol wrapping is unsupported in this version",
-            ))?
-        };
-
         self._validate_pack_encrypted(to, from, sign_by)?;
         // TODO: Think how to avoid resolving of did multiple times
         // and perform async operations in parallel
@@ -126,8 +121,14 @@ impl Message {
             (msg, None, to_kids)
         };
 
+        let (msg, messaging_service) =
+            match wrap_in_forward_if_needed(&msg, to, did_resolver, options).await? {
+                Some((forward_msg, messaging_service)) => (forward_msg, Some(messaging_service)),
+                None => (msg, None),
+            };
+
         let metadata = PackEncryptedMetadata {
-            messaging_service: None,
+            messaging_service,
             from_kid,
             sign_by_kid,
             to_kids,
@@ -207,7 +208,7 @@ pub struct PackEncryptedOptions {
     pub forward_headers: Option<Vec<(String, Value)>>,
 
     /// Identifier (DID URL) of messaging service (https://identity.foundation/didcomm-messaging/spec/#did-document-service-endpoint).
-    /// If DID contains multiple messaging services it allows specify what service to use.
+    /// If DID doc contains multiple messaging services it allows specify what service to use.
     /// If not present first service will be used.
     pub messaging_service: Option<String>,
 
@@ -1923,7 +1924,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "DID not resolved: No sender key agreements found"
+            "DID URL not found: No sender key agreements found"
         );
     }
 
@@ -1986,7 +1987,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "DID not resolved: No recipient key agreements found"
+            "DID URL not found: No recipient key agreements found"
         );
     }
 
@@ -2017,7 +2018,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", err),
-            "DID not resolved: Unable produce sign envelope: Signer key id not found in did doc"
+            "DID URL not found: Unable produce sign envelope: Signer key id not found in did doc"
         );
     }
 

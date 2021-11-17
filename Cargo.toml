@@ -38,6 +38,10 @@ features = ['std']
 git = 'https://github.com/hyperledger/aries-askar'
 rev = '4f29d43d584c4a1f1f982c4511824421aeccd2db'
 
+[dependencies.uuid]
+version = "0.8"
+features = ["v4"]
+
 [dev-dependencies]
 lazy_static = '1.4.0'
 

@@ -184,23 +184,23 @@ impl MessageBuilder {
         self
     }
 
-    pub fn attachement(mut self, attachement: Attachment) -> Self {
+    pub fn attachment(mut self, attachment: Attachment) -> Self {
         if let Some(ref mut attachments) = self.attachments {
-            attachments.push(attachement);
+            attachments.push(attachment);
             self
         } else {
-            self.attachments = Some(vec![attachement]);
+            self.attachments = Some(vec![attachment]);
             self
         }
     }
 
-    pub fn attachements(mut self, attachements: Vec<Attachment>) -> Self {
+    pub fn attachments(mut self, attachments: Vec<Attachment>) -> Self {
         if let Some(ref mut sattachments) = self.attachments {
-            let mut attachements = attachements;
-            sattachments.append(&mut attachements);
+            let mut attachments = attachments;
+            sattachments.append(&mut attachments);
             self
         } else {
-            self.attachments = Some(attachements);
+            self.attachments = Some(attachments);
             self
         }
     }
@@ -246,12 +246,12 @@ mod tests {
         .header("example-header-2".into(), json!("example-header-2-value"))
         .created_time(10000)
         .expires_time(20000)
-        .attachement(
+        .attachment(
             Attachment::base64("ZXhhbXBsZQ==".into())
                 .id("attachment1".into())
                 .finalize(),
         )
-        .attachements(vec![
+        .attachments(vec![
             Attachment::json(json!("example"))
                 .id("attachment2".into())
                 .finalize(),

@@ -8,7 +8,7 @@ pub enum ErrorKind {
     #[error("DID not resolved")]
     DIDNotResolved,
 
-    #[error("DID not resolved")]
+    #[error("DID URL not found")]
     DIDUrlNotFound,
 
     #[error("Secret not found")]
