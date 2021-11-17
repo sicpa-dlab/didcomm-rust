@@ -7,7 +7,7 @@ name = 'pack_encrypted'
 harness = false
 
 [[example]]
-name = 'basic'
+name = 'advanced_params'
 
 [package]
 name = 'didcomm'

@@ -6,28 +6,40 @@ mod test_vectors;
 // Allows test vectors usage inside and outside crate
 pub(crate) use didcomm;
 
+use crate::didcomm::AttachmentData;
 use didcomm::{
-    did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver, Message,
-    PackEncryptedOptions, UnpackOptions,
+    did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver, Attachment,
+    JsonAttachmentData, Message, PackEncryptedOptions, UnpackOptions,
 };
 use serde_json::json;
 use test_vectors::{ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRETS};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    // --- Build message from ALICE to BOB ---
-
+    // --- Building message from ALICE to BOB ---
     let msg = Message::build(
         "example-1".to_owned(),
         "example/v1".to_owned(),
         json!("example-body"),
     )
-    .to(ALICE_DID.to_owned())
-    .from(BOB_DID.to_owned())
+    .to(BOB_DID.to_owned())
+    .from(ALICE_DID.to_owned())
+    .attachement(Attachment {
+        data: AttachmentData::Json(JsonAttachmentData {
+            json: json!({"foo": "bar"}),
+            jws: None,
+        }),
+        id: Some("123".to_string()),
+        description: Some("example attachment".to_string()),
+        filename: None,
+        media_type: Some("application/didcomm-encrypted+json".to_string()),
+        format: None,
+        lastmod_time: None,
+        byte_count: None,
+    })
     .finalize();
 
     // --- Packing encrypted and authenticated message ---
-
     let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
     let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
 
@@ -48,12 +60,10 @@ async fn main() {
 
     println!("Encryption metadata is\n{:?}\n", metadata);
 
-    // --- Send message ---
-
+    // --- Sending message ---
     println!("Sending message \n{}\n", msg);
 
-    // // --- Unpacking message ---
-
+    // --- Unpacking message ---
     let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
     let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
 
@@ -66,8 +76,8 @@ async fn main() {
         },
     )
     .await
-    .expect("Ubable unpack");
+    .expect("Unable unpack");
 
-    println!("Receved message is \n{:?}\n", msg);
-    println!("Receved message unpack metadata is \n{:?}\n", metadata);
+    println!("Received message is \n{:?}\n", msg);
+    println!("Received message unpack metadata is \n{:?}\n", metadata);
 }
