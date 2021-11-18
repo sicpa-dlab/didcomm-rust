@@ -1,6 +1,6 @@
 use didcomm::error::ErrorKind;
 
-use crate::message::ErrorCode;
+use crate::common::ErrorCode;
 
 pub trait FFISecretsResolver: Sync + Send {
     fn get_secret(

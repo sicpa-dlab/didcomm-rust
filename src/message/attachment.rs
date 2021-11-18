@@ -48,22 +48,21 @@ pub struct Attachment {
 
 impl Attachment {
     pub fn base64(base64: String) -> AttachmentBuilder {
-        AttachmentBuilder::new(AttachmentData::Base64(Base64AttachmentData {
-            base64,
-            jws: None,
-        }))
+        AttachmentBuilder::new(AttachmentData::Base64{
+            value: Base64AttachmentData {base64, jws: None}
+        })
     }
 
     pub fn json(json: Value) -> AttachmentBuilder {
-        AttachmentBuilder::new(AttachmentData::Json(JsonAttachmentData { json, jws: None }))
+        AttachmentBuilder::new(AttachmentData::Json{
+            value: JsonAttachmentData {json, jws: None}
+        })
     }
 
     pub fn links(links: Vec<String>, hash: String) -> AttachmentBuilder {
-        AttachmentBuilder::new(AttachmentData::Links(LinksAttachmentData {
-            links,
-            hash,
-            jws: None,
-        }))
+        AttachmentBuilder::new(AttachmentData::Links{
+            value: LinksAttachmentData {links, hash, jws: None}
+        })
     }
 }
 
@@ -129,9 +128,9 @@ impl AttachmentBuilder {
 
     pub fn jws(mut self, jws: String) -> Self {
         match self.data {
-            AttachmentData::Base64(ref mut data) => data.jws = Some(jws),
-            AttachmentData::Json(ref mut data) => data.jws = Some(jws),
-            AttachmentData::Links(ref mut data) => data.jws = Some(jws),
+            AttachmentData::Base64 { ref mut value } => value.jws = Some(jws),
+            AttachmentData::Json { ref mut value } => value.jws = Some(jws),
+            AttachmentData::Links { ref mut value } => value.jws = Some(jws),
         }
 
         self
@@ -160,9 +159,9 @@ impl AttachmentBuilder {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 #[serde(untagged)]
 pub enum AttachmentData {
-    Base64(Base64AttachmentData),
-    Json(JsonAttachmentData),
-    Links(LinksAttachmentData),
+    Base64{value: Base64AttachmentData},
+    Json{value: JsonAttachmentData},
+    Links{value: LinksAttachmentData},
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]

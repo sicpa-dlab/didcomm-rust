@@ -2,7 +2,7 @@
 use async_trait::async_trait;
 use didcomm::secrets::Secret;
 
-use crate::{message::ErrorCode, secrets::{FFISecretsResolver, secrets_resolver::{OnFindSecretsResult, OnGetSecretResult}}};
+use crate::{common::ErrorCode, secrets::{FFISecretsResolver, secrets_resolver::{OnFindSecretsResult, OnGetSecretResult}}};
 
 
 /// Allows resolve pre-defined did's for `example` and other methods.

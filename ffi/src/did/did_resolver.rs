@@ -1,6 +1,6 @@
 use didcomm::error::{ErrorKind};
 
-use crate::message::ErrorCode;
+use crate::common::ErrorCode;
 
 pub trait FFIDIDResolver: Sync + Send {
     fn resolve(&self, 

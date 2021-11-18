@@ -8,6 +8,8 @@ use futures::channel::oneshot;
 
 use lazy_static::lazy_static;
 
+use crate::common::get_next_id;
+
 use super::FFISecretsResolver;
 use super::secrets_resolver::{OnFindSecretsResult, OnGetSecretResult};
 
@@ -32,8 +34,9 @@ impl SecretsResolver for FFISecretsResolverAdapter{
 
     async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>> {
         let (sender, receiver) = oneshot::channel::<Result<Option<String>>>();
-        CALLBACK_SENDERS_GET_SECRETS.lock().unwrap().insert(10, sender);
-        let cb = Box::new(OnGetSecretResultAdapter{cb_id: 10});
+        let cb_id = get_next_id();
+        CALLBACK_SENDERS_GET_SECRETS.lock().unwrap().insert(cb_id, sender);
+        let cb = Box::new(OnGetSecretResultAdapter{cb_id: cb_id});
 
         self.secrets_resolver.get_secret(String::from(secret_id), cb);
         
@@ -48,8 +51,9 @@ impl SecretsResolver for FFISecretsResolverAdapter{
 
     async fn find_secrets<'a>(&self, secret_ids: &'a [&'a str]) -> Result<Vec<&'a str>> {
         let (sender, receiver) = oneshot::channel::<Result<Vec<String>>>();
-        CALLBACK_SENDERS_FIND_SECRETS.lock().unwrap().insert(11, sender);
-        let cb = Box::new(OnFindSecretsResultAdapter{cb_id: 11});
+        let cb_id = get_next_id();
+        CALLBACK_SENDERS_FIND_SECRETS.lock().unwrap().insert(cb_id, sender);
+        let cb = Box::new(OnFindSecretsResultAdapter{cb_id: cb_id});
 
         self.secrets_resolver.find_secrets(
             secret_ids.iter().map(|&s| String::from(s) ).collect(),

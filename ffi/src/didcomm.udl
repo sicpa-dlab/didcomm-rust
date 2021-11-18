@@ -1,3 +1,123 @@
-namespace didcomm {
+[Wrapped]
+typedef string JsonObject;
+
+dictionary Message {
+  string id;
+  string typ;
+  string type_;
+  JsonObject body;
+  string? from;
+  sequence<string>? to;
+  string? thid;
+  string? pthid;
+  record<DOMString, JsonObject> extra_headers;
+  u64? created_time;
+  u64? expires_time;
+  string? from_prior;
+  sequence<Attachment>? attachments;
 };
 
+dictionary Attachment {
+  AttachmentData data;
+  string? id;
+  string? description;
+  string? filename;
+  string? media_type;
+  string? format;
+  u64? lastmod_time;
+  u64? byte_count;
+};
+
+[Enum]
+interface AttachmentData {
+  Base64(Base64AttachmentData value);
+  Json(JsonAttachmentData value);
+  Links(LinksAttachmentData value);
+};
+
+
+dictionary Base64AttachmentData {
+  string base64;
+  string? jws;
+};
+
+dictionary JsonAttachmentData {
+  JsonObject json;
+  string? jws;
+};
+
+dictionary LinksAttachmentData {
+  sequence<string> links;
+  string hash;
+  string? jws;
+};
+
+
+
+
+
+dictionary PackSignedMetadata {
+  string sign_by_kid;
+};
+
+callback interface OnPackSignedResult {
+  void success(string result, PackSignedMetadata metadata);
+  void error(ErrorKind err, string msg);
+};
+
+
+
+
+
+enum ErrorKind {
+  "DIDNotResolved",
+  "DIDUrlNotFound",
+  "SecretNotFound",
+  "Malformed",
+  "IoError",
+  "InvalidState",
+  "NoCompatibleCrypto",
+  "Unsupported",
+  "IllegalArgument",
+};
+
+enum ErrorCode {
+    "Success",
+    "Error",
+};
+
+
+
+
+
+callback interface OnDIDResolverResult {
+  void success(string? result);
+  void error(ErrorKind err, string msg);
+};
+
+callback interface FFIDIDResolver {
+  ErrorCode resolve(string did, OnDIDResolverResult cb);
+};
+
+
+
+
+
+callback interface OnGetSecretResult {
+  void success(string? result);
+  void error(ErrorKind err, string msg);
+};
+
+callback interface OnFindSecretsResult {
+  void success(sequence<string> result);
+  void error(ErrorKind err, string msg);
+};
+
+callback interface FFISecretsResolver {
+  ErrorCode get_secret(string secret_id, OnGetSecretResult cb);
+  ErrorCode find_secrets(sequence<string> secret_ids, OnFindSecretsResult cb);
+};
+
+namespace didcomm {
+  ErrorCode pack_signed([ByRef] Message msg, string sign_by, FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver, OnPackSignedResult cb);
+};

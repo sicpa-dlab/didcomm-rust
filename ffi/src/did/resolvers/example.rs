@@ -2,7 +2,7 @@
 use async_trait::async_trait;
 use didcomm::did::DIDDoc;
 
-use crate::{did::{FFIDIDResolver, did_resolver::OnDIDResolverResult}, message::ErrorCode};
+use crate::{common::ErrorCode, did::{FFIDIDResolver, did_resolver::OnDIDResolverResult}};
 
 /// Allows resolve pre-defined did's for `example` and other methods.
 pub struct ExampleFFIDIDResolver {

@@ -8,6 +8,8 @@ use futures::channel::oneshot;
 
 use lazy_static::lazy_static;
 
+use crate::common::get_next_id;
+
 use super::FFIDIDResolver;
 use super::did_resolver::OnDIDResolverResult;
 
@@ -31,8 +33,9 @@ impl DIDResolver for FFIDIDResolverAdapter{
 
     async fn resolve(&self, did: &str) -> Result<Option<DIDDoc>> {
         let (sender, receiver) = oneshot::channel::<Result<Option<String>>>();
-        CALLBACK_SENDERS.lock().unwrap().insert(10, sender);
-        let cb = Box::new(OnDIDResolverResultAdapter{cb_id: 10});
+        let cb_id = get_next_id();
+        CALLBACK_SENDERS.lock().unwrap().insert(cb_id, sender);
+        let cb = Box::new(OnDIDResolverResultAdapter{cb_id: cb_id});
 
         self.did_resolver.resolve(String::from(did), cb);
         
