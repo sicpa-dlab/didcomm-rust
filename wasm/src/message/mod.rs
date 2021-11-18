@@ -141,7 +141,7 @@ type IMessage = {
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
-const ATTACHEMENT_TS: &'static str = r#"
+const ATTACHMENT_TS: &'static str = r#"
 type Attachment = {
     /**
      * A JSON object that gives access to the actual content of the attachment.
@@ -197,12 +197,12 @@ type Attachment = {
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
-const ATTACHEMENT_DATA_TS: &'static str = r#"
+const ATTACHMENT_DATA_TS: &'static str = r#"
 type AttachmentData = Base64AttachmentData | JsonAttachmentData | LinksAttachmentData
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
-const BASE64_ATTACHEMENT_DATA_TS: &'static str = r#"
+const BASE64_ATTACHMENT_DATA_TS: &'static str = r#"
 type Base64AttachmentData = {
     /**
      * Base64-encoded data, when representing arbitrary content inline.
@@ -217,7 +217,7 @@ type Base64AttachmentData = {
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
-const JSON_ATTACHEMENT_DATA_TS: &'static str = r#"
+const JSON_ATTACHMENT_DATA_TS: &'static str = r#"
 type JsonAttachmentData = {
     /**
      * Directly embedded JSON data.
@@ -232,7 +232,7 @@ type JsonAttachmentData = {
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
-const LINKS_ATTACHEMENT_DATA_TS: &'static str = r#"
+const LINKS_ATTACHMENT_DATA_TS: &'static str = r#"
 type LinksAttachmentData = {
     /**
      * A list of one or more locations at which the content may be fetched.
