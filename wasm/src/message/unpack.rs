@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use didcomm::{
     error::{ErrorKind, ResultExt},
     UnpackOptions,
@@ -43,7 +45,7 @@ impl Message {
 
             let res = {
                 let res = Array::new_with_length(2);
-                res.set(0, Message(msg).into());
+                res.set(0, Message(Rc::new(msg)).into());
                 res.set(1, metadata);
                 res
             };
@@ -75,7 +77,14 @@ export namespace Message {
      * - `metadata` additional metadata about this `unpack` execution like used keys identifiers,
      *   trust context, algorithms and etc.
      *
-     * @thorws DIDCommError
+     * @throws DIDCommDIDNotResolved
+     * @throws DIDCommDIDUrlNotFound
+     * @throws DIDCommMalformed
+     * @throws DIDCommIoError
+     * @throws DIDCommInvalidState
+     * @throws DIDCommNoCompatibleCrypto
+     * @throws DIDCommUnsupported
+     * @throws DIDCommIllegalArgument
      */
     function unpack(
         msg: string,

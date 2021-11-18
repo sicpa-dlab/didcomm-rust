@@ -8,7 +8,6 @@ use crate::{error::JsResult, DIDResolver, JsDIDResolver, Message};
 impl Message {
     #[wasm_bindgen(skip_typescript)]
     pub fn pack_plaintext(&self, did_resolver: DIDResolver) -> Promise {
-        // TODO: FIXME: think on avoid cloning
         let msg = self.0.clone();
         let did_resolver = JsDIDResolver(did_resolver);
 
@@ -38,7 +37,11 @@ interface Message {
      * 
      * @returns a DIDComm plaintext message s JSON string
      * 
-     * @throws DIDCommError
+     * @throws DIDCommDIDNotResolved
+     * @throws DIDCommDIDUrlNotFound
+     * @throws DIDCommIoError
+     * @throws DIDCommInvalidState
+     * @throws DIDCommIllegalArgument
      */
     pack_plaintext(did_resolver: DIDResolver): Promise<string>;
 }

@@ -16,9 +16,7 @@ impl Message {
         did_resolver: DIDResolver,
         secrets_resolver: SecretsResolver,
     ) -> Promise {
-        // TODO: FIXME: think on avoid cloning
         let msg = self.0.clone();
-
         let did_resolver = JsDIDResolver(did_resolver);
         let secrets_resolver = JsSecretsResolver(secrets_resolver);
 
@@ -70,7 +68,14 @@ interface Message {
      * - `signed_message` a DIDComm signed message as JSON string
      * - `metadata` additional metadata about this `encrypt` execution like used keys identifiers and algorithms.
      *
-     * @throws DIDCommError
+     * @throws DIDCommDIDNotResolved
+     * @throws DIDCommDIDUrlNotFound
+     * @throws DIDCommMalformed
+     * @throws DIDCommIoError
+     * @throws DIDCommInvalidState
+     * @throws DIDCommNoCompatibleCrypto
+     * @throws DIDCommUnsupported
+     * @throws DIDCommIllegalArgument
      */
     pack_signed(
         sign_by: string,
