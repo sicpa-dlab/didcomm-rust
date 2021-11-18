@@ -1,3 +1,5 @@
+mod forward;
+
 use serde_json::{json, Value};
 use uuid::Uuid;
 
@@ -7,8 +9,12 @@ use crate::{
     error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
     message::{anoncrypt, MessagingServiceMetadata},
     utils::did::{did_or_url, is_did},
-    Attachment, Message, PackEncryptedOptions,
+    Attachment, AttachmentData, Message, PackEncryptedOptions,
 };
+
+use self::forward::ParsedForward;
+
+pub(crate) const FORWARD_MSG_TYPE: &str = "https://didcomm.org/routing/2.0/forward";
 
 async fn find_did_comm_service<'dr>(
     did: &str,
@@ -120,11 +126,7 @@ fn build_forward_message(
 
     let attachment = Attachment::json(serde_json::from_str(forwarded_msg)?).finalize();
 
-    let mut msg_builder = Message::build(
-        generate_message_id(),
-        "https://didcomm.org/routing/2.0/forward".to_owned(),
-        body,
-    );
+    let mut msg_builder = Message::build(generate_message_id(), FORWARD_MSG_TYPE.to_owned(), body);
 
     if let Some(headers) = headers {
         for (name, value) in headers {
@@ -137,6 +139,60 @@ fn build_forward_message(
     let msg = msg_builder.finalize();
 
     serde_json::to_string(&msg).kind(ErrorKind::InvalidState, "Unable serialize forward message")
+}
+
+pub(crate) fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
+    if msg.type_ != FORWARD_MSG_TYPE {
+        return None;
+    }
+
+    let next = match msg.body {
+        Value::Object(ref body) => match body.get("next") {
+            Some(&Value::String(ref next)) => Some(next),
+            _ => None,
+        },
+        _ => None,
+    };
+
+    if next.is_none() {
+        return None;
+    }
+
+    let next = next.unwrap();
+
+    let json_attachment_data = match msg.attachments {
+        Some(ref attachments) => match &attachments[..] {
+            [attachment, ..] => match &attachment.data {
+                AttachmentData::Json(forwarded_msg_data) => Some(forwarded_msg_data),
+                _ => None,
+            },
+            _ => None,
+        },
+        None => None,
+    };
+
+    if json_attachment_data.is_none() {
+        return None;
+    }
+
+    let attached_json = &json_attachment_data.unwrap().json;
+
+    let forwarded_msg = match attached_json {
+        Value::Object(ref forwarded_msg) => Some(forwarded_msg),
+        _ => None,
+    };
+
+    if forwarded_msg.is_none() {
+        return None;
+    }
+
+    let forwarded_msg = forwarded_msg.unwrap();
+
+    Some(ParsedForward {
+        msg: msg.clone(),
+        next: next.clone(),
+        forwarded_msg: forwarded_msg.clone(),
+    })
 }
 
 async fn wrap_in_forward<'dr>(

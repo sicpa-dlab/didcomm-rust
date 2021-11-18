@@ -2,9 +2,12 @@ use serde::{Deserialize, Serialize};
 
 use anoncrypt::_try_unpack_anoncrypt;
 use authcrypt::_try_unpack_authcrypt;
+use serde_json::Value;
 use sign::_try_unapck_sign;
 
 use crate::message::unpack::plaintext::_try_unpack_plaintext;
+use crate::protocols::routing::try_parse_forward;
+use crate::utils::did::did_or_url;
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
@@ -54,13 +57,6 @@ impl Message {
         secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
         options: &UnpackOptions,
     ) -> Result<(Self, UnpackMetadata)> {
-        if options.unwrap_re_wrapping_forward {
-            Err(err_msg(
-                ErrorKind::Unsupported,
-                "Forward unwrapping is unsupported by this version",
-            ))?;
-        }
-
         let mut metadata = UnpackMetadata {
             encrypted: false,
             authenticated: false,
@@ -78,9 +74,40 @@ impl Message {
             from_prior: None,
         };
 
-        let anoncryted =
-            _try_unpack_anoncrypt(msg, secrets_resolver, options, &mut metadata).await?;
-        let msg = anoncryted.as_deref().unwrap_or(msg);
+        let mut msg: &str = msg;
+        let mut anoncrypted: Option<String>;
+        let mut forwarded_msg: String;
+
+        loop {
+            anoncrypted =
+                _try_unpack_anoncrypt(&msg, secrets_resolver, options, &mut metadata).await?;
+
+            if options.unwrap_re_wrapping_forward && anoncrypted.is_some() {
+                if let Ok(plaintext) = Message::from_str(anoncrypted.as_deref().unwrap()) {
+                    if let Some(forward_msg) = try_parse_forward(&plaintext) {
+                        if has_key_agreement_secret(
+                            &forward_msg.next,
+                            did_resolver,
+                            secrets_resolver,
+                        )
+                        .await?
+                        {
+                            metadata.re_wrapped_in_forward = true;
+
+                            forwarded_msg =
+                                serde_json::to_string(&Value::Object(forward_msg.forwarded_msg))?;
+                            msg = &forwarded_msg;
+
+                            continue;
+                        }
+                    }
+                };
+            }
+
+            break;
+        }
+
+        let msg = anoncrypted.as_deref().unwrap_or(msg);
 
         let authcrypted =
             _try_unpack_authcrypt(msg, did_resolver, secrets_resolver, options, &mut metadata)
@@ -172,6 +199,31 @@ pub struct UnpackMetadata {
 
     /// If plaintext contains from_prior header, its unpacked value is returned
     pub from_prior: Option<FromPrior>,
+}
+
+async fn has_key_agreement_secret<'dr, 'sr>(
+    did_or_kid: &str,
+    did_resolver: &'dr (dyn DIDResolver + 'dr),
+    secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+) -> Result<bool> {
+    let kids = match did_or_url(did_or_kid) {
+        (_, Some(kid)) => {
+            vec![kid.to_owned()]
+        }
+        (did, None) => {
+            let did_doc = did_resolver
+                .resolve(did)
+                .await?
+                .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Next DID doc not found"))?;
+            did_doc.key_agreements
+        }
+    };
+
+    let kids = kids.iter().map(|s| s as &str).collect::<Vec<_>>();
+
+    let secrets_ids = secrets_resolver.find_secrets(&kids[..]).await?;
+
+    return Ok(!secrets_ids.is_empty());
 }
 
 #[cfg(test)]
