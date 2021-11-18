@@ -44,7 +44,7 @@ pub fn pack_encrypted<'a, 'b>(
 
 #[cfg(test)]
 mod tests {
-    use crate::message::test_helper::{TestCallbackCreator, get_result};
+    use crate::message::test_helper::{PackCallbackCreator, get_pack_result};
     use crate::test_vectors::{ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC};
     use crate::{pack_encrypted};
     use crate::did::resolvers::ExampleFFIDIDResolver;
@@ -64,9 +64,10 @@ mod tests {
             .finalize();
 
         let did_resolver =
-            ExampleFFIDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleFFISecretsResolver::new(ALICE_SECRETS.clone());
-        let test_cb = TestCallbackCreator::new().cb;
+            Box::new(ExampleFFIDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]));
+        let secrets_resolver = 
+            Box::new(ExampleFFISecretsResolver::new(ALICE_SECRETS.clone()));        
+        let test_cb = PackCallbackCreator::new().cb;
         let cb_id = test_cb.cb_id;            
 
         pack_encrypted(
@@ -74,14 +75,13 @@ mod tests {
             String::from(BOB_DID),
             Some(String::from(ALICE_DID)),
             Some(String::from(ALICE_DID)),
-            Box::new(did_resolver),
-            Box::new(secrets_resolver),
+            did_resolver,
+            secrets_resolver,
             &PackEncryptedOptions{forward: false, ..PackEncryptedOptions::default()},
             test_cb,
         );
 
-        let res = get_result(cb_id).await.unwrap();
-        // print!("res: {}", res);
+        let res = get_pack_result(cb_id).await;
         assert!(res.contains("ciphertext"));
     }
 }

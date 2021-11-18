@@ -108,20 +108,23 @@ callback interface FFISecretsResolver {
 
 
 
-
-
-dictionary PackSignedMetadata {
-  string sign_by_kid;
-};
-
 callback interface OnPackSignedResult {
   void success(string result, PackSignedMetadata metadata);
   void error(ErrorKind err, string msg);
 };
 
+dictionary PackSignedMetadata {
+  string sign_by_kid;
+};
 
 
 
+
+
+callback interface OnPackEncryptedResult {
+  void success(string result, PackEncryptedMetadata metadata);
+  void error(ErrorKind err, string msg);
+};
 
 dictionary PackEncryptedMetadata {
   MessagingServiceMetadata? messaging_service;
@@ -133,11 +136,6 @@ dictionary PackEncryptedMetadata {
 dictionary MessagingServiceMetadata {
   string id;
   string service_endpoint;
-};
-
-callback interface OnPackEncryptedResult {
-  void success(string result, PackEncryptedMetadata metadata);
-  void error(ErrorKind err, string msg);
 };
 
 enum AuthCryptAlg {
@@ -164,7 +162,65 @@ dictionary PackEncryptedOptions {
 
 
 
+callback interface OnPackPlaintextResult {
+  void success(string result);
+  void error(ErrorKind err, string msg);
+};
+
+
+
+
+
+callback interface OnUnpackResult {
+  void success(Message result, UnpackMetadata metadata);
+  void error(ErrorKind err, string msg);
+};
+
+dictionary UnpackMetadata {
+  boolean encrypted;
+  boolean authenticated;
+  boolean non_repudiation;
+  boolean anonymous_sender;
+  boolean re_wrapped_in_forward;
+  string? encrypted_from_kid;
+  sequence<string>? encrypted_to_kids;
+  string? sign_from;
+  string? from_prior_issuer_kid;
+  AuthCryptAlg? enc_alg_auth;
+  AnonCryptAlg? enc_alg_anon;
+  SignAlg? sign_alg;
+  string? signed_message;
+  FromPrior? from_prior;
+};
+
+dictionary UnpackOptions {
+  boolean expect_decrypt_by_all_keys;
+  boolean unwrap_re_wrapping_forward;
+};
+
+enum SignAlg {
+    "EdDSA",
+    "ES256",
+    "ES256K",
+};
+
+dictionary FromPrior {
+  string iss;
+  string sub;
+  string? aud;
+  u64? exp;
+  u64? nbf;
+  u64? iat;
+  string? jti;
+};
+
+
+
+
+
 namespace didcomm {
+  ErrorCode pack_plaintext([ByRef] Message msg, FFIDIDResolver did_resolver, OnPackPlaintextResult cb);
   ErrorCode pack_signed([ByRef] Message msg, string sign_by, FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver, OnPackSignedResult cb);
   ErrorCode pack_encrypted([ByRef] Message msg, string to, string? from, string? sign_by, FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver, [ByRef] PackEncryptedOptions options, OnPackEncryptedResult cb);
+  ErrorCode unpack(string msg, FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver, [ByRef] UnpackOptions options, OnUnpackResult cb);
 };

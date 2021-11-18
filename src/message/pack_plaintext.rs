@@ -28,7 +28,7 @@ impl Message {
             let (_unpacked_from_prior, _from_prior_issuer_kid) =
                 FromPrior::unpack(from_prior, did_resolver).await?;
 
-            // Add validation of FromPrior and Message fields consistency
+            // TODO: Add validation of FromPrior and Message fields consistency
         };
 
         let msg = serde_json::to_string(self)
