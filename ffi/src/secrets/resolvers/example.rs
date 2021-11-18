@@ -12,12 +12,11 @@ pub struct ExampleFFISecretsResolver {
 
 impl ExampleFFISecretsResolver {
     pub fn new(known_secrets: Vec<String>) -> Self {
-        ExampleFFISecretsResolver {
-            known_secrets: 
+        ExampleFFISecretsResolver {known_secrets: 
             known_secrets
             .iter()
-             .map(|ddoc| serde_json::from_str(ddoc).unwrap())
-             .collect() 
+            .map(|ddoc| serde_json::from_str(ddoc).unwrap())
+            .collect() 
         }
     }
 }
@@ -25,11 +24,7 @@ impl ExampleFFISecretsResolver {
 #[async_trait]
 impl FFISecretsResolver for ExampleFFISecretsResolver {
 
-    fn get_secret(
-        &self, 
-        secret_id: String, 
-        cb: Box<dyn OnGetSecretResult>
-    ) -> ErrorCode {
+    fn get_secret(&self, secret_id: String, cb: Box<dyn OnGetSecretResult>) -> ErrorCode {
         let secret = self
         .known_secrets
         .iter()
@@ -41,11 +36,7 @@ impl FFISecretsResolver for ExampleFFISecretsResolver {
         ErrorCode::Success
     }
 
-    fn find_secrets(
-        &self,
-        secret_ids: Vec<String>,
-        cb: Box<dyn OnFindSecretsResult>
-    ) -> ErrorCode {
+    fn find_secrets(&self, secret_ids: Vec<String>, cb: Box<dyn OnFindSecretsResult>) -> ErrorCode {
         let res = secret_ids
         .iter()
         .filter(|sid| self.known_secrets.iter().find(|s| s.id == **sid).is_some())

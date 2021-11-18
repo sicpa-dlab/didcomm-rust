@@ -11,12 +11,11 @@ pub struct ExampleFFIDIDResolver {
 
 impl ExampleFFIDIDResolver {
     pub fn new(known_dids: Vec<String>) -> Self {
-        ExampleFFIDIDResolver {
-            known_dids: 
+        ExampleFFIDIDResolver {known_dids: 
             known_dids
             .iter()
-             .map(|ddoc| serde_json::from_str(ddoc).unwrap())
-             .collect() 
+            .map(|ddoc| serde_json::from_str(ddoc).unwrap())
+            .collect() 
         }
     }
 }
@@ -24,10 +23,7 @@ impl ExampleFFIDIDResolver {
 #[async_trait]
 impl FFIDIDResolver for ExampleFFIDIDResolver {
 
-    fn resolve(&self, 
-        did: String, 
-        cb: Box<dyn OnDIDResolverResult>
-    ) -> ErrorCode {
+    fn resolve(&self, did: String, cb: Box<dyn OnDIDResolverResult>) -> ErrorCode {
         let diddoc = self
         .known_dids
         .iter()

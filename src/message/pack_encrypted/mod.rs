@@ -1,6 +1,8 @@
 mod anoncrypt;
 mod authcrypt;
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -190,7 +192,7 @@ impl Message {
 }
 
 /// Allow fine configuration of packing process.
-#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
 pub struct PackEncryptedOptions {
     /// If `true` and message is authenticated than information about sender will be protected from mediators, but
     /// additional re-encryption will be required. For anonymous messages this property will be ignored.
@@ -204,7 +206,7 @@ pub struct PackEncryptedOptions {
 
     /// if forward is enabled these optional headers can be passed to the wrapping `Forward` messages.
     /// If forward is disabled this property will be ignored.
-    pub forward_headers: Option<Vec<(String, Value)>>,
+    pub forward_headers: Option<HashMap<String, Value>>,
 
     /// Identifier (DID URL) of messaging service (https://identity.foundation/didcomm-messaging/spec/#did-document-service-endpoint).
     /// If DID contains multiple messaging services it allows specify what service to use.

@@ -159,9 +159,18 @@ impl AttachmentBuilder {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 #[serde(untagged)]
 pub enum AttachmentData {
-    Base64{value: Base64AttachmentData},
-    Json{value: JsonAttachmentData},
-    Links{value: LinksAttachmentData},
+    Base64{
+        #[serde(flatten)]
+        value: Base64AttachmentData
+    },
+    Json{
+        #[serde(flatten)]
+        value: JsonAttachmentData
+    },
+    Links{
+        #[serde(flatten)]
+        value: LinksAttachmentData
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
@@ -218,7 +227,7 @@ mod tests {
             .finalize();
 
         let data = match attachment.data {
-            AttachmentData::Base64(ref data) => data,
+            AttachmentData::Base64{ref value} => value,
             _ => panic!("data isn't base64."),
         };
 
@@ -252,7 +261,7 @@ mod tests {
             .finalize();
 
         let data = match attachment.data {
-            AttachmentData::Json(ref data) => data,
+            AttachmentData::Json{ref value} => value,
             _ => panic!("data isn't json."),
         };
 
@@ -289,7 +298,7 @@ mod tests {
         .finalize();
 
         let data = match attachment.data {
-            AttachmentData::Links(ref data) => data,
+            AttachmentData::Links{ref value} => value,
             _ => panic!("data isn't links."),
         };
 

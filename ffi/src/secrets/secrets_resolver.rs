@@ -3,17 +3,8 @@ use didcomm::error::ErrorKind;
 use crate::common::ErrorCode;
 
 pub trait FFISecretsResolver: Sync + Send {
-    fn get_secret(
-        &self, 
-        secret_id: String, 
-        cb: Box<dyn OnGetSecretResult>
-    ) -> ErrorCode;
-
-    fn find_secrets(
-        &self,
-        secret_ids: Vec<String>,
-        cb: Box<dyn OnFindSecretsResult>
-    ) -> ErrorCode;
+    fn get_secret(&self, secret_id: String, cb: Box<dyn OnGetSecretResult>) -> ErrorCode;
+    fn find_secrets(&self, secret_ids: Vec<String>, cb: Box<dyn OnFindSecretsResult>) -> ErrorCode;
 }
 
 pub trait OnGetSecretResult: Sync + Send {

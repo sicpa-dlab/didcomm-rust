@@ -5,6 +5,7 @@ mod common;
 
 pub use didcomm::*;
 pub use didcomm::error::*;
+pub use didcomm::algorithms::*;
 pub use common::ErrorCode;
 pub use common::JsonObject;
 pub use message::*;

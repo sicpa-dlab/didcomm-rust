@@ -33,6 +33,7 @@ impl DIDResolver for FFIDIDResolverAdapter{
 
     async fn resolve(&self, did: &str) -> Result<Option<DIDDoc>> {
         let (sender, receiver) = oneshot::channel::<Result<Option<String>>>();
+
         let cb_id = get_next_id();
         CALLBACK_SENDERS.lock().unwrap().insert(cb_id, sender);
         let cb = Box::new(OnDIDResolverResultAdapter{cb_id: cb_id});
@@ -40,10 +41,11 @@ impl DIDResolver for FFIDIDResolverAdapter{
         self.did_resolver.resolve(String::from(did), cb);
         
         let res = receiver.await
-            .kind(ErrorKind::InvalidState, "can not reslve DID Doc")?
-            .kind(ErrorKind::InvalidState, "can not reslve DID Doc")?;
+            .kind(ErrorKind::InvalidState, "can not resolve DID Doc")?
+            .kind(ErrorKind::InvalidState, "can not resolve DID Doc")?;
+
         match res {
-            Some(res) => serde_json::from_str(&res).to_didcomm("can not reslve DID Doc"),
+            Some(res) => serde_json::from_str(&res).to_didcomm("can not resolve DID Doc"),
             None => Ok(None),
         }
     }
@@ -57,6 +59,7 @@ pub struct OnDIDResolverResultAdapter {
 
 
 impl OnDIDResolverResult for OnDIDResolverResultAdapter {
+    // TODO: better error handling
     fn success(&self, result: Option<String>) {
         CALLBACK_SENDERS.lock().unwrap().remove(&self.cb_id).unwrap().send(
             Ok(result)

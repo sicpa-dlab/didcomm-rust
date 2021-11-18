@@ -56,19 +56,6 @@ dictionary LinksAttachmentData {
 
 
 
-dictionary PackSignedMetadata {
-  string sign_by_kid;
-};
-
-callback interface OnPackSignedResult {
-  void success(string result, PackSignedMetadata metadata);
-  void error(ErrorKind err, string msg);
-};
-
-
-
-
-
 enum ErrorKind {
   "DIDNotResolved",
   "DIDUrlNotFound",
@@ -118,6 +105,66 @@ callback interface FFISecretsResolver {
   ErrorCode find_secrets(sequence<string> secret_ids, OnFindSecretsResult cb);
 };
 
+
+
+
+
+
+dictionary PackSignedMetadata {
+  string sign_by_kid;
+};
+
+callback interface OnPackSignedResult {
+  void success(string result, PackSignedMetadata metadata);
+  void error(ErrorKind err, string msg);
+};
+
+
+
+
+
+dictionary PackEncryptedMetadata {
+  MessagingServiceMetadata? messaging_service;
+  string? from_kid;
+  string? sign_by_kid;
+  sequence<string> to_kids;
+};
+
+dictionary MessagingServiceMetadata {
+  string id;
+  string service_endpoint;
+};
+
+callback interface OnPackEncryptedResult {
+  void success(string result, PackEncryptedMetadata metadata);
+  void error(ErrorKind err, string msg);
+};
+
+enum AuthCryptAlg {
+    "A256cbcHs512Ecdh1puA256kw",
+};
+
+enum AnonCryptAlg {
+    "A256cbcHs512EcdhEsA256kw",
+    "Xc20pEcdhEsA256kw",
+    "A256gcmEcdhEsA256kw",
+};
+
+dictionary PackEncryptedOptions {
+  boolean protect_sender;
+  boolean forward;
+  record<DOMString, JsonObject>? forward_headers;
+  string? messaging_service;
+  AuthCryptAlg enc_alg_auth;
+  AnonCryptAlg enc_alg_anon;
+};
+
+
+
+
+
+
 namespace didcomm {
   ErrorCode pack_signed([ByRef] Message msg, string sign_by, FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver, OnPackSignedResult cb);
+  ErrorCode pack_encrypted([ByRef] Message msg, string to, string? from, string? sign_by, FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver, [ByRef] PackEncryptedOptions options, OnPackEncryptedResult cb);
 };

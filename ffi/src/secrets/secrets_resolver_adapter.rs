@@ -34,6 +34,7 @@ impl SecretsResolver for FFISecretsResolverAdapter{
 
     async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>> {
         let (sender, receiver) = oneshot::channel::<Result<Option<String>>>();
+
         let cb_id = get_next_id();
         CALLBACK_SENDERS_GET_SECRETS.lock().unwrap().insert(cb_id, sender);
         let cb = Box::new(OnGetSecretResultAdapter{cb_id: cb_id});
@@ -43,6 +44,7 @@ impl SecretsResolver for FFISecretsResolverAdapter{
         let res = receiver.await
             .kind(ErrorKind::InvalidState, "can not get secret")?
             .kind(ErrorKind::InvalidState, "can not get secret")?;
+
         match res {
             Some(res) => serde_json::from_str(&res).to_didcomm("can not get secret"),
             None => Ok(None),
@@ -51,6 +53,7 @@ impl SecretsResolver for FFISecretsResolverAdapter{
 
     async fn find_secrets<'a>(&self, secret_ids: &'a [&'a str]) -> Result<Vec<&'a str>> {
         let (sender, receiver) = oneshot::channel::<Result<Vec<String>>>();
+
         let cb_id = get_next_id();
         CALLBACK_SENDERS_FIND_SECRETS.lock().unwrap().insert(cb_id, sender);
         let cb = Box::new(OnFindSecretsResultAdapter{cb_id: cb_id});
@@ -63,8 +66,10 @@ impl SecretsResolver for FFISecretsResolverAdapter{
         let res = receiver.await
             .kind(ErrorKind::InvalidState, "can not get secret")?
             .kind(ErrorKind::InvalidState, "can not get secret")?;
+
         Ok(
-            secret_ids.iter()
+            secret_ids
+            .iter()
             .filter(|&&sid| res.iter().find(|&s| s == sid).is_some())
             .map(|sid| *sid)
             .collect()
