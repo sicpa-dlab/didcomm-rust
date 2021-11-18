@@ -48,20 +48,24 @@ pub struct Attachment {
 
 impl Attachment {
     pub fn base64(base64: String) -> AttachmentBuilder {
-        AttachmentBuilder::new(AttachmentData::Base64{
-            value: Base64AttachmentData {base64, jws: None}
+        AttachmentBuilder::new(AttachmentData::Base64 {
+            value: Base64AttachmentData { base64, jws: None },
         })
     }
 
     pub fn json(json: Value) -> AttachmentBuilder {
-        AttachmentBuilder::new(AttachmentData::Json{
-            value: JsonAttachmentData {json, jws: None}
+        AttachmentBuilder::new(AttachmentData::Json {
+            value: JsonAttachmentData { json, jws: None },
         })
     }
 
     pub fn links(links: Vec<String>, hash: String) -> AttachmentBuilder {
-        AttachmentBuilder::new(AttachmentData::Links{
-            value: LinksAttachmentData {links, hash, jws: None}
+        AttachmentBuilder::new(AttachmentData::Links {
+            value: LinksAttachmentData {
+                links,
+                hash,
+                jws: None,
+            },
         })
     }
 }
@@ -159,17 +163,17 @@ impl AttachmentBuilder {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 #[serde(untagged)]
 pub enum AttachmentData {
-    Base64{
+    Base64 {
         #[serde(flatten)]
-        value: Base64AttachmentData
+        value: Base64AttachmentData,
     },
-    Json{
+    Json {
         #[serde(flatten)]
-        value: JsonAttachmentData
+        value: JsonAttachmentData,
     },
-    Links{
+    Links {
         #[serde(flatten)]
-        value: LinksAttachmentData
+        value: LinksAttachmentData,
     },
 }
 
@@ -227,7 +231,7 @@ mod tests {
             .finalize();
 
         let data = match attachment.data {
-            AttachmentData::Base64{ref value} => value,
+            AttachmentData::Base64 { ref value } => value,
             _ => panic!("data isn't base64."),
         };
 
@@ -261,7 +265,7 @@ mod tests {
             .finalize();
 
         let data = match attachment.data {
-            AttachmentData::Json{ref value} => value,
+            AttachmentData::Json { ref value } => value,
             _ => panic!("data isn't json."),
         };
 
@@ -298,7 +302,7 @@ mod tests {
         .finalize();
 
         let data = match attachment.data {
-            AttachmentData::Links{ref value} => value,
+            AttachmentData::Links { ref value } => value,
             _ => panic!("data isn't links."),
         };
 

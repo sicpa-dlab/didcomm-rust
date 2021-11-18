@@ -16,4 +16,3 @@ pub trait OnFindSecretsResult: Sync + Send {
     fn success(&self, result: Vec<String>);
     fn error(&self, err: ErrorKind, msg: String);
 }
-

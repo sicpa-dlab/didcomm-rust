@@ -1,4 +1,4 @@
-use didcomm::error::{ErrorKind};
+use didcomm::error::ErrorKind;
 
 use crate::common::ErrorCode;
 
@@ -10,6 +10,3 @@ pub trait OnDIDResolverResult: Sync + Send {
     fn success(&self, result: Option<String>);
     fn error(&self, err: ErrorKind, msg: String);
 }
-
-
-

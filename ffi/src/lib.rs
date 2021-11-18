@@ -1,17 +1,16 @@
-mod message;
-mod did;
-mod secrets;
 mod common;
+mod did;
+mod message;
+mod secrets;
 
-pub use didcomm::*;
-pub use didcomm::error::*;
-pub use didcomm::algorithms::*;
 pub use common::ErrorCode;
 pub use common::JsonObject;
-pub use message::*;
 pub use did::*;
+pub use didcomm::algorithms::*;
+pub use didcomm::error::*;
+pub use didcomm::*;
+pub use message::*;
 pub use secrets::*;
-
 
 #[cfg(test)]
 mod test_vectors;

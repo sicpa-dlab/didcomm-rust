@@ -1,8 +1,11 @@
-use std::{cmp, sync::atomic::{AtomicUsize, Ordering}};
+use std::{
+    cmp,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
+use crate::UniffiCustomTypeWrapper;
 use futures::executor::ThreadPool;
 use lazy_static::lazy_static;
-use crate::UniffiCustomTypeWrapper;
 
 pub enum ErrorCode {
     Success = 0,
@@ -16,7 +19,7 @@ lazy_static! {
         .create()
         .unwrap();
 
-    static ref IDS_COUNTER: AtomicUsize = AtomicUsize::new(1);        
+    static ref IDS_COUNTER: AtomicUsize = AtomicUsize::new(1);
 }
 
 pub fn get_next_id() -> i32 {
