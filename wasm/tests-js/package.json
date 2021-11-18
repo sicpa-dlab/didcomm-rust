@@ -1,0 +1,24 @@
+{
+  "name": "didcomm-tests",
+  "version": "0.2.0",
+  "description": "JS tests for didcomm",
+  "scripts": {
+    "test": "jest",
+    "test-puppeteer": "jest --config=jest.config.puppeteer.js"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "didcomm-js": "file:../pkg"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.0.2",
+    "@types/jest-environment-puppeteer": "^4.4.1",
+    "@types/puppeteer": "^5.4.4",
+    "jest": "^27.3.1",
+    "jest-puppeteer": "^6.0.0",
+    "prettier": "2.4.1",
+    "ts-jest": "^27.0.7",
+    "ts-node": "^10.4.0"
+  }
+}

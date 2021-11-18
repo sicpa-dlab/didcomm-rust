@@ -1,12 +1,11 @@
-mod did_resolver;
+mod did;
 mod error;
 mod message;
-mod secrets_resolver;
+mod secrets;
 mod utils;
 
-pub use crate::{did_resolver::DIDResolver, message::Message, secrets_resolver::SecretsResolver};
-
-use crate::{did_resolver::JsDIDResolver, secrets_resolver::JsSecretsResolver};
+pub use crate::{did::DIDResolver, message::Message, secrets::SecretsResolver};
+use crate::{did::JsDIDResolver, secrets::JsSecretsResolver};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
