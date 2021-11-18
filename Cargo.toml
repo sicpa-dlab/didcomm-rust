@@ -7,7 +7,19 @@ name = 'pack_encrypted'
 harness = false
 
 [[example]]
+name = 'attachments'
+
+[[example]]
 name = 'advanced_params'
+
+[[example]]
+name = 'basic'
+
+[[example]]
+name = 'plaintext'
+
+[[example]]
+name = 'rotate_did'
 
 [package]
 name = 'didcomm'
