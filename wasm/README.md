@@ -4,8 +4,8 @@
 
 ```bash
 wasm-pack build # Will output modules best-suited to be bundled with webpack
-wasm-pack build --targed=nodejs # Will output modules that can be directly consumed by NodeJS
-wasm-pack build --targed=web # Will output modules that can be directly consumed in browser without bundler usage
+wasm-pack build --target=nodejs # Will output modules that can be directly consumed by NodeJS
+wasm-pack build --target=web # Will output modules that can be directly consumed in browser without bundler usage
 ```
 
 ### 🔬 Test in NodeJS
