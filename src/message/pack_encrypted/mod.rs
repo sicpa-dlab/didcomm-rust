@@ -1542,9 +1542,8 @@ mod tests {
             let parsed_forward = try_parse_forward(&forward_msg);
             assert!(parsed_forward.is_some());
 
-            let forwarded_msg =
-                serde_json::to_string(&Value::Object(parsed_forward.unwrap().forwarded_msg))
-                    .expect("Unable serialize forwarded message");
+            let forwarded_msg = serde_json::to_string(&parsed_forward.unwrap().forwarded_msg)
+                .expect("Unable serialize forwarded message");
 
             let (unpacked_msg, unpack_metadata) = Message::unpack(
                 &forwarded_msg,
@@ -1609,9 +1608,8 @@ mod tests {
             let parsed_forward = try_parse_forward(&forward_msg);
             assert!(parsed_forward.is_some());
 
-            let forwarded_msg =
-                serde_json::to_string(&Value::Object(parsed_forward.unwrap().forwarded_msg))
-                    .expect("Unable serialize forwarded message");
+            let forwarded_msg = serde_json::to_string(&parsed_forward.unwrap().forwarded_msg)
+                .expect("Unable serialize forwarded message");
 
             let (unpacked_msg, unpack_metadata) = Message::unpack(
                 &forwarded_msg,

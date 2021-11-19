@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 use anoncrypt::_try_unpack_anoncrypt;
 use authcrypt::_try_unpack_authcrypt;
-use serde_json::Value;
 use sign::_try_unapck_sign;
 
 use crate::message::unpack::plaintext::_try_unpack_plaintext;
@@ -94,8 +93,7 @@ impl Message {
                         {
                             metadata.re_wrapped_in_forward = true;
 
-                            forwarded_msg =
-                                serde_json::to_string(&Value::Object(forward_msg.forwarded_msg))?;
+                            forwarded_msg = serde_json::to_string(&forward_msg.forwarded_msg)?;
                             msg = &forwarded_msg;
 
                             continue;
@@ -593,9 +591,8 @@ mod test {
             let parsed_forward = try_parse_forward(&forward_msg);
             assert!(parsed_forward.is_some());
 
-            let forwarded_msg =
-                serde_json::to_string(&Value::Object(parsed_forward.unwrap().forwarded_msg))
-                    .expect("Unable serialize forwarded message");
+            let forwarded_msg = serde_json::to_string(&parsed_forward.unwrap().forwarded_msg)
+                .expect("Unable serialize forwarded message");
 
             let re_wrapping_forward_msg = wrap_in_forward(
                 &forwarded_msg,

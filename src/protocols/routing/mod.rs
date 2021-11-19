@@ -175,18 +175,7 @@ pub(crate) fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
         return None;
     }
 
-    let attached_json = &json_attachment_data.unwrap().json;
-
-    let forwarded_msg = match attached_json {
-        Value::Object(ref forwarded_msg) => Some(forwarded_msg),
-        _ => None,
-    };
-
-    if forwarded_msg.is_none() {
-        return None;
-    }
-
-    let forwarded_msg = forwarded_msg.unwrap();
+    let forwarded_msg = &json_attachment_data.unwrap().json;
 
     Some(ParsedForward {
         msg: msg.clone(),
