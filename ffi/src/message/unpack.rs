@@ -46,20 +46,11 @@ mod tests {
     use didcomm::{Message, PackEncryptedOptions, UnpackOptions};
     use serde_json::json;
 
-    use crate::test_vectors::{
-        ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRETS,
-    };
+    use crate::test_vectors::{ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRETS, simple_message};
 
     #[tokio::test]
     async fn test_unpack_plaintext_works() {
-        let msg = Message::build(
-            "example-1".to_owned(),
-            "example/v1".to_owned(),
-            json!("example-body"),
-        )
-        .to(BOB_DID.to_owned())
-        .from(ALICE_DID.to_owned())
-        .finalize();
+        let msg = simple_message();
 
         let did_resolver = Box::new(ExampleFFIDIDResolver::new(vec![
             ALICE_DID_DOC.clone(),
@@ -92,14 +83,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_unpack_signed_works() {
-        let msg = Message::build(
-            "example-1".to_owned(),
-            "example/v1".to_owned(),
-            json!("example-body"),
-        )
-        .to(BOB_DID.to_owned())
-        .from(ALICE_DID.to_owned())
-        .finalize();
+        let msg = simple_message();
 
         let did_resolver = Box::new(ExampleFFIDIDResolver::new(vec![
             ALICE_DID_DOC.clone(),
@@ -139,14 +123,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_unpack_encrypted_works() {
-        let msg = Message::build(
-            "example-1".to_owned(),
-            "example/v1".to_owned(),
-            json!("example-body"),
-        )
-        .to(BOB_DID.to_owned())
-        .from(ALICE_DID.to_owned())
-        .finalize();
+        let msg = simple_message();
 
         let did_resolver = Box::new(ExampleFFIDIDResolver::new(vec![
             ALICE_DID_DOC.clone(),
