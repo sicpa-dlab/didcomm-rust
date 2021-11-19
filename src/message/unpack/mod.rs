@@ -588,10 +588,11 @@ mod test {
             .await
             .expect("Unable unpack");
 
-            let parsed_forward = try_parse_forward(&forward_msg);
-            assert!(parsed_forward.is_some());
+            let parsed_forward = try_parse_forward(&forward_msg).expect("Message is not Forward");
 
-            let forwarded_msg = serde_json::to_string(&parsed_forward.unwrap().forwarded_msg)
+            assert_eq!(&parsed_forward.next, to);
+
+            let forwarded_msg = serde_json::to_string(&parsed_forward.forwarded_msg)
                 .expect("Unable serialize forwarded message");
 
             let re_wrapping_forward_msg = wrap_in_forward(
