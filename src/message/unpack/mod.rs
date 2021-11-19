@@ -149,9 +149,7 @@ impl Default for UnpackOptions {
     fn default() -> Self {
         UnpackOptions {
             expect_decrypt_by_all_keys: false,
-
-            // TODO: make it true before first stable release
-            unwrap_re_wrapping_forward: false,
+            unwrap_re_wrapping_forward: true,
         }
     }
 }
@@ -230,14 +228,12 @@ async fn has_key_agreement_secret<'dr, 'sr>(
 
 #[cfg(test)]
 mod test {
-    use crate::test_vectors::{
-        remove_field, remove_protected_field, update_field, update_protected_field,
-        INVALID_ENCRYPTED_MSG_ANON_P256_EPK_WRONG_POINT,
-    };
     use crate::{
         did::resolvers::ExampleDIDResolver,
+        protocols::routing::wrap_in_forward,
         secrets::resolvers::ExampleSecretsResolver,
         test_vectors::{
+            remove_field, remove_protected_field, update_field, update_protected_field,
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
             ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519, BOB_DID, BOB_DID_DOC, BOB_SECRETS,
@@ -246,6 +242,7 @@ mod test {
             BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, CHARLIE_AUTH_METHOD_25519, CHARLIE_DID_DOC,
             ENCRYPTED_MSG_ANON_XC20P_1, ENCRYPTED_MSG_ANON_XC20P_2, ENCRYPTED_MSG_AUTH_P256,
             ENCRYPTED_MSG_AUTH_P256_SIGNED, ENCRYPTED_MSG_AUTH_X25519, FROM_PRIOR_FULL,
+            INVALID_ENCRYPTED_MSG_ANON_P256_EPK_WRONG_POINT,
             INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_INT_ARRAY,
             INVALID_PLAINTEXT_MSG_ATTACHMENTS_AS_STRING,
             INVALID_PLAINTEXT_MSG_ATTACHMENTS_EMPTY_DATA,
@@ -256,9 +253,10 @@ mod test {
             INVALID_PLAINTEXT_MSG_EMPTY_ATTACHMENTS, INVALID_PLAINTEXT_MSG_NO_BODY,
             INVALID_PLAINTEXT_MSG_NO_ID, INVALID_PLAINTEXT_MSG_NO_TYP,
             INVALID_PLAINTEXT_MSG_NO_TYPE, INVALID_PLAINTEXT_MSG_STRING,
-            INVALID_PLAINTEXT_MSG_WRONG_TYP, MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON,
-            MESSAGE_ATTACHMENT_LINKS, MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2,
-            MESSAGE_FROM_PRIOR_FULL, MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_FROM_PRIOR,
+            INVALID_PLAINTEXT_MSG_WRONG_TYP, MEDIATOR1_DID_DOC, MEDIATOR1_SECRETS,
+            MESSAGE_ATTACHMENT_BASE64, MESSAGE_ATTACHMENT_JSON, MESSAGE_ATTACHMENT_LINKS,
+            MESSAGE_ATTACHMENT_MULTI_1, MESSAGE_ATTACHMENT_MULTI_2, MESSAGE_FROM_PRIOR_FULL,
+            MESSAGE_MINIMAL, MESSAGE_SIMPLE, PLAINTEXT_FROM_PRIOR,
             PLAINTEXT_FROM_PRIOR_INVALID_SIGNATURE, PLAINTEXT_INVALID_FROM_PRIOR,
             PLAINTEXT_MSG_ATTACHMENT_BASE64, PLAINTEXT_MSG_ATTACHMENT_JSON,
             PLAINTEXT_MSG_ATTACHMENT_LINKS, PLAINTEXT_MSG_ATTACHMENT_MULTI_1,
@@ -549,6 +547,84 @@ mod test {
 
         // TODO: Check P-384 curve support
         // TODO: Check P-521 curve support
+    }
+
+    #[tokio::test]
+    async fn unpack_re_wrapping_forward_works_anoncrypt() {
+        _unpack_re_wrapping_forward_works_anoncrypt(BOB_DID).await;
+
+        _unpack_re_wrapping_forward_works_anoncrypt(&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id)
+            .await;
+
+        async fn _unpack_re_wrapping_forward_works_anoncrypt(to: &str) {
+            let did_resolver = ExampleDIDResolver::new(vec![
+                ALICE_DID_DOC.clone(),
+                BOB_DID_DOC.clone(),
+                MEDIATOR1_DID_DOC.clone(),
+            ]);
+
+            let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+
+            let mediator1_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+
+            let (msg, _) = MESSAGE_SIMPLE
+                .pack_encrypted(
+                    to,
+                    None,
+                    None,
+                    &did_resolver,
+                    &alice_secrets_resolver,
+                    &PackEncryptedOptions::default(),
+                )
+                .await
+                .expect("Unable encrypt");
+
+            let (forward_msg, _) = Message::unpack(
+                &msg,
+                &did_resolver,
+                &mediator1_secrets_resolver,
+                &UnpackOptions::default(),
+            )
+            .await
+            .expect("Unable unpack");
+
+            let parsed_forward = try_parse_forward(&forward_msg);
+            assert!(parsed_forward.is_some());
+
+            let forwarded_msg =
+                serde_json::to_string(&Value::Object(parsed_forward.unwrap().forwarded_msg))
+                    .expect("Unable serialize forwarded message");
+
+            let re_wrapping_forward_msg = wrap_in_forward(
+                &forwarded_msg,
+                None,
+                to,
+                &vec![to.to_owned()],
+                &AnonCryptAlg::default(),
+                &did_resolver,
+            )
+            .await
+            .expect("Unable wrap in forward");
+
+            let (unpacked_msg, unpack_metadata) = Message::unpack(
+                &re_wrapping_forward_msg,
+                &did_resolver,
+                &bob_secrets_resolver,
+                &UnpackOptions::default(),
+            )
+            .await
+            .expect("Unable unpack");
+
+            assert_eq!(&unpacked_msg, &*MESSAGE_SIMPLE);
+
+            assert!(unpack_metadata.encrypted);
+            assert!(!unpack_metadata.authenticated);
+            assert!(!unpack_metadata.non_repudiation);
+            assert!(unpack_metadata.anonymous_sender);
+            assert!(unpack_metadata.re_wrapped_in_forward);
+        }
     }
 
     #[tokio::test]

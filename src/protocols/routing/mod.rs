@@ -195,7 +195,7 @@ pub(crate) fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
     })
 }
 
-async fn wrap_in_forward<'dr>(
+pub(crate) async fn wrap_in_forward<'dr>(
     msg: &str,
     headers: Option<&Vec<(String, Value)>>,
     to: &str,
