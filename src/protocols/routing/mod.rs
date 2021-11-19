@@ -12,7 +12,7 @@ use crate::{
     Attachment, AttachmentData, Message, PackEncryptedOptions,
 };
 
-use self::forward::ParsedForward;
+pub use self::forward::ParsedForward;
 
 pub(crate) const FORWARD_MSG_TYPE: &str = "https://didcomm.org/routing/2.0/forward";
 
@@ -141,7 +141,7 @@ fn build_forward_message(
     serde_json::to_string(&msg).kind(ErrorKind::InvalidState, "Unable serialize forward message")
 }
 
-pub(crate) fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
+pub fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
     if msg.type_ != FORWARD_MSG_TYPE {
         return None;
     }
@@ -184,7 +184,7 @@ pub(crate) fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
     })
 }
 
-pub(crate) async fn wrap_in_forward<'dr>(
+pub async fn wrap_in_forward<'dr>(
     msg: &str,
     headers: Option<&Vec<(String, Value)>>,
     to: &str,

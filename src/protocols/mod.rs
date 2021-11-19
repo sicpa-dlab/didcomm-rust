@@ -1,1 +1,1 @@
-pub(crate) mod routing;
+pub mod routing;

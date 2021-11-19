@@ -2,7 +2,7 @@ use serde_json::Value;
 
 use crate::Message;
 
-pub(crate) struct ParsedForward {
+pub struct ParsedForward {
     #[allow(dead_code)]
     pub msg: Message,
     pub next: String,
