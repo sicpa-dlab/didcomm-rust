@@ -289,16 +289,17 @@ mod tests {
         jwe,
         jwk::{FromJwkValue, ToJwkValue},
         jws,
+        message::MessagingServiceMetadata,
         protocols::routing::try_parse_forward,
         secrets::{resolvers::ExampleSecretsResolver, Secret, SecretMaterial},
         test_vectors::{
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
             ALICE_DID, ALICE_DID_DOC, ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS,
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256, ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
-            BOB_DID, BOB_DID_DOC, BOB_DID_DOC_NO_SECRETS, BOB_SECRETS,
-            BOB_SECRET_KEY_AGREEMENT_KEY_P256_1, BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
+            BOB_DID, BOB_DID_COMM_MESSAGING_SERVICE, BOB_DID_DOC, BOB_DID_DOC_NO_SECRETS,
+            BOB_SECRETS, BOB_SECRET_KEY_AGREEMENT_KEY_P256_1, BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
             BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
-            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, CHARLIE_DID, CHARLIE_DID_DOC,
+            BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, BOB_SERVICE, CHARLIE_DID, CHARLIE_DID_DOC,
             CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519, FROM_PRIOR_FULL,
             MEDIATOR1_DID_DOC, MEDIATOR1_SECRETS, MESSAGE_FROM_PRIOR_FULL, MESSAGE_SIMPLE,
             PLAINTEXT_MSG_SIMPLE,
@@ -1496,83 +1497,21 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn pack_encrypted_works_authcrypt_single_mediator() {
-        _pack_encrypted_works_authcrypt_single_mediator(BOB_DID, ALICE_DID).await;
+    async fn pack_encrypted_works_single_mediator() {
+        _pack_encrypted_works_single_mediator(BOB_DID, Some(ALICE_DID)).await;
 
-        _pack_encrypted_works_authcrypt_single_mediator(
+        _pack_encrypted_works_single_mediator(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
-            ALICE_DID,
+            Some(ALICE_DID),
         )
         .await;
 
-        async fn _pack_encrypted_works_authcrypt_single_mediator(to: &str, from: &str) {
-            let did_resolver = ExampleDIDResolver::new(vec![
-                ALICE_DID_DOC.clone(),
-                BOB_DID_DOC.clone(),
-                MEDIATOR1_DID_DOC.clone(),
-            ]);
+        _pack_encrypted_works_single_mediator(BOB_DID, None).await;
 
-            let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
-
-            let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
-
-            let mediator1_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
-
-            let (msg, _) = MESSAGE_SIMPLE
-                .pack_encrypted(
-                    to,
-                    Some(from),
-                    None,
-                    &did_resolver,
-                    &alice_secrets_resolver,
-                    &PackEncryptedOptions::default(),
-                )
-                .await
-                .expect("Unable encrypt");
-
-            let (forward_msg, _) = Message::unpack(
-                &msg,
-                &did_resolver,
-                &mediator1_secrets_resolver,
-                &UnpackOptions::default(),
-            )
-            .await
-            .expect("Unable unpack");
-
-            let parsed_forward = try_parse_forward(&forward_msg).expect("Message is not Forward");
-
-            assert_eq!(&parsed_forward.next, to);
-
-            let forwarded_msg = serde_json::to_string(&parsed_forward.forwarded_msg)
-                .expect("Unable serialize forwarded message");
-
-            let (unpacked_msg, unpack_metadata) = Message::unpack(
-                &forwarded_msg,
-                &did_resolver,
-                &bob_secrets_resolver,
-                &UnpackOptions::default(),
-            )
-            .await
-            .expect("Unable unpack");
-
-            assert_eq!(&unpacked_msg, &*MESSAGE_SIMPLE);
-
-            assert!(unpack_metadata.encrypted);
-            assert!(unpack_metadata.authenticated);
-            assert!(!unpack_metadata.non_repudiation);
-            assert!(!unpack_metadata.anonymous_sender);
-            assert!(!unpack_metadata.re_wrapped_in_forward);
-        }
-    }
-
-    #[tokio::test]
-    async fn pack_encrypted_works_anoncrypt_single_mediator() {
-        _pack_encrypted_works_anoncrypt_single_mediator(BOB_DID).await;
-
-        _pack_encrypted_works_anoncrypt_single_mediator(&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id)
+        _pack_encrypted_works_single_mediator(&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id, None)
             .await;
 
-        async fn _pack_encrypted_works_anoncrypt_single_mediator(to: &str) {
+        async fn _pack_encrypted_works_single_mediator(to: &str, from: Option<&str>) {
             let did_resolver = ExampleDIDResolver::new(vec![
                 ALICE_DID_DOC.clone(),
                 BOB_DID_DOC.clone(),
@@ -1585,10 +1524,10 @@ mod tests {
 
             let mediator1_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
 
-            let (msg, _) = MESSAGE_SIMPLE
+            let (msg, pack_metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
                     to,
-                    None,
+                    from,
                     None,
                     &did_resolver,
                     &alice_secrets_resolver,
@@ -1597,7 +1536,15 @@ mod tests {
                 .await
                 .expect("Unable encrypt");
 
-            let (forward_msg, _) = Message::unpack(
+            assert_eq!(
+                pack_metadata.messaging_service.as_ref(),
+                Some(&MessagingServiceMetadata {
+                    id: BOB_SERVICE.id.clone(),
+                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.service_endpoint.clone(),
+                })
+            );
+
+            let (unpacked_msg_mediator1, unpack_metadata_mediator1) = Message::unpack(
                 &msg,
                 &did_resolver,
                 &mediator1_secrets_resolver,
@@ -1606,11 +1553,19 @@ mod tests {
             .await
             .expect("Unable unpack");
 
-            let parsed_forward = try_parse_forward(&forward_msg).expect("Message is not Forward");
+            let forward =
+                try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
 
-            assert_eq!(&parsed_forward.next, to);
+            assert_eq!(&forward.msg, &unpacked_msg_mediator1);
+            assert_eq!(&forward.next, to);
 
-            let forwarded_msg = serde_json::to_string(&parsed_forward.forwarded_msg)
+            assert!(unpack_metadata_mediator1.encrypted);
+            assert!(!unpack_metadata_mediator1.authenticated);
+            assert!(!unpack_metadata_mediator1.non_repudiation);
+            assert!(unpack_metadata_mediator1.anonymous_sender);
+            assert!(!unpack_metadata_mediator1.re_wrapped_in_forward);
+
+            let forwarded_msg = serde_json::to_string(&forward.forwarded_msg)
                 .expect("Unable serialize forwarded message");
 
             let (unpacked_msg, unpack_metadata) = Message::unpack(
@@ -1625,9 +1580,9 @@ mod tests {
             assert_eq!(&unpacked_msg, &*MESSAGE_SIMPLE);
 
             assert!(unpack_metadata.encrypted);
-            assert!(!unpack_metadata.authenticated);
+            assert_eq!(unpack_metadata.authenticated, from.is_some());
             assert!(!unpack_metadata.non_repudiation);
-            assert!(unpack_metadata.anonymous_sender);
+            assert_eq!(unpack_metadata.anonymous_sender, from.is_none());
             assert!(!unpack_metadata.re_wrapped_in_forward);
         }
     }
