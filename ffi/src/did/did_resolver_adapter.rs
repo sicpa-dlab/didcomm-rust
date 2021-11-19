@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use didcomm::did::{DIDDoc, DIDResolver};
-use didcomm::error::{err_msg, ErrorKind, Result, ResultExt, ToResult};
+use didcomm::error::{err_msg, ErrorKind, Result, ResultExt};
 use futures::channel::oneshot;
 
 use lazy_static::lazy_static;
@@ -24,14 +24,14 @@ impl FFIDIDResolverAdapter {
 }
 
 lazy_static! {
-    static ref CALLBACK_SENDERS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Option<String>>>>>> =
+    static ref CALLBACK_SENDERS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Option<DIDDoc>>>>>> =
         Arc::new(Mutex::new(HashMap::new()));
 }
 
 #[async_trait]
 impl DIDResolver for FFIDIDResolverAdapter {
     async fn resolve(&self, did: &str) -> Result<Option<DIDDoc>> {
-        let (sender, receiver) = oneshot::channel::<Result<Option<String>>>();
+        let (sender, receiver) = oneshot::channel::<Result<Option<DIDDoc>>>();
 
         let cb_id = get_next_id();
         CALLBACK_SENDERS.lock().unwrap().insert(cb_id, sender);
@@ -44,10 +44,7 @@ impl DIDResolver for FFIDIDResolverAdapter {
             .kind(ErrorKind::InvalidState, "can not resolve DID Doc")?
             .kind(ErrorKind::InvalidState, "can not resolve DID Doc")?;
 
-        match res {
-            Some(res) => serde_json::from_str(&res).to_didcomm("can not resolve DID Doc"),
-            None => Ok(None),
-        }
+        Ok(res)
     }
 }
 
@@ -57,7 +54,7 @@ pub struct OnDIDResolverResultAdapter {
 
 impl OnDIDResolverResult for OnDIDResolverResultAdapter {
     // TODO: better error handling
-    fn success(&self, result: Option<String>) {
+    fn success(&self, result: Option<DIDDoc>) {
         CALLBACK_SENDERS
             .lock()
             .unwrap()

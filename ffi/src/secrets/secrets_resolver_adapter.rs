@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use didcomm::error::{err_msg, ErrorKind, Result, ResultExt, ToResult};
+use didcomm::error::{err_msg, ErrorKind, Result, ResultExt};
 use didcomm::secrets::{Secret, SecretsResolver};
 use futures::channel::oneshot;
 
@@ -24,7 +24,7 @@ impl FFISecretsResolverAdapter {
 }
 
 lazy_static! {
-    static ref CALLBACK_SENDERS_GET_SECRETS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Option<String>>>>>> =
+    static ref CALLBACK_SENDERS_GET_SECRETS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Option<Secret>>>>>> =
         Arc::new(Mutex::new(HashMap::new()));
     static ref CALLBACK_SENDERS_FIND_SECRETS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Vec<String>>>>>> =
         Arc::new(Mutex::new(HashMap::new()));
@@ -33,7 +33,7 @@ lazy_static! {
 #[async_trait]
 impl SecretsResolver for FFISecretsResolverAdapter {
     async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>> {
-        let (sender, receiver) = oneshot::channel::<Result<Option<String>>>();
+        let (sender, receiver) = oneshot::channel::<Result<Option<Secret>>>();
 
         let cb_id = get_next_id();
         CALLBACK_SENDERS_GET_SECRETS
@@ -50,10 +50,7 @@ impl SecretsResolver for FFISecretsResolverAdapter {
             .kind(ErrorKind::InvalidState, "can not get secret")?
             .kind(ErrorKind::InvalidState, "can not get secret")?;
 
-        match res {
-            Some(res) => serde_json::from_str(&res).to_didcomm("can not get secret"),
-            None => Ok(None),
-        }
+        Ok(res)
     }
 
     async fn find_secrets<'a>(&self, secret_ids: &'a [&'a str]) -> Result<Vec<&'a str>> {
@@ -87,7 +84,7 @@ pub struct OnGetSecretResultAdapter {
 }
 
 impl OnGetSecretResult for OnGetSecretResultAdapter {
-    fn success(&self, result: Option<String>) {
+    fn success(&self, result: Option<Secret>) {
         CALLBACK_SENDERS_GET_SECRETS
             .lock()
             .unwrap()

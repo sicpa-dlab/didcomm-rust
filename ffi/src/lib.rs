@@ -5,11 +5,15 @@ mod secrets;
 
 pub use common::ErrorCode;
 pub use common::JsonObject;
+pub use did::resolvers::*;
 pub use did::*;
 pub use didcomm::algorithms::*;
+pub use didcomm::did::*;
 pub use didcomm::error::*;
+pub use didcomm::secrets::*;
 pub use didcomm::*;
 pub use message::*;
+pub use secrets::resolvers::*;
 pub use secrets::*;
 
 #[cfg(test)]

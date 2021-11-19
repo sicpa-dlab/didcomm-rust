@@ -59,15 +59,30 @@ pub enum SecretType {
     Ed25519VerificationKey2018,
     Ed25519VerificationKey2020,
     EcdsaSecp256k1VerificationKey2019,
-    Other(String),
+    Other,
 }
 
 /// Represents secret crypto material.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum SecretMaterial {
-    JWK(Value),
-    Multibase(String),
-    Base58(String),
-    Hex(String),
-    Other(Value),
+    JWK {
+        #[serde(flatten)]
+        value: Value,
+    },
+    Multibase {
+        #[serde(flatten)]
+        value: String,
+    },
+    Base58 {
+        #[serde(flatten)]
+        value: String,
+    },
+    Hex {
+        #[serde(flatten)]
+        value: String,
+    },
+    Other {
+        #[serde(flatten)]
+        value: Value,
+    },
 }

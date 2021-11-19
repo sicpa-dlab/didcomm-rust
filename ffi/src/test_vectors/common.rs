@@ -4,11 +4,9 @@ use serde_json::json;
 pub(crate) const ALICE_DID: &str = "did:example:alice";
 pub(crate) const BOB_DID: &str = "did:example:bob";
 
-
 pub(crate) fn simple_message() -> Message {
     _message().finalize()
 }
-
 
 fn _message() -> MessageBuilder {
     Message::build(
@@ -21,4 +19,3 @@ fn _message() -> MessageBuilder {
     .created_time(1516269022)
     .expires_time(1516385931)
 }
-

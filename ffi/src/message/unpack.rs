@@ -43,10 +43,11 @@ mod tests {
     use crate::message::{pack_encrypted, pack_plaintext, pack_signed};
     use crate::secrets::resolvers::ExampleFFISecretsResolver;
     use crate::{did::resolvers::ExampleFFIDIDResolver, message::test_helper::PackCallbackCreator};
-    use didcomm::{Message, PackEncryptedOptions, UnpackOptions};
-    use serde_json::json;
+    use didcomm::{PackEncryptedOptions, UnpackOptions};
 
-    use crate::test_vectors::{ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRETS, simple_message};
+    use crate::test_vectors::{
+        simple_message, ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRETS,
+    };
 
     #[tokio::test]
     async fn test_unpack_plaintext_works() {

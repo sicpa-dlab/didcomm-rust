@@ -32,7 +32,7 @@ impl FFISecretsResolver for ExampleFFISecretsResolver {
             .known_secrets
             .iter()
             .find(|s| s.id == secret_id)
-            .map(|ddoc| serde_json::to_string(ddoc).unwrap());
+            .map(|s| s.clone());
 
         cb.success(secret);
 

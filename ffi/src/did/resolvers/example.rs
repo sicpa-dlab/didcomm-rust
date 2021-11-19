@@ -29,7 +29,7 @@ impl FFIDIDResolver for ExampleFFIDIDResolver {
             .known_dids
             .iter()
             .find(|ddoc| ddoc.did == did)
-            .map(|ddoc| serde_json::to_string(ddoc).unwrap());
+            .map(|ddoc| ddoc.clone());
 
         cb.success(diddoc);
 

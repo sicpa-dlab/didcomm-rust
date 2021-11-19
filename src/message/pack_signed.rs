@@ -270,8 +270,8 @@ mod tests {
             );
 
             let signer_key = match verification_material {
-                VerificationMaterial::JWK(ref jwk) => {
-                    Key::from_jwk_value(jwk).expect("Unable from_jwk_value")
+                VerificationMaterial::JWK { ref value } => {
+                    Key::from_jwk_value(value).expect("Unable from_jwk_value")
                 }
                 _ => panic!("Unexpected verification_material"),
             };
@@ -393,13 +393,15 @@ mod tests {
         secrets.push(Secret {
             id: "did:example:alice#key-d25519-1".into(),
             type_: SecretType::JsonWebKey2020,
-            secret_material: SecretMaterial::JWK(serde_json::json!({
-                "kty": "EC",
-                "d": "sB0bYtpaXyp-h17dDpMx91N3Du1AdN4z1FUq02GbmLw",
-                "crv": "A-256",
-                "x": "L0crjMN1g0Ih4sYAJ_nGoHUck2cloltUpUVQDhF2nHE",
-                "y": "SxYgE7CmEJYi7IDhgK5jI4ZiajO8jPRZDldVhqFpYoo",
-            })),
+            secret_material: SecretMaterial::JWK {
+                value: serde_json::json!({
+                    "kty": "EC",
+                    "d": "sB0bYtpaXyp-h17dDpMx91N3Du1AdN4z1FUq02GbmLw",
+                    "crv": "A-256",
+                    "x": "L0crjMN1g0Ih4sYAJ_nGoHUck2cloltUpUVQDhF2nHE",
+                    "y": "SxYgE7CmEJYi7IDhgK5jI4ZiajO8jPRZDldVhqFpYoo",
+                }),
+            },
         });
         let did_resolver = ExampleDIDResolver::new(vec![did_doc]);
         let secrets_resolver = ExampleSecretsResolver::new(secrets);

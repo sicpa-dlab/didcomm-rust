@@ -1,4 +1,4 @@
-use didcomm::error::ErrorKind;
+use didcomm::{error::ErrorKind, secrets::Secret};
 
 use crate::common::ErrorCode;
 
@@ -8,7 +8,7 @@ pub trait FFISecretsResolver: Sync + Send {
 }
 
 pub trait OnGetSecretResult: Sync + Send {
-    fn success(&self, result: Option<String>);
+    fn success(&self, result: Option<Secret>);
     fn error(&self, err: ErrorKind, msg: String);
 }
 

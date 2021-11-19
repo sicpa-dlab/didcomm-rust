@@ -78,7 +78,7 @@ enum ErrorCode {
 
 
 callback interface OnDIDResolverResult {
-  void success(string? result);
+  void success(DIDDoc? result);
   void error(ErrorKind err, string msg);
 };
 
@@ -86,12 +86,69 @@ callback interface FFIDIDResolver {
   ErrorCode resolve(string did, OnDIDResolverResult cb);
 };
 
+dictionary DIDDoc {
+  string did;
+  sequence<string> key_agreements;
+  sequence<string> authentications;
+  sequence<VerificationMethod> verification_methods;
+  sequence<Service> services;
+};
+
+dictionary VerificationMethod {
+  string id;
+  VerificationMethodType type_;
+  string controller;
+  VerificationMaterial verification_material;
+};
+
+[Enum]
+interface VerificationMaterial {
+  JWK(JsonObject value);
+  Multibase(string value);
+  Base58(string value);
+  Hex(string value);
+  Other(JsonObject value);
+};
+
+enum VerificationMethodType {
+    "JsonWebKey2020",
+    "X25519KeyAgreementKey2019",
+    "Ed25519VerificationKey2018",
+    "EcdsaSecp256k1VerificationKey2019",
+    "X25519KeyAgreementKey2020",
+    "Ed25519VerificationKey2020",
+    "Other",
+};
+
+dictionary Service {
+  string id;
+  ServiceKind kind;
+};
+
+[Enum]
+interface ServiceKind {
+  DIDCommMessaging(DIDCommMessagingService value);
+  Other(JsonObject value);
+};
+
+dictionary DIDCommMessagingService {
+  string service_endpoint;
+  sequence<string> accept;
+  sequence<string> route_keys;
+};
+
+interface ExampleFFIDIDResolver {
+  constructor(sequence<string> known_dids);
+  ErrorCode resolve(string did, OnDIDResolverResult cb);
+};
+
+
 
 
 
 
 callback interface OnGetSecretResult {
-  void success(string? result);
+  void success(Secret? result);
   void error(ErrorKind err, string msg);
 };
 
@@ -104,6 +161,39 @@ callback interface FFISecretsResolver {
   ErrorCode get_secret(string secret_id, OnGetSecretResult cb);
   ErrorCode find_secrets(sequence<string> secret_ids, OnFindSecretsResult cb);
 };
+
+dictionary Secret {
+  string id;
+  SecretType type_;
+  SecretMaterial secret_material;
+};
+
+[Enum]
+interface SecretMaterial {
+  JWK(JsonObject value);
+  Multibase(string value);
+  Base58(string value);
+  Hex(string value);
+  Other(JsonObject value);
+};
+
+enum SecretType {
+    "JsonWebKey2020",
+    "X25519KeyAgreementKey2019",
+    "Ed25519VerificationKey2018",
+    "EcdsaSecp256k1VerificationKey2019",
+    "X25519KeyAgreementKey2020",
+    "Ed25519VerificationKey2020",
+    "Other",
+};
+
+interface ExampleFFISecretsResolver {
+  constructor(sequence<string> known_secrets);
+  ErrorCode get_secret(string secret_id, OnGetSecretResult cb);
+  ErrorCode find_secrets(sequence<string> secret_ids, OnFindSecretsResult cb);
+};
+
+
 
 
 

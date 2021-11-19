@@ -2253,15 +2253,15 @@ mod tests {
             let to_kid = &to_key.id;
 
             let from_key = match from_key.verification_material {
-                VerificationMaterial::JWK(ref jwk) => {
-                    KE::from_jwk_value(jwk).expect("Unable from_jwk_value")
+                VerificationMaterial::JWK { ref value } => {
+                    KE::from_jwk_value(value).expect("Unable from_jwk_value")
                 }
                 _ => panic!("Unexpected verification method"),
             };
 
             let to_key = match to_key.secret_material {
-                SecretMaterial::JWK(ref jwk) => {
-                    KE::from_jwk_value(jwk).expect("Unable from_jwk_value")
+                SecretMaterial::JWK { ref value } => {
+                    KE::from_jwk_value(value).expect("Unable from_jwk_value")
                 }
                 _ => panic!("Unexpected verification method"),
             };
@@ -2320,8 +2320,8 @@ mod tests {
             let to_kid = &to_key.id;
 
             let to_key = match to_key.secret_material {
-                SecretMaterial::JWK(ref jwk) => {
-                    KE::from_jwk_value(jwk).expect("Unable from_jwk_value")
+                SecretMaterial::JWK { ref value } => {
+                    KE::from_jwk_value(value).expect("Unable from_jwk_value")
                 }
                 _ => panic!("Unexpected verification method"),
             };
@@ -2368,8 +2368,8 @@ mod tests {
         let sign_key_id = &sign_key.id;
 
         let sign_key = match sign_key.verification_material {
-            VerificationMaterial::JWK(ref jwk) => {
-                Key::from_jwk_value(jwk).expect("Unable from_jwk_value")
+            VerificationMaterial::JWK { ref value } => {
+                Key::from_jwk_value(value).expect("Unable from_jwk_value")
             }
             _ => panic!("Unexpected verification_material"),
         };
