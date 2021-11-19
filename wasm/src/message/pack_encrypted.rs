@@ -22,9 +22,7 @@ impl Message {
         secrets_resolver: SecretsResolver,
         options: JsValue,
     ) -> Promise {
-        // TODO: FIXME: think on avoid cloning
         let msg = self.0.clone();
-
         let did_resolver = JsDIDResolver(did_resolver);
         let secrets_resolver = JsSecretsResolver(secrets_resolver);
 
@@ -111,7 +109,14 @@ interface Message {
      * - `metadata` additional metadata about this `pack` execution like used keys identifiers,
      *   used messaging service.
      * 
-     * @throws DIDCommError
+     * @throws DIDCommDIDNotResolved
+     * @throws DIDCommDIDUrlNotFound
+     * @throws DIDCommMalformed
+     * @throws DIDCommIoError
+     * @throws DIDCommInvalidState
+     * @throws DIDCommNoCompatibleCrypto
+     * @throws DIDCommUnsupported
+     * @throws DIDCommIllegalArgument
      */
     pack_encrypted(
         to: string, 

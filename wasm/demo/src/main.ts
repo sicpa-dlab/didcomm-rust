@@ -23,7 +23,7 @@ class ExampleDIDResolver implements DIDResolver {
   }
 
   async resolve(did: String): Promise<DIDDoc | null> {
-    return this.known_dids.find((ddoc) => ddoc.did == did);
+    return this.known_dids.find((ddoc) => ddoc.did == did) || null;
   }
 }
 
@@ -34,11 +34,11 @@ class ExampleSecretsResolver implements SecretsResolver {
     this.known_secrets = known_secrets;
   }
 
-  async get_secret(secret_id: String): Promise<Secret | null> {
-    return this.known_secrets.find((secret) => secret.id == secret_id);
+  async get_secret(secret_id: string): Promise<Secret | null> {
+    return this.known_secrets.find((secret) => secret.id == secret_id) || null;
   }
 
-  async find_secrets(secret_ids: Array<String>): Promise<Array<String>> {
+  async find_secrets(secret_ids: Array<string>): Promise<Array<string>> {
     let secrets = secret_ids.filter((id) =>
       this.known_secrets.find((secret) => secret.id == id)
     );

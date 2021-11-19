@@ -26,8 +26,7 @@ async fn main() {
 
     let secrets_resolver = ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
 
-    // --- Build from_prior header
-
+    // --- Building from_prior header
     let from_prior = FromPrior::build(CHARLIE_DID.into(), ALICE_DID.into())
         .aud("123".into())
         .exp(1234)
@@ -46,8 +45,7 @@ async fn main() {
     println!("Packed from_prior is\n{}\n", from_prior);
     println!("from_prior issuer kid is\n{}\n", issuer_kid);
 
-    // --- Build message from ALICE (ex-CHARLIE) to BOB ---
-
+    // --- Building message from ALICE (ex-CHARLIE) to BOB ---
     let msg = Message::build(
         "1234567890".to_owned(),
         "http://example.com/protocols/lets_do_lunch/1.0/proposal".to_owned(),
@@ -63,7 +61,6 @@ async fn main() {
     println!("Original message is\n{:?}\n", msg);
 
     // --- Packing encrypted and authenticated message ---
-
     let (msg, metadata) = msg
         .pack_encrypted(
             BOB_DID,
@@ -81,12 +78,10 @@ async fn main() {
 
     println!("Encryption metadata is\n{:?}\n", metadata);
 
-    // --- Send message ---
-
+    // --- Sending message ---
     println!("Sending packed message\n{}\n", msg);
 
-    // // --- Unpacking message ---
-
+    // --- Unpacking message ---
     let did_resolver = ExampleDIDResolver::new(vec![
         ALICE_DID_DOC.clone(),
         BOB_DID_DOC.clone(),
@@ -104,8 +99,8 @@ async fn main() {
         },
     )
     .await
-    .expect("Ubable unpack");
+    .expect("Unable unpack");
 
-    println!("Unpacked receved message is\n{:?}\n", msg);
+    println!("Unpacked received message is\n{:?}\n", msg);
     println!("Unpack metadata is\n{:?}\n", metadata);
 }
