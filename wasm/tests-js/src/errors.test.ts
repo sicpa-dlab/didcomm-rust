@@ -20,7 +20,7 @@ test.each([
     })(),
     exp_err:
       "Malformed: Unable resolve recipient did: Unable resolve did: Some Malformed error",
-    case: "Malformed raised",
+    case: "Malformed",
   },
   {
     err: (() => {
@@ -30,7 +30,7 @@ test.each([
     })(),
     exp_err:
       "IO error: Unable resolve recipient did: Unable resolve did: Some IoError error",
-    case: "IoError raised",
+    case: "IoError",
   },
   {
     err: (() => {
@@ -40,7 +40,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable resolve recipient did: Unable resolve did: Some InvalidState error",
-    case: "InvalidState raised",
+    case: "InvalidState",
   },
   {
     err: (() => {
@@ -48,7 +48,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable resolve recipient did: Unable resolve did: Unknown error",
-    case: "Error raised",
+    case: "Error",
   },
   {
     err: (() => {
@@ -56,7 +56,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable resolve recipient did: Unable resolve did: String error",
-    case: "String raised",
+    case: "String",
   },
   {
     err: (() => {
@@ -64,7 +64,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable resolve recipient did: Unable resolve did: JsValue(123)",
-    case: "Unusual raised",
+    case: "Unusual",
   },
 ])(
   "DIDReslver.resolve exception is propogated for $case",
@@ -104,7 +104,7 @@ test.each([
     })(),
     exp_err:
       "Malformed: Unable resolve sender secret: Unable get secret: Some Malformed error",
-    case: "Malformed raised",
+    case: "Malformed",
   },
   {
     err: (() => {
@@ -114,7 +114,7 @@ test.each([
     })(),
     exp_err:
       "IO error: Unable resolve sender secret: Unable get secret: Some IoError error",
-    case: "IoError raised",
+    case: "IoError",
   },
   {
     err: (() => {
@@ -124,7 +124,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable resolve sender secret: Unable get secret: Some InvalidState error",
-    case: "InvalidState raised",
+    case: "InvalidState",
   },
   {
     err: (() => {
@@ -132,7 +132,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable resolve sender secret: Unable get secret: Unknown error",
-    case: "Error raised",
+    case: "Error",
   },
   {
     err: (() => {
@@ -140,7 +140,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable resolve sender secret: Unable get secret: String error",
-    case: "String raised",
+    case: "String",
   },
   {
     err: (() => {
@@ -148,7 +148,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable resolve sender secret: Unable get secret: JsValue(123)",
-    case: "Unusual raised",
+    case: "Unusual",
   },
 ])(
   "Secrets.get_secret exception is propogated for $case",
@@ -189,7 +189,7 @@ test.each([
     })(),
     exp_err:
       "Malformed: Unable find secrets: Unable find secrets: Some Malformed error",
-    case: "Malformed raised",
+    case: "Malformed",
   },
   {
     err: (() => {
@@ -199,7 +199,7 @@ test.each([
     })(),
     exp_err:
       "IO error: Unable find secrets: Unable find secrets: Some IoError error",
-    case: "IoError raised",
+    case: "IoError",
   },
   {
     err: (() => {
@@ -209,7 +209,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable find secrets: Unable find secrets: Some InvalidState error",
-    case: "InvalidState raised",
+    case: "InvalidState",
   },
   {
     err: (() => {
@@ -217,7 +217,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable find secrets: Unable find secrets: Unknown error",
-    case: "Error raised",
+    case: "Error",
   },
   {
     err: (() => {
@@ -225,7 +225,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable find secrets: Unable find secrets: String error",
-    case: "String raised",
+    case: "String",
   },
   {
     err: (() => {
@@ -233,7 +233,7 @@ test.each([
     })(),
     exp_err:
       "Invalid state: Unable find secrets: Unable find secrets: JsValue(123)",
-    case: "Unusual raised",
+    case: "Unusual",
   },
 ])(
   "Secrets.find_secrets exception is propogated for $case",
