@@ -26,7 +26,7 @@ export const CHARLIE_SECRET_AUTH_KEY_ED25519: Secret = {
   },
 };
 
-export const CHARLIE_SECRETS: Array<Secret> = [
+export const CHARLIE_SECRETS: Secret[] = [
   CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519,
   CHARLIE_SECRET_AUTH_KEY_ED25519,
 ];

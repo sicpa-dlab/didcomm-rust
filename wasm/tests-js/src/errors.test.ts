@@ -14,7 +14,7 @@ import {
 test.each([
   {
     err: (() => {
-      let e = Error("Some Malformed error");
+      const e = Error("Some Malformed error");
       e.name = "DIDCommMalformed";
       return e;
     })(),
@@ -24,7 +24,7 @@ test.each([
   },
   {
     err: (() => {
-      let e = Error("Some IoError error");
+      const e = Error("Some IoError error");
       e.name = "DIDCommIoError";
       return e;
     })(),
@@ -34,7 +34,7 @@ test.each([
   },
   {
     err: (() => {
-      let e = Error("Some InvalidState error");
+      const e = Error("Some InvalidState error");
       e.name = "DIDCommInvalidState";
       return e;
     })(),
@@ -69,7 +69,7 @@ test.each([
 ])(
   "DIDReslver.resolve exception is propogated for $case",
   async ({ err, exp_err }) => {
-    const did_resolver = new MockDIDResolver(
+    const didResolver = new MockDIDResolver(
       [
         () => {
           throw err;
@@ -78,14 +78,14 @@ test.each([
       new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC])
     );
 
-    const secrets_resolver = new ExampleSecretsResolver(ALICE_SECRETS);
+    const secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
 
     const res = MESSAGE_SIMPLE.pack_encrypted(
       BOB_DID,
       ALICE_DID,
       null,
-      did_resolver,
-      secrets_resolver,
+      didResolver,
+      secretsResolver,
       {
         forward: false,
       }
@@ -98,7 +98,7 @@ test.each([
 test.each([
   {
     err: (() => {
-      let e = Error("Some Malformed error");
+      const e = Error("Some Malformed error");
       e.name = "DIDCommMalformed";
       return e;
     })(),
@@ -108,7 +108,7 @@ test.each([
   },
   {
     err: (() => {
-      let e = Error("Some IoError error");
+      const e = Error("Some IoError error");
       e.name = "DIDCommIoError";
       return e;
     })(),
@@ -118,7 +118,7 @@ test.each([
   },
   {
     err: (() => {
-      let e = Error("Some InvalidState error");
+      const e = Error("Some InvalidState error");
       e.name = "DIDCommInvalidState";
       return e;
     })(),
@@ -153,9 +153,9 @@ test.each([
 ])(
   "Secrets.get_secret exception is propogated for $case",
   async ({ err, exp_err }) => {
-    const did_resolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
+    const didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
 
-    const secrets_resolver = new MockSecretsResolver(
+    const secretsResolver = new MockSecretsResolver(
       [
         () => {
           throw err;
@@ -169,8 +169,8 @@ test.each([
       BOB_DID,
       ALICE_DID,
       null,
-      did_resolver,
-      secrets_resolver,
+      didResolver,
+      secretsResolver,
       {
         forward: false,
       }
@@ -183,7 +183,7 @@ test.each([
 test.each([
   {
     err: (() => {
-      let e = Error("Some Malformed error");
+      const e = Error("Some Malformed error");
       e.name = "DIDCommMalformed";
       return e;
     })(),
@@ -193,7 +193,7 @@ test.each([
   },
   {
     err: (() => {
-      let e = Error("Some IoError error");
+      const e = Error("Some IoError error");
       e.name = "DIDCommIoError";
       return e;
     })(),
@@ -203,7 +203,7 @@ test.each([
   },
   {
     err: (() => {
-      let e = Error("Some InvalidState error");
+      const e = Error("Some InvalidState error");
       e.name = "DIDCommInvalidState";
       return e;
     })(),
@@ -238,9 +238,9 @@ test.each([
 ])(
   "Secrets.find_secrets exception is propogated for $case",
   async ({ err, exp_err }) => {
-    const did_resolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
+    const didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
 
-    const secrets_resolver = new MockSecretsResolver(
+    const secretsResolver = new MockSecretsResolver(
       [],
       [
         () => {
@@ -254,8 +254,8 @@ test.each([
       BOB_DID,
       ALICE_DID,
       null,
-      did_resolver,
-      secrets_resolver,
+      didResolver,
+      secretsResolver,
       {
         forward: false,
       }

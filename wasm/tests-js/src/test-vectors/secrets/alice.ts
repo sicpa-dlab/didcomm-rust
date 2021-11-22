@@ -1,6 +1,6 @@
 import { Secret } from "didcomm-js";
 
-export const ALICE_SECRETS: Array<Secret> = [
+export const ALICE_SECRETS: Secret[] = [
   {
     id: "did:example:alice#key-1",
     type: "JsonWebKey2020",

@@ -1,6 +1,6 @@
 import { Secret } from "didcomm-js";
 
-export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Array<Secret> = [
+export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
   {
     id: "did:example:charlie#key-x25519-1",
     type: "JsonWebKey2020",

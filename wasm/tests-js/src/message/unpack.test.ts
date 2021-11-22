@@ -19,8 +19,8 @@ test.each([
     case: "Minimal",
     msg: PLAINTEXT_MSG_MINIMAL,
     options: {},
-    exp_msg: IMESSAGE_MINIMAL,
-    exp_metadata: {
+    expMsg: IMESSAGE_MINIMAL,
+    expMetadata: {
       anonymous_sender: false,
       authenticated: false,
       enc_alg_anon: null,
@@ -41,8 +41,8 @@ test.each([
     case: "Simple",
     msg: PLAINTEXT_MSG_SIMPLE,
     options: {},
-    exp_msg: IMESSAGE_SIMPLE,
-    exp_metadata: {
+    expMsg: IMESSAGE_SIMPLE,
+    expMetadata: {
       anonymous_sender: false,
       authenticated: false,
       enc_alg_anon: null,
@@ -63,8 +63,8 @@ test.each([
     case: "FromPrior",
     msg: PLAINTEXT_FROM_PRIOR,
     options: {},
-    exp_msg: IMESSAGE_FROM_PRIOR,
-    exp_metadata: {
+    expMsg: IMESSAGE_FROM_PRIOR,
+    expMetadata: {
       anonymous_sender: false,
       authenticated: false,
       enc_alg_anon: null,
@@ -91,23 +91,23 @@ test.each([
   },
 ])(
   "Message.unpack works for $case",
-  async ({ msg, options, exp_msg, exp_metadata }) => {
-    const did_resolver = new ExampleDIDResolver([
+  async ({ msg, options, expMsg, expMetadata }) => {
+    const didResolver = new ExampleDIDResolver([
       ALICE_DID_DOC,
       BOB_DID_DOC,
       CHARLIE_DID_DOC,
     ]);
 
-    const secrets_resolver = new ExampleSecretsResolver(BOB_SECRETS);
+    const secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
 
     const [unpacked, metadata] = await Message.unpack(
       msg,
-      did_resolver,
-      secrets_resolver,
+      didResolver,
+      secretsResolver,
       options
     );
 
-    expect(unpacked.as_value()).toMatchObject(exp_msg);
-    expect(metadata).toEqual(exp_metadata);
+    expect(unpacked.as_value()).toMatchObject(expMsg);
+    expect(metadata).toEqual(expMetadata);
   }
 );
