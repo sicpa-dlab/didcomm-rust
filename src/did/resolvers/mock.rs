@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use std::cell::RefCell;
 use std::sync::Mutex;
 
