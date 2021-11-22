@@ -69,3 +69,6 @@ features = ['js']
 [dev-dependencies.criterion]
 version = '0.3'
 features = ['async_futures']
+
+[features]
+uniffi = []

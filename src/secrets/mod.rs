@@ -10,8 +10,38 @@ use crate::error::Result;
 
 /// Interface for secrets resolver.
 /// Resolves secrets such as private keys to be used for signing and encryption.
+#[cfg(feature = "uniffi")]
 #[async_trait]
 pub trait SecretsResolver: Sync {
+    /// Finds secret (usually private key) identified by the given key ID.
+    ///
+    /// # Parameters
+    /// - `secret_id` the ID (in form of DID URL) identifying a secret
+    ///
+    /// # Returns
+    /// A secret (usually private key) or None of there is no secret for the given ID
+    ///
+    /// # Errors
+    /// - IOError
+    /// - InvalidState
+    async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>>;
+
+    /// Find all secrets that have one of the given IDs.
+    /// Return secrets only for key IDs for which a secret is present.
+    ///
+    /// # Parameters
+    /// - `secret_ids` the IDs find secrets for
+    ///
+    /// # Returns
+    /// possible empty list of all secrets that have one of the given IDs.
+    async fn find_secrets<'a>(&self, secret_ids: &'a [&'a str]) -> Result<Vec<&'a str>>;
+}
+
+/// Interface for secrets resolver.
+/// Resolves secrets such as private keys to be used for signing and encryption.
+#[cfg(not(feature = "uniffi"))]
+#[async_trait(?Send)]
+pub trait SecretsResolver {
     /// Finds secret (usually private key) identified by the given key ID.
     ///
     /// # Parameters
