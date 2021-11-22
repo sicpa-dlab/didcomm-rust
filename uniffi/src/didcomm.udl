@@ -158,8 +158,8 @@ callback interface OnFindSecretsResult {
 };
 
 callback interface FFISecretsResolver {
-  ErrorCode get_secret(string secret_id, OnGetSecretResult cb);
-  ErrorCode find_secrets(sequence<string> secret_ids, OnFindSecretsResult cb);
+  ErrorCode get_secret(string secretId, OnGetSecretResult cb);
+  ErrorCode find_secrets(sequence<string> secretIds, OnFindSecretsResult cb);
 };
 
 dictionary Secret {
