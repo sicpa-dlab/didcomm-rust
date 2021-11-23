@@ -1,5 +1,5 @@
 [Wrapped]
-typedef string JsonObject;
+typedef string JsonValue;
 
 // 1. MESSAGE
 
@@ -7,12 +7,12 @@ dictionary Message {
   string id;
   string typ;
   string type_;
-  JsonObject body;
+  JsonValue body;
   string? from;
   sequence<string>? to;
   string? thid;
   string? pthid;
-  record<DOMString, JsonObject> extra_headers;
+  record<DOMString, JsonValue> extra_headers;
   u64? created_time;
   u64? expires_time;
   string? from_prior;
@@ -44,7 +44,7 @@ dictionary Base64AttachmentData {
 };
 
 dictionary JsonAttachmentData {
-  JsonObject json;
+  JsonValue json;
   string? jws;
 };
 
@@ -111,11 +111,11 @@ dictionary VerificationMethod {
 
 [Enum]
 interface VerificationMaterial {
-  JWK(JsonObject value);
+  JWK(JsonValue value);
   Multibase(string value);
   Base58(string value);
   Hex(string value);
-  Other(JsonObject value);
+  Other(JsonValue value);
 };
 
 enum VerificationMethodType {
@@ -136,7 +136,7 @@ dictionary Service {
 [Enum]
 interface ServiceKind {
   DIDCommMessaging(DIDCommMessagingService value);
-  Other(JsonObject value);
+  Other(JsonValue value);
 };
 
 dictionary DIDCommMessagingService {
@@ -188,11 +188,11 @@ dictionary Secret {
 
 [Enum]
 interface SecretMaterial {
-  JWK(JsonObject value);
+  JWK(JsonValue value);
   Multibase(string value);
   Base58(string value);
   Hex(string value);
-  Other(JsonObject value);
+  Other(JsonValue value);
 };
 
 enum SecretType {
@@ -259,7 +259,7 @@ enum AnonCryptAlg {
 dictionary PackEncryptedOptions {
   boolean protect_sender;
   boolean forward;
-  record<DOMString, JsonObject>? forward_headers;
+  record<DOMString, JsonValue>? forward_headers;
   string? messaging_service;
   AuthCryptAlg enc_alg_auth;
   AnonCryptAlg enc_alg_anon;

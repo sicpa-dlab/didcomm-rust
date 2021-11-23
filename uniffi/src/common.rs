@@ -27,11 +27,11 @@ pub fn get_next_id() -> i32 {
     (IDS_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32
 }
 
-// We use `JsonObject` in our UDL. It moves to and from Uniffi bindings via a string.
-pub type JsonObject = serde_json::Value;
+// We use `JsonValue` in our UDL. It moves to and from Uniffi bindings via a string.
+pub type JsonValue = serde_json::Value;
 
 // We must implement the UniffiCustomTypeWrapper trait.
-impl UniffiCustomTypeWrapper for JsonObject {
+impl UniffiCustomTypeWrapper for JsonValue {
     type Wrapped = String;
 
     fn wrap(val: Self::Wrapped) -> uniffi::Result<Self> {

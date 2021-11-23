@@ -4,7 +4,7 @@ mod message;
 mod secrets;
 
 pub use common::ErrorCode;
-pub use common::JsonObject;
+pub use common::JsonValue;
 pub use did::resolvers::*;
 pub use did::*;
 pub use didcomm::algorithms::*;
