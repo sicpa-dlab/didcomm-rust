@@ -551,23 +551,48 @@ mod test {
 
     #[tokio::test]
     async fn unpack_works_unwrap_re_wrapping_forward_on() {
-        _unpack_works_unwrap_re_wrapping_forward_on(BOB_DID, Some(ALICE_DID)).await;
+        _unpack_works_unwrap_re_wrapping_forward_on(BOB_DID, None, None).await;
 
-        _unpack_works_unwrap_re_wrapping_forward_on(
-            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
-            Some(ALICE_DID),
-        )
-        .await;
+        _unpack_works_unwrap_re_wrapping_forward_on(BOB_DID, None, Some(ALICE_DID)).await;
 
-        _unpack_works_unwrap_re_wrapping_forward_on(BOB_DID, None).await;
+        _unpack_works_unwrap_re_wrapping_forward_on(BOB_DID, Some(ALICE_DID), None).await;
+
+        _unpack_works_unwrap_re_wrapping_forward_on(BOB_DID, Some(ALICE_DID), Some(ALICE_DID))
+            .await;
 
         _unpack_works_unwrap_re_wrapping_forward_on(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             None,
+            None,
         )
         .await;
 
-        async fn _unpack_works_unwrap_re_wrapping_forward_on(to: &str, from: Option<&str>) {
+        _unpack_works_unwrap_re_wrapping_forward_on(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            None,
+            Some(ALICE_DID),
+        )
+        .await;
+
+        _unpack_works_unwrap_re_wrapping_forward_on(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            Some(ALICE_DID),
+            None,
+        )
+        .await;
+
+        _unpack_works_unwrap_re_wrapping_forward_on(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            Some(ALICE_DID),
+            Some(ALICE_DID),
+        )
+        .await;
+
+        async fn _unpack_works_unwrap_re_wrapping_forward_on(
+            to: &str,
+            from: Option<&str>,
+            sign_by: Option<&str>,
+        ) {
             let did_resolver = ExampleDIDResolver::new(vec![
                 ALICE_DID_DOC.clone(),
                 BOB_DID_DOC.clone(),
@@ -584,7 +609,7 @@ mod test {
                 .pack_encrypted(
                     to,
                     from,
-                    None,
+                    sign_by,
                     &did_resolver,
                     &alice_secrets_resolver,
                     &PackEncryptedOptions::default(),
@@ -651,23 +676,48 @@ mod test {
 
     #[tokio::test]
     async fn unpack_works_unwrap_re_wrapping_forward_off() {
-        _unpack_works_unwrap_re_wrapping_forward_off(BOB_DID, Some(ALICE_DID)).await;
+        _unpack_works_unwrap_re_wrapping_forward_off(BOB_DID, None, None).await;
 
-        _unpack_works_unwrap_re_wrapping_forward_off(
-            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
-            Some(ALICE_DID),
-        )
-        .await;
+        _unpack_works_unwrap_re_wrapping_forward_off(BOB_DID, None, Some(ALICE_DID)).await;
 
-        _unpack_works_unwrap_re_wrapping_forward_off(BOB_DID, None).await;
+        _unpack_works_unwrap_re_wrapping_forward_off(BOB_DID, Some(ALICE_DID), None).await;
+
+        _unpack_works_unwrap_re_wrapping_forward_off(BOB_DID, Some(ALICE_DID), Some(ALICE_DID))
+            .await;
 
         _unpack_works_unwrap_re_wrapping_forward_off(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             None,
+            None,
         )
         .await;
 
-        async fn _unpack_works_unwrap_re_wrapping_forward_off(to: &str, from: Option<&str>) {
+        _unpack_works_unwrap_re_wrapping_forward_off(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            None,
+            Some(ALICE_DID),
+        )
+        .await;
+
+        _unpack_works_unwrap_re_wrapping_forward_off(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            Some(ALICE_DID),
+            None,
+        )
+        .await;
+
+        _unpack_works_unwrap_re_wrapping_forward_off(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            Some(ALICE_DID),
+            Some(ALICE_DID),
+        )
+        .await;
+
+        async fn _unpack_works_unwrap_re_wrapping_forward_off(
+            to: &str,
+            from: Option<&str>,
+            sign_by: Option<&str>,
+        ) {
             let did_resolver = ExampleDIDResolver::new(vec![
                 ALICE_DID_DOC.clone(),
                 BOB_DID_DOC.clone(),
@@ -684,7 +734,7 @@ mod test {
                 .pack_encrypted(
                     to,
                     from,
-                    None,
+                    sign_by,
                     &did_resolver,
                     &alice_secrets_resolver,
                     &PackEncryptedOptions::default(),
@@ -781,8 +831,11 @@ mod test {
             assert_eq!(&unpacked_twice_msg, &*MESSAGE_SIMPLE);
 
             assert!(unpack_twice_metadata.encrypted);
-            assert_eq!(unpack_twice_metadata.authenticated, from.is_some());
-            assert!(!unpack_twice_metadata.non_repudiation);
+            assert_eq!(
+                unpack_twice_metadata.authenticated,
+                from.is_some() || sign_by.is_some()
+            );
+            assert_eq!(unpack_twice_metadata.non_repudiation, sign_by.is_some());
             assert_eq!(unpack_twice_metadata.anonymous_sender, from.is_none());
             assert!(!unpack_twice_metadata.re_wrapped_in_forward);
         }
