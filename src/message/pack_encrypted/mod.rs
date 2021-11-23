@@ -265,6 +265,8 @@ pub struct MessagingServiceMetadata {
 
 #[cfg(test)]
 mod tests {
+    use std::{collections::HashMap, iter::FromIterator};
+
     use askar_crypto::{
         alg::{
             aes::{A256CbcHs512, A256Gcm, A256Kw, AesKey},
@@ -1747,7 +1749,13 @@ mod tests {
                     sign_by,
                     &did_resolver,
                     &alice_secrets_resolver,
-                    &PackEncryptedOptions::default(),
+                    &PackEncryptedOptions {
+                        forward_headers: Some(vec![
+                            ("example-header-1".into(), json!("example-header-1-value")),
+                            ("example-header-2".into(), json!("example-header-2-value")),
+                        ]),
+                        ..PackEncryptedOptions::default()
+                    },
                 )
                 .await
                 .expect("Unable encrypt");
@@ -1804,6 +1812,15 @@ mod tests {
                 try_parse_forward(&unpacked_msg_mediator3).expect("Message is not Forward");
 
             assert_eq!(&forward_at_mediator3.msg, &unpacked_msg_mediator3);
+
+            assert_eq!(
+                &forward_at_mediator3.msg.extra_headers,
+                &HashMap::from_iter([
+                    ("example-header-1".into(), json!("example-header-1-value")),
+                    ("example-header-2".into(), json!("example-header-2-value")),
+                ])
+            );
+
             assert_eq!(
                 &forward_at_mediator3.next,
                 "did:example:mediator2#key-x25519-1"
@@ -1832,6 +1849,15 @@ mod tests {
                 try_parse_forward(&unpacked_msg_mediator2).expect("Message is not Forward");
 
             assert_eq!(&forward_at_mediator2.msg, &unpacked_msg_mediator2);
+
+            assert_eq!(
+                &forward_at_mediator2.msg.extra_headers,
+                &HashMap::from_iter([
+                    ("example-header-1".into(), json!("example-header-1-value")),
+                    ("example-header-2".into(), json!("example-header-2-value")),
+                ])
+            );
+
             assert_eq!(
                 &forward_at_mediator2.next,
                 "did:example:mediator1#key-x25519-1"
@@ -1860,6 +1886,15 @@ mod tests {
                 try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
 
             assert_eq!(&forward_at_mediator1.msg, &unpacked_msg_mediator1);
+
+            assert_eq!(
+                &forward_at_mediator1.msg.extra_headers,
+                &HashMap::from_iter([
+                    ("example-header-1".into(), json!("example-header-1-value")),
+                    ("example-header-2".into(), json!("example-header-2-value")),
+                ])
+            );
+
             assert_eq!(&forward_at_mediator1.next, to);
 
             assert!(unpack_metadata_mediator1.encrypted);
@@ -1964,7 +1999,10 @@ mod tests {
                     sign_by,
                     &did_resolver,
                     &alice_secrets_resolver,
-                    &PackEncryptedOptions::default(),
+                    &PackEncryptedOptions {
+                        messaging_service: Some(BOB_SERVICE.id.clone()),
+                        ..PackEncryptedOptions::default()
+                    },
                 )
                 .await
                 .expect("Unable encrypt");
