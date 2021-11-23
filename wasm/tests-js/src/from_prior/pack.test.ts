@@ -1,3 +1,4 @@
+import { FromPrior } from "didcomm-js";
 import {
   ALICE_DID_DOC,
   CHARLIE_DID_DOC,
@@ -29,12 +30,13 @@ test.each([
     case: "Explicit key",
   },
 ])(
-  "Message.pack-plaintext works for $case",
+  "FromPrior.pack works for $case",
   async ({ fromPrior, issuerKid, expKid }) => {
     const didResolver = new ExampleDIDResolver([
       ALICE_DID_DOC,
       CHARLIE_DID_DOC,
     ]);
+
     const secretsResolver = new ExampleSecretsResolver(CHARLIE_SECRETS);
 
     const [packed, kid] = await fromPrior.pack(
@@ -43,7 +45,10 @@ test.each([
       secretsResolver
     );
 
-    expect(typeof packed).toBe("string");
-    expect(kid).toEqual(expKid);
+    expect(typeof packed).toStrictEqual("string");
+    expect(kid).toStrictEqual(expKid);
+
+    const [unpacked, _] = await FromPrior.unpack(packed, didResolver);
+    expect(unpacked.as_value()).toStrictEqual(fromPrior.as_value());
   }
 );
