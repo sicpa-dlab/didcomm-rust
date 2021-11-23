@@ -224,16 +224,3 @@ type MessagingServiceMetadata = {
     service_endpoint: string,
 }
 "#;
-
-#[wasm_bindgen(typescript_custom_section)]
-const FROM_PRIOR_TS: &'static str = r#"
-type FromPrior = {
-    iss: string,
-    sub: string,
-    aud?: string,
-    exp?: number,
-    nbf?: number,
-    iat?: number,
-    jti?: string,
-}
-"#;

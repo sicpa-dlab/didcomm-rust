@@ -1,55 +1,55 @@
 import { Secret, SecretsResolver } from "didcomm-js";
 
 export class ExampleSecretsResolver implements SecretsResolver {
-  known_secrets: Secret[];
+  knownSecrets: Secret[];
 
-  constructor(known_secrets: Secret[]) {
-    this.known_secrets = known_secrets;
+  constructor(knownSecrets: Secret[]) {
+    this.knownSecrets = knownSecrets;
   }
 
-  async get_secret(secret_id: string): Promise<Secret | null> {
-    return this.known_secrets.find((secret) => secret.id == secret_id);
+  async get_secret(secretId: string): Promise<Secret | null> {
+    return this.knownSecrets.find((secret) => secret.id === secretId);
   }
 
-  async find_secrets(secret_ids: string[]): Promise<string[]> {
-    let secrets = secret_ids.filter((id) =>
-      this.known_secrets.find((secret) => secret.id == id)
+  async find_secrets(secretIds: string[]): Promise<string[]> {
+    return secretIds.filter((id) =>
+      this.knownSecrets.find((secret) => secret.id === id)
     );
-    return secrets;
   }
 }
 
-type MockGet = (secret_id: string) => Secret | null;
-type MockFind = (secret_ids: string[]) => string[];
+type MockGet = (secretId: string) => Secret | null;
+type MockFind = (secretIds: string[]) => string[];
 
+/* tslint:disable:max-classes-per-file */
 export class MockSecretsResolver implements SecretsResolver {
-  get_handlers: MockGet[];
-  find_handlers: MockFind[];
+  getHandlers: MockGet[];
+  findHandlers: MockFind[];
   fallback: SecretsResolver;
 
   constructor(
-    get_handlers: MockGet[],
-    find_handlers: MockFind[],
+    getHandlers: MockGet[],
+    findHandlers: MockFind[],
     fallback: SecretsResolver
   ) {
-    this.get_handlers = get_handlers;
-    this.find_handlers = find_handlers;
+    this.getHandlers = getHandlers;
+    this.findHandlers = findHandlers;
     this.fallback = fallback;
   }
 
-  async get_secret(secret_id: string): Promise<Secret | null> {
-    let handler = this.get_handlers.pop();
+  async get_secret(secretId: string): Promise<Secret | null> {
+    const handler = this.getHandlers.pop();
 
     return handler
-      ? handler(secret_id)
-      : await this.fallback.get_secret(secret_id);
+      ? handler(secretId)
+      : await this.fallback.get_secret(secretId);
   }
 
-  async find_secrets(secret_ids: string[]): Promise<string[]> {
-    let handler = this.find_handlers.pop();
+  async find_secrets(secretIds: string[]): Promise<string[]> {
+    const handler = this.findHandlers.pop();
 
     return handler
-      ? handler(secret_ids)
-      : await this.fallback.find_secrets(secret_ids);
+      ? handler(secretIds)
+      : await this.fallback.find_secrets(secretIds);
   }
 }

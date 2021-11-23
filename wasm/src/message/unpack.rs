@@ -195,6 +195,6 @@ type UnpackMetadata = {
     /**
      * If plaintext contains from_prior header, its unpacked value is returned
      */
-    from_prior?: FromPrior,
+    from_prior?: IFromPrior,
 }
 "#;

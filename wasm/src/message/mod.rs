@@ -1,14 +1,15 @@
+mod from_prior;
 mod pack_encrypted;
 mod pack_plaintext;
 mod pack_signed;
 mod unpack;
 
-use std::rc::Rc;
-
 use didcomm::error::{ErrorKind, ResultExt};
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 
 use crate::{error::JsResult, utils::set_panic_hook};
+pub use from_prior::FromPrior;
 
 #[wasm_bindgen]
 /// Wrapper for plain message. Provides helpers for message building and packing/unpacking.
