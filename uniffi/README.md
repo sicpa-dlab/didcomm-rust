@@ -24,7 +24,7 @@ cargo install uniffi_bindgen --path uniffi-rs/uniffi_bindgen/
 
 3. Build:
 ```
-cargo build
+cargo build --release
 ```
 
 4. Generate Swift binding:

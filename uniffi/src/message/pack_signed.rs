@@ -39,43 +39,104 @@ pub fn pack_signed(
 
 #[cfg(test)]
 mod tests {
-    use crate::did::resolvers::ExampleFFIDIDResolver;
-    use crate::message::pack_signed::pack_signed;
-    use crate::message::test_helper::{get_pack_result, PackCallbackCreator};
-    use crate::secrets::resolvers::ExampleFFISecretsResolver;
+    use didcomm::error::ErrorKind;
     use didcomm::Message;
     use serde_json::json;
 
-    use crate::test_vectors::{ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC};
+    use crate::message::pack_signed::pack_signed;
+    use crate::message::test_helper::{
+        create_did_resolver, create_pack_callback, create_secrets_resolver, get_pack_error,
+        get_pack_result,
+    };
+
+    use crate::test_vectors::{simple_message, ALICE_DID};
 
     #[tokio::test]
-    async fn test_pack_signed_works() {
-        let msg = Message::build(
-            "example-1".to_owned(),
-            "example/v1".to_owned(),
-            json!("example-body"),
-        )
-        .to(BOB_DID.to_owned())
-        .from(ALICE_DID.to_owned())
-        .finalize();
-
-        let did_resolver = Box::new(ExampleFFIDIDResolver::new(vec![
-            ALICE_DID_DOC.clone(),
-            BOB_DID_DOC.clone(),
-        ]));
-        let secrets_resolver = Box::new(ExampleFFISecretsResolver::new(ALICE_SECRETS.clone()));
-        let test_cb = PackCallbackCreator::new().cb;
-        let cb_id = test_cb.cb_id;
+    async fn pack_signed_works() {
+        let (test_cb, cb_id) = create_pack_callback();
 
         pack_signed(
-            &msg,
+            &simple_message(),
             String::from(ALICE_DID),
-            did_resolver,
-            secrets_resolver,
+            create_did_resolver(),
+            create_secrets_resolver(),
             test_cb,
         );
 
         let res = get_pack_result(cb_id).await;
         assert!(res.contains("payload"));
+    }
+
+    #[tokio::test]
+    async fn pack_signed_works_did_not_found() {
+        let msg = Message::build(
+            "example-1".to_owned(),
+            "example/v1".to_owned(),
+            json!("example-body"),
+        )
+        .to(String::from("did:unknown:bob"))
+        .from(ALICE_DID.to_owned())
+        .finalize();
+
+        let (test_cb, cb_id) = create_pack_callback();
+
+        pack_signed(
+            &msg,
+            String::from("did:unknown:alice"),
+            create_did_resolver(),
+            create_secrets_resolver(),
+            test_cb,
+        );
+
+        let res = get_pack_error(cb_id).await;
+        assert_eq!(res.kind(), ErrorKind::DIDNotResolved);
+    }
+
+    #[tokio::test]
+    async fn pack_signed_works_did_url_not_found() {
+        let (test_cb, cb_id) = create_pack_callback();
+
+        pack_signed(
+            &simple_message(),
+            String::from(format!("{}#unknown-fragment", ALICE_DID)),
+            create_did_resolver(),
+            create_secrets_resolver(),
+            test_cb,
+        );
+
+        let res = get_pack_error(cb_id).await;
+        assert_eq!(res.kind(), ErrorKind::DIDUrlNotFound);
+    }
+
+    #[tokio::test]
+    async fn pack_signed_works_secret_not_found() {
+        let (test_cb, cb_id) = create_pack_callback();
+
+        pack_signed(
+            &simple_message(),
+            String::from(format!("{}#key-not-in-secrets-1", ALICE_DID)),
+            create_did_resolver(),
+            create_secrets_resolver(),
+            test_cb,
+        );
+
+        let res = get_pack_error(cb_id).await;
+        assert_eq!(res.kind(), ErrorKind::SecretNotFound);
+    }
+
+    #[tokio::test]
+    async fn pack_signed_works_illegal_argument() {
+        let (test_cb, cb_id) = create_pack_callback();
+
+        pack_signed(
+            &simple_message(),
+            String::from("not-a-did"),
+            create_did_resolver(),
+            create_secrets_resolver(),
+            test_cb,
+        );
+
+        let res = get_pack_error(cb_id).await;
+        assert_eq!(res.kind(), ErrorKind::IllegalArgument);
     }
 }

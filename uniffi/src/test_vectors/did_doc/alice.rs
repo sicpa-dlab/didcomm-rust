@@ -112,6 +112,7 @@ lazy_static! {
     pub(crate) static ref ALICE_DID_DOC: String = serde_json::to_string(&DIDDoc {
         did: "did:example:alice".into(),
         authentications: vec![
+            "did:example:alice#key-not-in-secrets-1".into(),
             "did:example:alice#key-1".into(),
             "did:example:alice#key-2".into(),
             "did:example:alice#key-3".into(),
@@ -124,6 +125,7 @@ lazy_static! {
         ],
         services: vec![],
         verification_methods: vec![
+            ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET.clone(),
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.clone(),
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.clone(),
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_P521.clone(),

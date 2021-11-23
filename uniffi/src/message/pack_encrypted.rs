@@ -49,40 +49,27 @@ pub fn pack_encrypted<'a, 'b>(
 
 #[cfg(test)]
 mod tests {
-    use crate::did::resolvers::ExampleFFIDIDResolver;
-    use crate::message::test_helper::{get_pack_result, PackCallbackCreator};
+    use crate::message::test_helper::{
+        create_did_resolver, create_pack_callback, create_secrets_resolver, get_pack_error,
+        get_pack_result,
+    };
     use crate::pack_encrypted;
-    use crate::secrets::resolvers::ExampleFFISecretsResolver;
-    use crate::test_vectors::{ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC};
+    use crate::test_vectors::{simple_message, ALICE_DID, BOB_DID};
+    use didcomm::error::ErrorKind;
     use didcomm::{Message, PackEncryptedOptions};
     use serde_json::json;
 
     #[tokio::test]
-    async fn test_pack_encrypted_works() {
-        let msg = Message::build(
-            "example-1".to_owned(),
-            "example/v1".to_owned(),
-            json!("example-body"),
-        )
-        .to(BOB_DID.to_owned())
-        .from(ALICE_DID.to_owned())
-        .finalize();
-
-        let did_resolver = Box::new(ExampleFFIDIDResolver::new(vec![
-            ALICE_DID_DOC.clone(),
-            BOB_DID_DOC.clone(),
-        ]));
-        let secrets_resolver = Box::new(ExampleFFISecretsResolver::new(ALICE_SECRETS.clone()));
-        let test_cb = PackCallbackCreator::new().cb;
-        let cb_id = test_cb.cb_id;
+    async fn pack_encrypted_works() {
+        let (test_cb, cb_id) = create_pack_callback();
 
         pack_encrypted(
-            &msg,
+            &simple_message(),
             String::from(BOB_DID),
             Some(String::from(ALICE_DID)),
             Some(String::from(ALICE_DID)),
-            did_resolver,
-            secrets_resolver,
+            create_did_resolver(),
+            create_secrets_resolver(),
             &PackEncryptedOptions {
                 forward: false,
                 ..PackEncryptedOptions::default()
@@ -92,5 +79,105 @@ mod tests {
 
         let res = get_pack_result(cb_id).await;
         assert!(res.contains("ciphertext"));
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_did_not_found() {
+        let msg = Message::build(
+            "example-1".to_owned(),
+            "example/v1".to_owned(),
+            json!("example-body"),
+        )
+        .to(String::from("did:unknown:bob"))
+        .from(ALICE_DID.to_owned())
+        .finalize();
+
+        let (test_cb, cb_id) = create_pack_callback();
+
+        pack_encrypted(
+            &msg,
+            String::from("did:unknown:bob"),
+            Some(String::from(ALICE_DID)),
+            Some(String::from(ALICE_DID)),
+            create_did_resolver(),
+            create_secrets_resolver(),
+            &PackEncryptedOptions {
+                forward: false,
+                ..PackEncryptedOptions::default()
+            },
+            test_cb,
+        );
+
+        let res = get_pack_error(cb_id).await;
+        assert_eq!(res.kind(), ErrorKind::DIDNotResolved);
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_did_url_not_found() {
+        let (test_cb, cb_id) = create_pack_callback();
+
+        pack_encrypted(
+            &simple_message(),
+            String::from(format!("{}#unknown-fragment", BOB_DID)),
+            Some(String::from(ALICE_DID)),
+            Some(String::from(ALICE_DID)),
+            create_did_resolver(),
+            create_secrets_resolver(),
+            &PackEncryptedOptions {
+                forward: false,
+                ..PackEncryptedOptions::default()
+            },
+            test_cb,
+        );
+
+        let res = get_pack_error(cb_id).await;
+        assert_eq!(res.kind(), ErrorKind::DIDUrlNotFound);
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_secret_not_found() {
+        let (test_cb, cb_id) = create_pack_callback();
+
+        pack_encrypted(
+            &simple_message(),
+            String::from(BOB_DID),
+            Some(String::from(format!(
+                "{}#key-x25519-not-in-secrets-1",
+                ALICE_DID
+            ))),
+            Some(String::from(ALICE_DID)),
+            create_did_resolver(),
+            create_secrets_resolver(),
+            &PackEncryptedOptions {
+                forward: false,
+                ..PackEncryptedOptions::default()
+            },
+            test_cb,
+        );
+
+        let res = get_pack_error(cb_id).await;
+        assert_eq!(res.kind(), ErrorKind::SecretNotFound);
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_illegal_argument() {
+        let (test_cb, cb_id) = create_pack_callback();
+
+        pack_encrypted(
+            &simple_message(),
+            String::from("not-a-did"),
+            Some(String::from(ALICE_DID)),
+            Some(String::from(ALICE_DID)),
+            create_did_resolver(),
+            create_secrets_resolver(),
+            &PackEncryptedOptions {
+                forward: false,
+                ..PackEncryptedOptions::default()
+            },
+            test_cb,
+        );
+
+        let res = get_pack_error(cb_id).await;
+        assert_eq!(res.kind(), ErrorKind::IllegalArgument);
     }
 }

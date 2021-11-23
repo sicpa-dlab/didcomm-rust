@@ -1,5 +1,5 @@
 use didcomm::{
-    error::{err_msg, ErrorKind, Result},
+    error::{err_msg, Error, ErrorKind, Result},
     Message, PackEncryptedMetadata, PackSignedMetadata, UnpackMetadata,
 };
 use std::{
@@ -10,8 +10,10 @@ use std::{
 use futures::channel::oneshot;
 use lazy_static::lazy_static;
 
+use crate::test_vectors::{ALICE_DID_DOC, ALICE_SECRETS, BOB_DID_DOC, BOB_SECRETS};
 use crate::{
-    common::get_next_id, OnPackEncryptedResult, OnPackPlaintextResult, OnPackSignedResult,
+    common::get_next_id, ExampleFFIDIDResolver, ExampleFFISecretsResolver, FFIDIDResolver,
+    FFISecretsResolver, OnPackEncryptedResult, OnPackPlaintextResult, OnPackSignedResult,
     OnUnpackResult,
 };
 
@@ -129,6 +131,15 @@ pub(crate) async fn get_pack_result(cb_id: i32) -> String {
     receiver.await.unwrap().unwrap()
 }
 
+pub(crate) async fn get_pack_error(cb_id: i32) -> Error {
+    let receiver = CALLBACK_PACK_RECEIVER
+        .lock()
+        .unwrap()
+        .remove(&cb_id)
+        .unwrap();
+    receiver.await.unwrap().err().unwrap()
+}
+
 pub struct UnpackCallback {
     pub cb_id: i32,
 }
@@ -155,7 +166,48 @@ impl OnUnpackResult for UnpackCallback {
     }
 }
 
-pub(crate) fn create_unpack_cb() -> Box<UnpackCallback> {
+pub(crate) async fn get_unpack_result(cb_id: i32) -> Message {
+    let receiver = CALLBACK_UNPACK_RECEIVER
+        .lock()
+        .unwrap()
+        .remove(&cb_id)
+        .unwrap();
+    receiver.await.unwrap().unwrap()
+}
+
+pub(crate) async fn get_unpack_error(cb_id: i32) -> Error {
+    let receiver = CALLBACK_UNPACK_RECEIVER
+        .lock()
+        .unwrap()
+        .remove(&cb_id)
+        .unwrap();
+    receiver.await.unwrap().err().unwrap()
+}
+
+pub(crate) fn create_secrets_resolver() -> Box<dyn FFISecretsResolver> {
+    Box::new(ExampleFFISecretsResolver::new(
+        ALICE_SECRETS
+            .clone()
+            .into_iter()
+            .chain(BOB_SECRETS.clone().into_iter())
+            .collect(),
+    ))
+}
+
+pub(crate) fn create_did_resolver() -> Box<dyn FFIDIDResolver> {
+    Box::new(ExampleFFIDIDResolver::new(vec![
+        ALICE_DID_DOC.clone(),
+        BOB_DID_DOC.clone(),
+    ]))
+}
+
+pub(crate) fn create_pack_callback() -> (Box<PackCallback>, i32) {
+    let test_cb = PackCallbackCreator::new().cb;
+    let cb_id = test_cb.cb_id;
+    (test_cb, cb_id)
+}
+
+pub(crate) fn create_unpack_cb() -> (Box<UnpackCallback>, i32) {
     let (sender, receiver) = oneshot::channel::<Result<Message>>();
 
     let cb_id = get_next_id();
@@ -168,14 +220,5 @@ pub(crate) fn create_unpack_cb() -> Box<UnpackCallback> {
         .unwrap()
         .insert(cb_id, receiver);
 
-    Box::new(UnpackCallback { cb_id })
-}
-
-pub(crate) async fn get_unpack_result(cb_id: i32) -> Message {
-    let receiver = CALLBACK_UNPACK_RECEIVER
-        .lock()
-        .unwrap()
-        .remove(&cb_id)
-        .unwrap();
-    receiver.await.unwrap().unwrap()
+    (Box::new(UnpackCallback { cb_id }), cb_id)
 }

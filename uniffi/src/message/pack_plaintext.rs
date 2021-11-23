@@ -32,33 +32,16 @@ pub fn pack_plaintext(
 
 #[cfg(test)]
 mod tests {
-    use crate::did::resolvers::ExampleFFIDIDResolver;
     use crate::message::pack_plaintext;
-    use crate::message::test_helper::{get_pack_result, PackCallbackCreator};
-    use didcomm::Message;
-    use serde_json::json;
+    use crate::message::test_helper::{create_did_resolver, create_pack_callback, get_pack_result};
 
-    use crate::test_vectors::{ALICE_DID, ALICE_DID_DOC, BOB_DID, BOB_DID_DOC};
+    use crate::test_vectors::simple_message;
 
     #[tokio::test]
-    async fn test_pack_plaintext_works() {
-        let msg = Message::build(
-            "example-1".to_owned(),
-            "example/v1".to_owned(),
-            json!("example-body"),
-        )
-        .to(BOB_DID.to_owned())
-        .from(ALICE_DID.to_owned())
-        .finalize();
+    async fn pack_plaintext_works() {
+        let (test_cb, cb_id) = create_pack_callback();
 
-        let did_resolver = Box::new(ExampleFFIDIDResolver::new(vec![
-            ALICE_DID_DOC.clone(),
-            BOB_DID_DOC.clone(),
-        ]));
-        let test_cb = PackCallbackCreator::new().cb;
-        let cb_id = test_cb.cb_id;
-
-        pack_plaintext(&msg, did_resolver, test_cb);
+        pack_plaintext(&simple_message(), create_did_resolver(), test_cb);
 
         let res = get_pack_result(cb_id).await;
         assert!(res.contains("body"));
