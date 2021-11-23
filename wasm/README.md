@@ -162,11 +162,10 @@ let [encryptedMsg, encryptMetadata] = await msg.pack_encrypted(
 let [encrypted_msg, encrypt_metadata] = await msg.pack_encrypted(
   BOB_DID,
   ALICE_DID,
-  null,
+  ALICE_DID, // Provide information about signer here
   did_resolver,
   secrets_resolver,
   {
-    sign_by: ALICE_DID, // Provide information about signer here
     forward: false, // Forward wrapping is unsupported in current version
   }
 );
@@ -215,8 +214,8 @@ Install `wasm-pack` from https://rustwasm.github.io/wasm-pack/installer/ and the
 
 ```bash
 wasm-pack build # Will output modules best-suited to be bundled with webpack
-wasm-pack build --targed=nodejs # Will output modules that can be directly consumed by NodeJS
-wasm-pack build --targed=web # Will output modules that can be directly consumed in browser without bundler usage
+wasm-pack build --target=nodejs # Will output modules that can be directly consumed by NodeJS
+wasm-pack build --target=web # Will output modules that can be directly consumed in browser without bundler usage
 ```
 
 ## How to test in NodeJS

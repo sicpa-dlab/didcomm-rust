@@ -107,7 +107,7 @@ test.each([
       options
     );
 
-    expect(unpacked.as_value()).toMatchObject(expMsg);
-    expect(metadata).toEqual(expMetadata);
+    expect(unpacked.as_value()).toStrictEqual(expMsg);
+    expect(metadata).toStrictEqual(expMetadata);
   }
 );

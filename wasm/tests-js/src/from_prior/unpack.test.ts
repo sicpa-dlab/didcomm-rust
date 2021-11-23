@@ -18,8 +18,10 @@ test("FromPrior.unpack works", async () => {
     didResolver
   );
 
+  // TODO: Use toStrictEq check after reduction of FromPrior fields
   expect(fromPrior.as_value()).toMatchObject(IFROM_PRIOR_FULL);
-  expect(issuerKid).toEqual(CHARLIE_SECRET_AUTH_KEY_ED25519.id);
+
+  expect(issuerKid).toStrictEqual(CHARLIE_SECRET_AUTH_KEY_ED25519.id);
 });
 
 test.each([
@@ -31,7 +33,7 @@ test.each([
   {
     jwt: FROM_PRIOR_JWT_INVALID_SIGNATURE,
     exp_err:
-      "Malformed: Unable to verify fromPrior signature: Unable decode signature: Invalid last symbol 66, offset 85.",
+      "Malformed: Unable to verify from_prior signature: Unable decode signature: Invalid last symbol 66, offset 85.",
     case: "Invalid signature",
   },
 ])("FromPrior.unpack handles $case", async ({ jwt, exp_err }) => {
