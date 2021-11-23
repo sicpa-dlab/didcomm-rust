@@ -1,20 +1,55 @@
 import { Secret, SecretsResolver } from "didcomm-js";
 
 export class ExampleSecretsResolver implements SecretsResolver {
-  known_secrets: Array<Secret>;
+  knownSecrets: Secret[];
 
-  constructor(known_secrets: Array<Secret>) {
-    this.known_secrets = known_secrets;
+  constructor(knownSecrets: Secret[]) {
+    this.knownSecrets = knownSecrets;
   }
 
-  async get_secret(secret_id: String): Promise<Secret | null> {
-    return this.known_secrets.find((secret) => secret.id == secret_id);
+  async get_secret(secretId: string): Promise<Secret | null> {
+    return this.knownSecrets.find((secret) => secret.id === secretId);
   }
 
-  async find_secrets(secret_ids: Array<String>): Promise<Array<String>> {
-    let secrets = secret_ids.filter((id) =>
-      this.known_secrets.find((secret) => secret.id == id)
+  async find_secrets(secretIds: string[]): Promise<string[]> {
+    return secretIds.filter((id) =>
+      this.knownSecrets.find((secret) => secret.id === id)
     );
-    return secrets;
+  }
+}
+
+type MockGet = (secretId: string) => Secret | null;
+type MockFind = (secretIds: string[]) => string[];
+
+/* tslint:disable:max-classes-per-file */
+export class MockSecretsResolver implements SecretsResolver {
+  getHandlers: MockGet[];
+  findHandlers: MockFind[];
+  fallback: SecretsResolver;
+
+  constructor(
+    getHandlers: MockGet[],
+    findHandlers: MockFind[],
+    fallback: SecretsResolver
+  ) {
+    this.getHandlers = getHandlers;
+    this.findHandlers = findHandlers;
+    this.fallback = fallback;
+  }
+
+  async get_secret(secretId: string): Promise<Secret | null> {
+    const handler = this.getHandlers.pop();
+
+    return handler
+      ? handler(secretId)
+      : await this.fallback.get_secret(secretId);
+  }
+
+  async find_secrets(secretIds: string[]): Promise<string[]> {
+    const handler = this.findHandlers.pop();
+
+    return handler
+      ? handler(secretIds)
+      : await this.fallback.find_secrets(secretIds);
   }
 }

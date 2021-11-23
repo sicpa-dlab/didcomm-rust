@@ -4,7 +4,8 @@
   "description": "JS demo for didcomm",
   "scripts": {
     "start": "ts-node src/main.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check": "tslint -c tslint.json 'src/**/*.ts'"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -12,6 +13,7 @@
     "didcomm-js": "file:../pkg"
   },
   "devDependencies": {
-    "ts-node": "^10.4.0"
+    "ts-node": "^10.4.0",
+    "tslint": "^6.1.3"
   }
 }

@@ -16,40 +16,39 @@ import {
 } from "didcomm-js";
 
 class ExampleDIDResolver implements DIDResolver {
-  known_dids: Array<DIDDoc>;
+  knownDids: DIDDoc[];
 
-  constructor(known_dids: Array<DIDDoc>) {
-    this.known_dids = known_dids;
+  constructor(knownDids: DIDDoc[]) {
+    this.knownDids = knownDids;
   }
 
-  async resolve(did: String): Promise<DIDDoc | null> {
-    return this.known_dids.find((ddoc) => ddoc.did == did);
+  async resolve(did: string): Promise<DIDDoc | null> {
+    return this.knownDids.find((ddoc) => ddoc.did === did) || null;
   }
 }
 
 class ExampleSecretsResolver implements SecretsResolver {
-  known_secrets: Array<Secret>;
+  knownSecrets: Secret[];
 
-  constructor(known_secrets: Array<Secret>) {
-    this.known_secrets = known_secrets;
+  constructor(knownSecrets: Secret[]) {
+    this.knownSecrets = knownSecrets;
   }
 
-  async get_secret(secret_id: String): Promise<Secret | null> {
-    return this.known_secrets.find((secret) => secret.id == secret_id);
+  async get_secret(secretId: string): Promise<Secret | null> {
+    return this.knownSecrets.find((secret) => secret.id === secretId) || null;
   }
 
-  async find_secrets(secret_ids: Array<String>): Promise<Array<String>> {
-    let secrets = secret_ids.filter((id) =>
-      this.known_secrets.find((secret) => secret.id == id)
+  async find_secrets(secretIds: string[]): Promise<string[]> {
+    return secretIds.filter((id) =>
+      this.knownSecrets.find((secret) => secret.id === id)
     );
-    return secrets;
   }
 }
 
 async function main() {
   // --- Build message from ALICE to BOB ---
 
-  let msg = new Message({
+  const msg = new Message({
     id: "1234567890",
     typ: "application/didcomm-plain+json",
     type: "http://example.com/protocols/lets_do_lunch/1.0/proposal",
@@ -62,40 +61,40 @@ async function main() {
 
   // --- Packing encrypted and authenticated message ---
 
-  let did_resolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  let secrets_resolver = new ExampleSecretsResolver(ALICE_SECRETS);
+  let didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
+  let secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
 
-  let [encrypted_msg, encrypt_metadata] = await msg.pack_encrypted(
+  const [encryptedMsg, encryptMetadata] = await msg.pack_encrypted(
     BOB_DID,
     ALICE_DID,
     null,
-    did_resolver,
-    secrets_resolver,
+    didResolver,
+    secretsResolver,
     {
       forward: false,
     }
   );
 
-  console.log("Encryption metadata is\n", encrypt_metadata);
+  console.log("Encryption metadata is\n", encryptMetadata);
 
   // --- Send message ---
 
-  console.log("Sending message\n", encrypted_msg);
+  console.log("Sending message\n", encryptedMsg);
 
   // --- Unpacking message ---
 
-  did_resolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  secrets_resolver = new ExampleSecretsResolver(BOB_SECRETS);
+  didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
+  secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
 
-  let [unpacked_msg, unpack_metadata] = await Message.unpack(
-    encrypted_msg,
-    did_resolver,
-    secrets_resolver,
+  const [unpackedMsg, unpackMetadata] = await Message.unpack(
+    encryptedMsg,
+    didResolver,
+    secretsResolver,
     {}
   );
 
-  console.log("Receved message is\n", unpacked_msg.as_value());
-  console.log("Receved message unpack metadata is\n", unpack_metadata);
+  console.log("Receved message is\n", unpackedMsg.as_value());
+  console.log("Receved message unpack metadata is\n", unpackMetadata);
 }
 
 main().catch((e) => console.log(e));

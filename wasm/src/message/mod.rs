@@ -1,16 +1,19 @@
+mod from_prior;
 mod pack_encrypted;
 mod pack_plaintext;
 mod pack_signed;
 mod unpack;
 
 use didcomm::error::{ErrorKind, ResultExt};
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 
 use crate::{error::JsResult, utils::set_panic_hook};
+pub use from_prior::FromPrior;
 
 #[wasm_bindgen]
 /// Wrapper for plain message. Provides helpers for message building and packing/unpacking.
-pub struct Message(pub(crate) didcomm::Message);
+pub struct Message(pub(crate) Rc<didcomm::Message>);
 
 #[wasm_bindgen]
 impl Message {
@@ -25,12 +28,12 @@ impl Message {
             .kind(ErrorKind::Malformed, "Unable deserialize Message")
             .as_js()?;
 
-        Ok(Message(msg))
+        Ok(Message(Rc::new(msg)))
     }
 
     #[wasm_bindgen(skip_typescript)]
     pub fn as_value(&self) -> Result<JsValue, JsValue> {
-        let msg = JsValue::from_serde(&self.0)
+        let msg = JsValue::from_serde(&*self.0)
             .kind(ErrorKind::Malformed, "Unable serialize Message")
             .as_js()?;
 
