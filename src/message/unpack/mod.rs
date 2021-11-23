@@ -217,7 +217,7 @@ async fn has_key_agreement_secret<'dr, 'sr>(
         }
     };
 
-    let kids = kids.iter().map(|s| s as &str).collect::<Vec<_>>();
+    let kids = kids.iter().map(|k| k as &str).collect::<Vec<_>>();
 
     let secrets_ids = secrets_resolver.find_secrets(&kids[..]).await?;
 

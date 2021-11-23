@@ -203,7 +203,7 @@ pub async fn wrap_in_forward<'dr>(
 
     let mut msg = msg.to_owned();
 
-    for (to_, next_) in routing_keys.iter().zip(nexts.iter()) {
+    for (to_, next_) in tos.iter().zip(nexts.iter()) {
         msg = build_forward_message(&msg, next_, headers)?;
         msg = anoncrypt(to_, did_resolver, msg.as_bytes(), enc_alg_anon)
             .await?
@@ -239,11 +239,15 @@ pub(crate) async fn wrap_in_forward_if_needed<'dr>(
         .map(|did_comm_service| did_comm_service.service_endpoint.clone())
         .collect::<Vec<_>>();
 
-    routing_keys.extend(
-        unwrap_did_comm_service(services_chain.last().unwrap())?
+    routing_keys.append(
+        &mut unwrap_did_comm_service(services_chain.last().unwrap())?
             .routing_keys
             .clone(),
     );
+
+    if routing_keys.is_empty() {
+        return Ok(None);
+    }
 
     let forward_msg = wrap_in_forward(
         msg,

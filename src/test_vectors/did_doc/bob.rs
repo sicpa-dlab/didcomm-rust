@@ -179,7 +179,7 @@ lazy_static! {
             routing_keys: vec!["did:example:mediator1#key-x25519-1".into()],
         };
     pub(crate) static ref BOB_SERVICE: Service = Service {
-        id: "did:example:123456789abcdefghi#didcomm-1".into(),
+        id: "did:example:bob#didcomm-1".into(),
         kind: ServiceKind::DIDCommMessaging(BOB_DID_COMM_MESSAGING_SERVICE.clone()),
     };
     pub(crate) static ref BOB_DID_DOC: DIDDoc = DIDDoc {

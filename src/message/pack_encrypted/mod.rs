@@ -280,7 +280,7 @@ mod tests {
         sign::KeySigVerify,
     };
 
-    use serde_json::Value;
+    use serde_json::{json, Value};
 
     use crate::{
         algorithms::AnonCryptAlg,
@@ -300,11 +300,16 @@ mod tests {
             BOB_SECRETS, BOB_SECRET_KEY_AGREEMENT_KEY_P256_1, BOB_SECRET_KEY_AGREEMENT_KEY_P256_2,
             BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1, BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2,
             BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3, BOB_SERVICE, CHARLIE_DID, CHARLIE_DID_DOC,
-            CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519, FROM_PRIOR_FULL,
-            MEDIATOR1_DID_DOC, MEDIATOR1_SECRETS, MESSAGE_FROM_PRIOR_FULL, MESSAGE_SIMPLE,
-            PLAINTEXT_MSG_SIMPLE,
+            CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519,
+            CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519, CHARLIE_SERVICE, FROM_PRIOR_FULL,
+            MEDIATOR1_DID_DOC, MEDIATOR1_SECRETS, MEDIATOR2_DID_DOC, MEDIATOR2_SECRETS,
+            MEDIATOR3_DID_COMM_MESSAGING_SERVICE, MEDIATOR3_DID_DOC, MEDIATOR3_SECRETS,
+            MESSAGE_FROM_PRIOR_FULL, MESSAGE_SIMPLE, PLAINTEXT_MSG_SIMPLE,
         },
-        utils::crypto::{JoseKDF, KeyWrap},
+        utils::{
+            crypto::{JoseKDF, KeyWrap},
+            did::did_or_url,
+        },
         Message, PackEncryptedMetadata, PackEncryptedOptions, UnpackOptions,
     };
 
@@ -1498,20 +1503,47 @@ mod tests {
 
     #[tokio::test]
     async fn pack_encrypted_works_single_mediator() {
-        _pack_encrypted_works_single_mediator(BOB_DID, Some(ALICE_DID)).await;
+        _pack_encrypted_works_single_mediator(BOB_DID, None, None).await;
+
+        _pack_encrypted_works_single_mediator(BOB_DID, None, Some(ALICE_DID)).await;
+
+        _pack_encrypted_works_single_mediator(BOB_DID, Some(ALICE_DID), None).await;
+
+        _pack_encrypted_works_single_mediator(BOB_DID, Some(ALICE_DID), Some(ALICE_DID)).await;
 
         _pack_encrypted_works_single_mediator(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            None,
+            None,
+        )
+        .await;
+
+        _pack_encrypted_works_single_mediator(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            None,
             Some(ALICE_DID),
         )
         .await;
 
-        _pack_encrypted_works_single_mediator(BOB_DID, None).await;
+        _pack_encrypted_works_single_mediator(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            Some(ALICE_DID),
+            None,
+        )
+        .await;
 
-        _pack_encrypted_works_single_mediator(&BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id, None)
-            .await;
+        _pack_encrypted_works_single_mediator(
+            &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
+            Some(ALICE_DID),
+            Some(ALICE_DID),
+        )
+        .await;
 
-        async fn _pack_encrypted_works_single_mediator(to: &str, from: Option<&str>) {
+        async fn _pack_encrypted_works_single_mediator(
+            to: &str,
+            from: Option<&str>,
+            sign_by: Option<&str>,
+        ) {
             let did_resolver = ExampleDIDResolver::new(vec![
                 ALICE_DID_DOC.clone(),
                 BOB_DID_DOC.clone(),
@@ -1528,7 +1560,7 @@ mod tests {
                 .pack_encrypted(
                     to,
                     from,
-                    None,
+                    sign_by,
                     &did_resolver,
                     &alice_secrets_resolver,
                     &PackEncryptedOptions::default(),
@@ -1543,6 +1575,35 @@ mod tests {
                     service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.service_endpoint.clone(),
                 })
             );
+
+            assert_eq!(
+                pack_metadata.from_kid.map(|k| did_or_url(&k).0.to_owned()),
+                from.map(|d| d.to_owned())
+            );
+            assert_eq!(
+                pack_metadata
+                    .sign_by_kid
+                    .map(|k| did_or_url(&k).0.to_owned()),
+                sign_by.map(|d| d.to_owned())
+            );
+
+            match did_or_url(to) {
+                (_, Some(to_kid)) => {
+                    assert_eq!(
+                        pack_metadata
+                            .to_kids
+                            .iter()
+                            .map(|k| k.as_str())
+                            .collect::<Vec<_>>(),
+                        vec![to_kid]
+                    )
+                }
+                (to_did, None) => {
+                    for metadata_to_kid in pack_metadata.to_kids {
+                        assert_eq!(did_or_url(&metadata_to_kid).0, to_did);
+                    }
+                }
+            }
 
             let (unpacked_msg_mediator1, unpack_metadata_mediator1) = Message::unpack(
                 &msg,
@@ -1580,8 +1641,253 @@ mod tests {
             assert_eq!(&unpacked_msg, &*MESSAGE_SIMPLE);
 
             assert!(unpack_metadata.encrypted);
-            assert_eq!(unpack_metadata.authenticated, from.is_some());
-            assert!(!unpack_metadata.non_repudiation);
+            assert_eq!(
+                unpack_metadata.authenticated,
+                from.is_some() || sign_by.is_some()
+            );
+            assert_eq!(unpack_metadata.non_repudiation, sign_by.is_some());
+            assert_eq!(unpack_metadata.anonymous_sender, from.is_none());
+            assert!(!unpack_metadata.re_wrapped_in_forward);
+        }
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_multiple_mediators_alternative_endpoints() {
+        _pack_encrypted_works_multiple_mediators_alternative_endpoints(CHARLIE_DID, None, None)
+            .await;
+
+        _pack_encrypted_works_multiple_mediators_alternative_endpoints(
+            CHARLIE_DID,
+            None,
+            Some(ALICE_DID),
+        )
+        .await;
+
+        _pack_encrypted_works_multiple_mediators_alternative_endpoints(
+            CHARLIE_DID,
+            Some(ALICE_DID),
+            None,
+        )
+        .await;
+
+        _pack_encrypted_works_multiple_mediators_alternative_endpoints(
+            CHARLIE_DID,
+            Some(ALICE_DID),
+            Some(ALICE_DID),
+        )
+        .await;
+
+        _pack_encrypted_works_multiple_mediators_alternative_endpoints(
+            &CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519.id,
+            None,
+            None,
+        )
+        .await;
+
+        _pack_encrypted_works_multiple_mediators_alternative_endpoints(
+            &CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519.id,
+            None,
+            Some(ALICE_DID),
+        )
+        .await;
+
+        _pack_encrypted_works_multiple_mediators_alternative_endpoints(
+            &CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519.id,
+            Some(ALICE_DID),
+            None,
+        )
+        .await;
+
+        _pack_encrypted_works_multiple_mediators_alternative_endpoints(
+            &CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519.id,
+            Some(ALICE_DID),
+            Some(ALICE_DID),
+        )
+        .await;
+
+        async fn _pack_encrypted_works_multiple_mediators_alternative_endpoints(
+            to: &str,
+            from: Option<&str>,
+            sign_by: Option<&str>,
+        ) {
+            let msg = Message::build(
+                "1234567890".to_owned(),
+                "http://example.com/protocols/lets_do_lunch/1.0/proposal".to_owned(),
+                json!({"messagespecificattribute": "and its value"}),
+            )
+            .from(ALICE_DID.to_owned())
+            .to(CHARLIE_DID.to_owned())
+            .created_time(1516269022)
+            .expires_time(1516385931)
+            .finalize();
+
+            let did_resolver = ExampleDIDResolver::new(vec![
+                ALICE_DID_DOC.clone(),
+                CHARLIE_DID_DOC.clone(),
+                MEDIATOR1_DID_DOC.clone(),
+                MEDIATOR2_DID_DOC.clone(),
+                MEDIATOR3_DID_DOC.clone(),
+            ]);
+
+            let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let charlie_secrets_resolver = ExampleSecretsResolver::new(CHARLIE_SECRETS.clone());
+
+            let mediator1_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+
+            let mediator2_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR2_SECRETS.clone());
+
+            let mediator3_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR3_SECRETS.clone());
+
+            let (packed_msg, pack_metadata) = msg
+                .pack_encrypted(
+                    to,
+                    from,
+                    sign_by,
+                    &did_resolver,
+                    &alice_secrets_resolver,
+                    &PackEncryptedOptions::default(),
+                )
+                .await
+                .expect("Unable encrypt");
+
+            assert_eq!(
+                pack_metadata.messaging_service.as_ref(),
+                Some(&MessagingServiceMetadata {
+                    id: CHARLIE_SERVICE.id.clone(),
+                    service_endpoint: MEDIATOR3_DID_COMM_MESSAGING_SERVICE
+                        .service_endpoint
+                        .clone(),
+                })
+            );
+
+            assert_eq!(
+                pack_metadata.from_kid.map(|k| did_or_url(&k).0.to_owned()),
+                from.map(|d| d.to_owned())
+            );
+            assert_eq!(
+                pack_metadata
+                    .sign_by_kid
+                    .map(|k| did_or_url(&k).0.to_owned()),
+                sign_by.map(|d| d.to_owned())
+            );
+
+            match did_or_url(to) {
+                (_, Some(to_kid)) => {
+                    assert_eq!(
+                        pack_metadata
+                            .to_kids
+                            .iter()
+                            .map(|k| k.as_str())
+                            .collect::<Vec<_>>(),
+                        vec![to_kid]
+                    )
+                }
+                (to_did, None) => {
+                    for metadata_to_kid in pack_metadata.to_kids {
+                        assert_eq!(did_or_url(&metadata_to_kid).0, to_did);
+                    }
+                }
+            }
+
+            let (unpacked_msg_mediator3, unpack_metadata_mediator3) = Message::unpack(
+                &packed_msg,
+                &did_resolver,
+                &mediator3_secrets_resolver,
+                &UnpackOptions::default(),
+            )
+            .await
+            .expect("Unable unpack");
+
+            let forward_at_mediator3 =
+                try_parse_forward(&unpacked_msg_mediator3).expect("Message is not Forward");
+
+            assert_eq!(&forward_at_mediator3.msg, &unpacked_msg_mediator3);
+            assert_eq!(
+                &forward_at_mediator3.next,
+                "did:example:mediator2#key-x25519-1"
+            );
+
+            assert!(unpack_metadata_mediator3.encrypted);
+            assert!(!unpack_metadata_mediator3.authenticated);
+            assert!(!unpack_metadata_mediator3.non_repudiation);
+            assert!(unpack_metadata_mediator3.anonymous_sender);
+            assert!(!unpack_metadata_mediator3.re_wrapped_in_forward);
+
+            let forwarded_msg_at_mediator3 =
+                serde_json::to_string(&forward_at_mediator3.forwarded_msg)
+                    .expect("Unable serialize forwarded message");
+
+            let (unpacked_msg_mediator2, unpack_metadata_mediator2) = Message::unpack(
+                &forwarded_msg_at_mediator3,
+                &did_resolver,
+                &mediator2_secrets_resolver,
+                &UnpackOptions::default(),
+            )
+            .await
+            .expect("Unable unpack");
+
+            let forward_at_mediator2 =
+                try_parse_forward(&unpacked_msg_mediator2).expect("Message is not Forward");
+
+            assert_eq!(&forward_at_mediator2.msg, &unpacked_msg_mediator2);
+            assert_eq!(
+                &forward_at_mediator2.next,
+                "did:example:mediator1#key-x25519-1"
+            );
+
+            assert!(unpack_metadata_mediator2.encrypted);
+            assert!(!unpack_metadata_mediator2.authenticated);
+            assert!(!unpack_metadata_mediator2.non_repudiation);
+            assert!(unpack_metadata_mediator2.anonymous_sender);
+            assert!(!unpack_metadata_mediator2.re_wrapped_in_forward);
+
+            let forwarded_msg_at_mediator2 =
+                serde_json::to_string(&forward_at_mediator2.forwarded_msg)
+                    .expect("Unable serialize forwarded message");
+
+            let (unpacked_msg_mediator1, unpack_metadata_mediator1) = Message::unpack(
+                &forwarded_msg_at_mediator2,
+                &did_resolver,
+                &mediator1_secrets_resolver,
+                &UnpackOptions::default(),
+            )
+            .await
+            .expect("Unable unpack");
+
+            let forward_at_mediator1 =
+                try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
+
+            assert_eq!(&forward_at_mediator1.msg, &unpacked_msg_mediator1);
+            assert_eq!(&forward_at_mediator1.next, to);
+
+            assert!(unpack_metadata_mediator1.encrypted);
+            assert!(!unpack_metadata_mediator1.authenticated);
+            assert!(!unpack_metadata_mediator1.non_repudiation);
+            assert!(unpack_metadata_mediator1.anonymous_sender);
+            assert!(!unpack_metadata_mediator1.re_wrapped_in_forward);
+
+            let forwarded_msg_at_mediator1 =
+                serde_json::to_string(&forward_at_mediator1.forwarded_msg)
+                    .expect("Unable serialize forwarded message");
+
+            let (unpacked_msg, unpack_metadata) = Message::unpack(
+                &forwarded_msg_at_mediator1,
+                &did_resolver,
+                &charlie_secrets_resolver,
+                &UnpackOptions::default(),
+            )
+            .await
+            .expect("Unable unpack");
+
+            assert_eq!(&unpacked_msg, &msg);
+
+            assert!(unpack_metadata.encrypted);
+            assert_eq!(
+                unpack_metadata.authenticated,
+                from.is_some() || sign_by.is_some()
+            );
+            assert_eq!(unpack_metadata.non_repudiation, sign_by.is_some());
             assert_eq!(unpack_metadata.anonymous_sender, from.is_none());
             assert!(!unpack_metadata.re_wrapped_in_forward);
         }
