@@ -1,5 +1,5 @@
 [package]
-name = 'didcomm-ffi'
+name = 'didcomm-uniffi'
 version = '0.2.0'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
