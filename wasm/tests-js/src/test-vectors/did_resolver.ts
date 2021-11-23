@@ -1,19 +1,20 @@
 import { DIDResolver, DIDDoc } from "didcomm-js";
 
 export class ExampleDIDResolver implements DIDResolver {
-  known_dids: DIDDoc[];
+  knownDids: DIDDoc[];
 
-  constructor(known_dids: DIDDoc[]) {
-    this.known_dids = known_dids;
+  constructor(knownDids: DIDDoc[]) {
+    this.knownDids = knownDids;
   }
 
   async resolve(did: string): Promise<DIDDoc | null> {
-    return this.known_dids.find((ddoc) => ddoc.did == did);
+    return this.knownDids.find((ddoc) => ddoc.did === did);
   }
 }
 
 type MockResolve = (did: string) => DIDDoc | null;
 
+/* tslint:disable:max-classes-per-file */
 export class MockDIDResolver implements DIDResolver {
   handlers: MockResolve[];
   fallback: DIDResolver;
@@ -24,7 +25,7 @@ export class MockDIDResolver implements DIDResolver {
   }
 
   async resolve(did: string): Promise<DIDDoc | null> {
-    let handler = this.handlers.pop();
+    const handler = this.handlers.pop();
     return handler ? handler(did) : await this.fallback.resolve(did);
   }
 }

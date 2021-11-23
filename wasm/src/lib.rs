@@ -4,7 +4,11 @@ mod message;
 mod secrets;
 mod utils;
 
-pub use crate::{did::DIDResolver, message::Message, secrets::SecretsResolver};
+pub use crate::{
+    did::DIDResolver,
+    message::{FromPrior, Message},
+    secrets::SecretsResolver,
+};
 use crate::{did::JsDIDResolver, secrets::JsSecretsResolver};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
