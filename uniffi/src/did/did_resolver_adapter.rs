@@ -1,19 +1,27 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
-use async_trait::async_trait;
-use didcomm::did::{DIDDoc, DIDResolver};
-use didcomm::error::{err_msg, ErrorKind, Result, ResultExt};
+use didcomm::{
+    did::{DIDDoc, DIDResolver},
+    error::{err_msg, ErrorKind, Result, ResultExt, ResultExtNoContext},
+};
 use futures::channel::oneshot;
 
+use crate::FFIDIDResolver;
+
+use async_trait::async_trait;
 use lazy_static::lazy_static;
 
 use crate::common::get_next_id;
 
-use super::did_resolver::OnDIDResolverResult;
-use super::FFIDIDResolver;
+lazy_static! {
+    static ref CALLBACK_SENDERS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Option<DIDDoc>>>>>> =
+        Arc::new(Mutex::new(HashMap::new()));
+}
 
-pub struct FFIDIDResolverAdapter {
+pub(crate) struct FFIDIDResolverAdapter {
     did_resolver: Box<dyn FFIDIDResolver>,
 }
 
@@ -23,19 +31,17 @@ impl FFIDIDResolverAdapter {
     }
 }
 
-lazy_static! {
-    static ref CALLBACK_SENDERS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Option<DIDDoc>>>>>> =
-        Arc::new(Mutex::new(HashMap::new()));
-}
-
 #[async_trait]
 impl DIDResolver for FFIDIDResolverAdapter {
     async fn resolve(&self, did: &str) -> Result<Option<DIDDoc>> {
         let (sender, receiver) = oneshot::channel::<Result<Option<DIDDoc>>>();
 
         let cb_id = get_next_id();
-        CALLBACK_SENDERS.lock().unwrap().insert(cb_id, sender);
-        let cb = Box::new(OnDIDResolverResultAdapter { cb_id: cb_id });
+        CALLBACK_SENDERS
+            .lock()
+            .kind_no_context(ErrorKind::InvalidState, "can not resolve DID Doc")?
+            .insert(cb_id, sender);
+        let cb = Arc::new(OnDIDResolverResult { cb_id: cb_id });
 
         self.did_resolver.resolve(String::from(did), cb);
 
@@ -48,29 +54,40 @@ impl DIDResolver for FFIDIDResolverAdapter {
     }
 }
 
-pub struct OnDIDResolverResultAdapter {
+pub struct OnDIDResolverResult {
     pub cb_id: i32,
 }
 
-impl OnDIDResolverResult for OnDIDResolverResultAdapter {
-    // TODO: better error handling
-    fn success(&self, result: Option<DIDDoc>) {
-        CALLBACK_SENDERS
-            .lock()
-            .unwrap()
-            .remove(&self.cb_id)
-            .unwrap()
-            .send(Ok(result))
-            .unwrap();
+impl OnDIDResolverResult {
+    pub fn new(cb_id: i32) -> Self {
+        OnDIDResolverResult { cb_id }
     }
 
-    fn error(&self, err: ErrorKind, msg: String) {
-        CALLBACK_SENDERS
+    pub fn success(&self, result: Option<DIDDoc>) -> std::result::Result<(), ErrorKind> {
+        let sender = CALLBACK_SENDERS
             .lock()
-            .unwrap()
-            .remove(&self.cb_id)
-            .unwrap()
-            .send(Err(err_msg(err, msg)))
-            .unwrap();
+            .to_error_kind(ErrorKind::InvalidState)?
+            .remove(&self.cb_id);
+        match sender {
+            Some(sender) => sender
+                .send(Ok(result))
+                .to_error_kind(ErrorKind::InvalidState)?,
+            None => Err(ErrorKind::InvalidState)?,
+        };
+        Ok(())
+    }
+
+    pub fn error(&self, err: ErrorKind, msg: String) -> std::result::Result<(), ErrorKind> {
+        let sender = CALLBACK_SENDERS
+            .lock()
+            .to_error_kind(ErrorKind::InvalidState)?
+            .remove(&self.cb_id);
+        match sender {
+            Some(sender) => sender
+                .send(Err(err_msg(err, msg)))
+                .to_error_kind(ErrorKind::InvalidState)?,
+            None => Err(ErrorKind::InvalidState)?,
+        };
+        Ok(())
     }
 }

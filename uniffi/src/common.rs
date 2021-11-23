@@ -4,6 +4,7 @@ use std::{
 };
 
 use crate::UniffiCustomTypeWrapper;
+use didcomm::error::ToResult;
 use futures::executor::ThreadPool;
 use lazy_static::lazy_static;
 
@@ -34,7 +35,7 @@ impl UniffiCustomTypeWrapper for JsonObject {
     type Wrapped = String;
 
     fn wrap(val: Self::Wrapped) -> uniffi::Result<Self> {
-        Ok(serde_json::from_str(&val)?)
+        Ok(serde_json::from_str(&val).to_didcomm("Invalid json value")?)
     }
 
     fn unwrap(obj: Self) -> Self::Wrapped {

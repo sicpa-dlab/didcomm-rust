@@ -1,8 +1,8 @@
 use didcomm::{error::ErrorKind, Message, UnpackMetadata, UnpackOptions};
 
 use crate::common::EXECUTOR;
+use crate::did_resolver_adapter::FFIDIDResolverAdapter;
 use crate::{
-    did_resolver_adapter::FFIDIDResolverAdapter,
     secrets_resolver_adapter::FFISecretsResolverAdapter, ErrorCode, FFIDIDResolver,
     FFISecretsResolver,
 };

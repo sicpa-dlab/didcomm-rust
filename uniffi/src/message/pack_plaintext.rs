@@ -2,7 +2,8 @@ use didcomm::error::ErrorKind;
 use didcomm::Message;
 
 use crate::common::{ErrorCode, EXECUTOR};
-use crate::did::{did_resolver_adapter::FFIDIDResolverAdapter, FFIDIDResolver};
+use crate::did::FFIDIDResolver;
+use crate::did_resolver_adapter::FFIDIDResolverAdapter;
 
 pub trait OnPackPlaintextResult: Sync + Send {
     fn success(&self, result: String);

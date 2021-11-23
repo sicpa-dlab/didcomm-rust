@@ -1,12 +1,17 @@
-use didcomm::{did::DIDDoc, error::ErrorKind};
+use std::sync::Arc;
 
-use crate::common::ErrorCode;
+use crate::{ErrorCode, OnDIDResolverResult};
 
+/// Represents DID Doc resolver (https://www.w3.org/TR/did-core/#did-resolution).
 pub trait FFIDIDResolver: Sync + Send {
-    fn resolve(&self, did: String, cb: Box<dyn OnDIDResolverResult>) -> ErrorCode;
-}
-
-pub trait OnDIDResolverResult: Sync + Send {
-    fn success(&self, result: Option<DIDDoc>);
-    fn error(&self, err: ErrorKind, msg: String);
+    /// Resolves a DID document by the given DID.
+    ///
+    /// # Params
+    /// - `did` a DID to be resolved.
+    /// - `cb` a callback with a result
+    ///  
+    /// # Returns
+    /// A result code
+    ///
+    fn resolve(&self, did: String, cb: Arc<OnDIDResolverResult>) -> ErrorCode;
 }

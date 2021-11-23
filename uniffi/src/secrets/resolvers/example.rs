@@ -1,12 +1,12 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use didcomm::secrets::Secret;
 
 use crate::{
     common::ErrorCode,
-    secrets::{
-        secrets_resolver::{OnFindSecretsResult, OnGetSecretResult},
-        FFISecretsResolver,
-    },
+    secrets::FFISecretsResolver,
+    secrets_resolver_adapter::{OnFindSecretsResult, OnGetSecretResult},
 };
 
 /// Allows resolve pre-defined did's for `example` and other methods.
@@ -27,27 +27,29 @@ impl ExampleFFISecretsResolver {
 
 #[async_trait]
 impl FFISecretsResolver for ExampleFFISecretsResolver {
-    fn get_secret(&self, secret_id: String, cb: Box<dyn OnGetSecretResult>) -> ErrorCode {
+    fn get_secret(&self, secret_id: String, cb: Arc<OnGetSecretResult>) -> ErrorCode {
         let secret = self
             .known_secrets
             .iter()
             .find(|s| s.id == secret_id)
             .map(|s| s.clone());
 
-        cb.success(secret);
-
-        ErrorCode::Success
+        match cb.success(secret) {
+            Ok(_) => ErrorCode::Success,
+            Err(_) => ErrorCode::Error,
+        }
     }
 
-    fn find_secrets(&self, secret_ids: Vec<String>, cb: Box<dyn OnFindSecretsResult>) -> ErrorCode {
+    fn find_secrets(&self, secret_ids: Vec<String>, cb: Arc<OnFindSecretsResult>) -> ErrorCode {
         let res = secret_ids
             .iter()
             .filter(|sid| self.known_secrets.iter().find(|s| s.id == **sid).is_some())
             .map(|sid| sid.clone())
             .collect();
 
-        cb.success(res);
-
-        ErrorCode::Success
+        match cb.success(res) {
+            Ok(_) => ErrorCode::Success,
+            Err(_) => ErrorCode::Error,
+        }
     }
 }

@@ -2,7 +2,8 @@ use didcomm::Message;
 use didcomm::{error::ErrorKind, PackSignedMetadata};
 
 use crate::common::{ErrorCode, EXECUTOR};
-use crate::did::{did_resolver_adapter::FFIDIDResolverAdapter, FFIDIDResolver};
+use crate::did::FFIDIDResolver;
+use crate::did_resolver_adapter::FFIDIDResolverAdapter;
 use crate::secrets::{secrets_resolver_adapter::FFISecretsResolverAdapter, FFISecretsResolver};
 
 pub trait OnPackSignedResult: Sync + Send {

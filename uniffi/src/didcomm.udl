@@ -1,6 +1,8 @@
 [Wrapped]
 typedef string JsonObject;
 
+// 1. MESSAGE
+
 dictionary Message {
   string id;
   string typ;
@@ -54,8 +56,9 @@ dictionary LinksAttachmentData {
 
 
 
+// 2. ERRORS
 
-
+[Error]
 enum ErrorKind {
   "DIDNotResolved",
   "DIDUrlNotFound",
@@ -75,15 +78,20 @@ enum ErrorCode {
 
 
 
-
-
-callback interface OnDIDResolverResult {
-  void success(DIDDoc? result);
-  void error(ErrorKind err, string msg);
-};
+// 3. DID RESOLVER
 
 callback interface FFIDIDResolver {
   ErrorCode resolve(string did, OnDIDResolverResult cb);
+};
+
+interface OnDIDResolverResult {
+  constructor(i32 cb_id);
+
+  [Throws=ErrorKind]
+  void success(DIDDoc? result);
+
+  [Throws=ErrorKind]
+  void error(ErrorKind err, string msg);
 };
 
 dictionary DIDDoc {
@@ -145,21 +153,31 @@ interface ExampleFFIDIDResolver {
 
 
 
-
-
-callback interface OnGetSecretResult {
-  void success(Secret? result);
-  void error(ErrorKind err, string msg);
-};
-
-callback interface OnFindSecretsResult {
-  void success(sequence<string> result);
-  void error(ErrorKind err, string msg);
-};
+// 4. SECRETS RESOLVER
 
 callback interface FFISecretsResolver {
-  ErrorCode get_secret(string secretId, OnGetSecretResult cb);
-  ErrorCode find_secrets(sequence<string> secretIds, OnFindSecretsResult cb);
+  ErrorCode get_secret(string secretId, OnGetSecretResult cb); // should be secretId, not secret_id to avoid an error in generated code
+  ErrorCode find_secrets(sequence<string> secretIds, OnFindSecretsResult cb); // should be secretIds, not secret_ids to avoid an error in generated code
+};
+
+interface OnGetSecretResult {
+  constructor(i32 cb_id);
+
+  [Throws=ErrorKind]
+  void success(Secret? result);
+
+  [Throws=ErrorKind]
+  void error(ErrorKind err, string msg);
+};
+
+interface OnFindSecretsResult {
+  constructor(i32 cb_id);
+
+  [Throws=ErrorKind]  
+  void success(sequence<string> result);
+
+  [Throws=ErrorKind]  
+  void error(ErrorKind err, string msg);
 };
 
 dictionary Secret {
@@ -196,7 +214,7 @@ interface ExampleFFISecretsResolver {
 
 
 
-
+// 5. PACK SIGNED
 
 callback interface OnPackSignedResult {
   void success(string result, PackSignedMetadata metadata);
@@ -209,7 +227,7 @@ dictionary PackSignedMetadata {
 
 
 
-
+// 6. PACK ENCRYPTED
 
 callback interface OnPackEncryptedResult {
   void success(string result, PackEncryptedMetadata metadata);
@@ -249,8 +267,7 @@ dictionary PackEncryptedOptions {
 
 
 
-
-
+// 6. PACK PLAINTEXT
 
 callback interface OnPackPlaintextResult {
   void success(string result);
@@ -259,7 +276,7 @@ callback interface OnPackPlaintextResult {
 
 
 
-
+// 7. UNPACK
 
 callback interface OnUnpackResult {
   void success(Message result, UnpackMetadata metadata);
@@ -306,7 +323,7 @@ dictionary FromPrior {
 
 
 
-
+// 7. PACK / UNPACK FUNCTIONS
 
 namespace didcomm {
   ErrorCode pack_plaintext([ByRef] Message msg, FFIDIDResolver did_resolver, OnPackPlaintextResult cb);

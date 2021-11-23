@@ -1,18 +1,33 @@
-use didcomm::{error::ErrorKind, secrets::Secret};
+use std::sync::Arc;
 
-use crate::common::ErrorCode;
+use crate::{
+    common::ErrorCode,
+    secrets_resolver_adapter::{OnFindSecretsResult, OnGetSecretResult},
+};
 
+/// Interface for secrets resolver.
+/// Resolves secrets such as private keys to be used for signing and encryption.
 pub trait FFISecretsResolver: Sync + Send {
-    fn get_secret(&self, secret_id: String, cb: Box<dyn OnGetSecretResult>) -> ErrorCode;
-    fn find_secrets(&self, secret_ids: Vec<String>, cb: Box<dyn OnFindSecretsResult>) -> ErrorCode;
-}
+    /// Finds secret (usually private key) identified by the given key ID.
+    ///
+    /// # Parameters
+    /// - `secret_id` the ID (in form of DID URL) identifying a secret
+    /// - `cb` a callback with a result
+    ///
+    /// # Returns
+    /// A secret (usually private key) or None of there is no secret for the given ID
+    ///
+    fn get_secret(&self, secret_id: String, cb: Arc<OnGetSecretResult>) -> ErrorCode;
 
-pub trait OnGetSecretResult: Sync + Send {
-    fn success(&self, result: Option<Secret>);
-    fn error(&self, err: ErrorKind, msg: String);
-}
-
-pub trait OnFindSecretsResult: Sync + Send {
-    fn success(&self, result: Vec<String>);
-    fn error(&self, err: ErrorKind, msg: String);
+    /// Find all secrets that have one of the given IDs.
+    /// Return secrets only for key IDs for which a secret is present.
+    ///
+    /// # Parameters
+    /// - `secret_ids` the IDs find secrets for
+    /// - `cb` a callback with a result
+    ///
+    /// # Returns
+    /// A secret (usually private key) or None of there is no secret for the given ID
+    ///
+    fn find_secrets(&self, secret_ids: Vec<String>, cb: Arc<OnFindSecretsResult>) -> ErrorCode;
 }

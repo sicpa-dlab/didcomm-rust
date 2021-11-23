@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use didcomm::error::{err_msg, ErrorKind, Result, ResultExt};
+use didcomm::error::{err_msg, ErrorKind, Result, ResultExt, ResultExtNoContext};
 use didcomm::secrets::{Secret, SecretsResolver};
 use futures::channel::oneshot;
 
@@ -10,8 +10,14 @@ use lazy_static::lazy_static;
 
 use crate::common::get_next_id;
 
-use super::secrets_resolver::{OnFindSecretsResult, OnGetSecretResult};
 use super::FFISecretsResolver;
+
+lazy_static! {
+    static ref CALLBACK_SENDERS_GET_SECRETS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Option<Secret>>>>>> =
+        Arc::new(Mutex::new(HashMap::new()));
+    static ref CALLBACK_SENDERS_FIND_SECRETS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Vec<String>>>>>> =
+        Arc::new(Mutex::new(HashMap::new()));
+}
 
 pub struct FFISecretsResolverAdapter {
     secrets_resolver: Box<dyn FFISecretsResolver>,
@@ -23,13 +29,6 @@ impl FFISecretsResolverAdapter {
     }
 }
 
-lazy_static! {
-    static ref CALLBACK_SENDERS_GET_SECRETS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Option<Secret>>>>>> =
-        Arc::new(Mutex::new(HashMap::new()));
-    static ref CALLBACK_SENDERS_FIND_SECRETS: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Vec<String>>>>>> =
-        Arc::new(Mutex::new(HashMap::new()));
-}
-
 #[async_trait]
 impl SecretsResolver for FFISecretsResolverAdapter {
     async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>> {
@@ -38,9 +37,9 @@ impl SecretsResolver for FFISecretsResolverAdapter {
         let cb_id = get_next_id();
         CALLBACK_SENDERS_GET_SECRETS
             .lock()
-            .unwrap()
+            .kind_no_context(ErrorKind::InvalidState, "can not get secret")?
             .insert(cb_id, sender);
-        let cb = Box::new(OnGetSecretResultAdapter { cb_id: cb_id });
+        let cb = Arc::new(OnGetSecretResult { cb_id: cb_id });
 
         self.secrets_resolver
             .get_secret(String::from(secret_id), cb);
@@ -59,9 +58,9 @@ impl SecretsResolver for FFISecretsResolverAdapter {
         let cb_id = get_next_id();
         CALLBACK_SENDERS_FIND_SECRETS
             .lock()
-            .unwrap()
+            .kind_no_context(ErrorKind::InvalidState, "can not get secret")?
             .insert(cb_id, sender);
-        let cb = Box::new(OnFindSecretsResultAdapter { cb_id: cb_id });
+        let cb = Arc::new(OnFindSecretsResult { cb_id: cb_id });
 
         self.secrets_resolver
             .find_secrets(secret_ids.iter().map(|&s| String::from(s)).collect(), cb);
@@ -79,54 +78,78 @@ impl SecretsResolver for FFISecretsResolverAdapter {
     }
 }
 
-pub struct OnGetSecretResultAdapter {
+pub struct OnGetSecretResult {
     pub cb_id: i32,
 }
 
-impl OnGetSecretResult for OnGetSecretResultAdapter {
-    fn success(&self, result: Option<Secret>) {
-        CALLBACK_SENDERS_GET_SECRETS
-            .lock()
-            .unwrap()
-            .remove(&self.cb_id)
-            .unwrap()
-            .send(Ok(result))
-            .unwrap();
+impl OnGetSecretResult {
+    pub fn new(cb_id: i32) -> Self {
+        OnGetSecretResult { cb_id }
     }
 
-    fn error(&self, err: ErrorKind, msg: String) {
-        CALLBACK_SENDERS_GET_SECRETS
+    pub fn success(&self, result: Option<Secret>) -> std::result::Result<(), ErrorKind> {
+        let sender = CALLBACK_SENDERS_GET_SECRETS
             .lock()
-            .unwrap()
-            .remove(&self.cb_id)
-            .unwrap()
-            .send(Err(err_msg(err, msg)))
-            .unwrap();
+            .to_error_kind(ErrorKind::InvalidState)?
+            .remove(&self.cb_id);
+        match sender {
+            Some(sender) => sender
+                .send(Ok(result))
+                .to_error_kind(ErrorKind::InvalidState)?,
+            None => Err(ErrorKind::InvalidState)?,
+        };
+        Ok(())
+    }
+
+    pub fn error(&self, err: ErrorKind, msg: String) -> std::result::Result<(), ErrorKind> {
+        let sender = CALLBACK_SENDERS_GET_SECRETS
+            .lock()
+            .to_error_kind(ErrorKind::InvalidState)?
+            .remove(&self.cb_id);
+        match sender {
+            Some(sender) => sender
+                .send(Err(err_msg(err, msg)))
+                .to_error_kind(ErrorKind::InvalidState)?,
+            None => Err(ErrorKind::InvalidState)?,
+        };
+        Ok(())
     }
 }
 
-pub struct OnFindSecretsResultAdapter {
+pub struct OnFindSecretsResult {
     pub cb_id: i32,
 }
 
-impl OnFindSecretsResult for OnFindSecretsResultAdapter {
-    fn success(&self, result: Vec<String>) {
-        CALLBACK_SENDERS_FIND_SECRETS
-            .lock()
-            .unwrap()
-            .remove(&self.cb_id)
-            .unwrap()
-            .send(Ok(result))
-            .unwrap();
+impl OnFindSecretsResult {
+    pub fn new(cb_id: i32) -> Self {
+        OnFindSecretsResult { cb_id }
     }
 
-    fn error(&self, err: ErrorKind, msg: String) {
-        CALLBACK_SENDERS_FIND_SECRETS
+    pub fn success(&self, result: Vec<String>) -> std::result::Result<(), ErrorKind> {
+        let sender = CALLBACK_SENDERS_FIND_SECRETS
             .lock()
-            .unwrap()
-            .remove(&self.cb_id)
-            .unwrap()
-            .send(Err(err_msg(err, msg)))
-            .unwrap();
+            .to_error_kind(ErrorKind::InvalidState)?
+            .remove(&self.cb_id);
+        match sender {
+            Some(sender) => sender
+                .send(Ok(result))
+                .to_error_kind(ErrorKind::InvalidState)?,
+            None => Err(ErrorKind::InvalidState)?,
+        };
+        Ok(())
+    }
+
+    pub fn error(&self, err: ErrorKind, msg: String) -> std::result::Result<(), ErrorKind> {
+        let sender = CALLBACK_SENDERS_FIND_SECRETS
+            .lock()
+            .to_error_kind(ErrorKind::InvalidState)?
+            .remove(&self.cb_id);
+        match sender {
+            Some(sender) => sender
+                .send(Err(err_msg(err, msg)))
+                .to_error_kind(ErrorKind::InvalidState)?,
+            None => Err(ErrorKind::InvalidState)?,
+        };
+        Ok(())
     }
 }

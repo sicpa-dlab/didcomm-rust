@@ -46,99 +46,135 @@ typedef struct RustCallStatus {
 // ⚠️ increment the version suffix in all instances of UNIFFI_SHARED_HEADER_V3 in this file.           ⚠️
 #endif // def UNIFFI_SHARED_H
 
-void ffi_didcomm_9604_ExampleFFIDIDResolver_object_free(
+void ffi_didcomm_ff3d_OnDIDResolverResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_9604_ExampleFFIDIDResolver_new(
+void*_Nonnull didcomm_ff3d_OnDIDResolverResult_new(
+      int32_t cb_id,
+    RustCallStatus *_Nonnull out_status
+    );
+void didcomm_ff3d_OnDIDResolverResult_success(
+      void*_Nonnull ptr,RustBuffer result,
+    RustCallStatus *_Nonnull out_status
+    );
+void didcomm_ff3d_OnDIDResolverResult_error(
+      void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
+    RustCallStatus *_Nonnull out_status
+    );
+void ffi_didcomm_ff3d_ExampleFFIDIDResolver_object_free(
+      void*_Nonnull ptr,
+    RustCallStatus *_Nonnull out_status
+    );
+void*_Nonnull didcomm_ff3d_ExampleFFIDIDResolver_new(
       RustBuffer known_dids,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_9604_ExampleFFIDIDResolver_resolve(
-      void*_Nonnull ptr,RustBuffer did,uint64_t cb,
+RustBuffer didcomm_ff3d_ExampleFFIDIDResolver_resolve(
+      void*_Nonnull ptr,RustBuffer did,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_9604_ExampleFFISecretsResolver_object_free(
+void ffi_didcomm_ff3d_OnGetSecretResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_9604_ExampleFFISecretsResolver_new(
+void*_Nonnull didcomm_ff3d_OnGetSecretResult_new(
+      int32_t cb_id,
+    RustCallStatus *_Nonnull out_status
+    );
+void didcomm_ff3d_OnGetSecretResult_success(
+      void*_Nonnull ptr,RustBuffer result,
+    RustCallStatus *_Nonnull out_status
+    );
+void didcomm_ff3d_OnGetSecretResult_error(
+      void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
+    RustCallStatus *_Nonnull out_status
+    );
+void ffi_didcomm_ff3d_OnFindSecretsResult_object_free(
+      void*_Nonnull ptr,
+    RustCallStatus *_Nonnull out_status
+    );
+void*_Nonnull didcomm_ff3d_OnFindSecretsResult_new(
+      int32_t cb_id,
+    RustCallStatus *_Nonnull out_status
+    );
+void didcomm_ff3d_OnFindSecretsResult_success(
+      void*_Nonnull ptr,RustBuffer result,
+    RustCallStatus *_Nonnull out_status
+    );
+void didcomm_ff3d_OnFindSecretsResult_error(
+      void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
+    RustCallStatus *_Nonnull out_status
+    );
+void ffi_didcomm_ff3d_ExampleFFISecretsResolver_object_free(
+      void*_Nonnull ptr,
+    RustCallStatus *_Nonnull out_status
+    );
+void*_Nonnull didcomm_ff3d_ExampleFFISecretsResolver_new(
       RustBuffer known_secrets,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_9604_ExampleFFISecretsResolver_get_secret(
-      void*_Nonnull ptr,RustBuffer secret_id,uint64_t cb,
+RustBuffer didcomm_ff3d_ExampleFFISecretsResolver_get_secret(
+      void*_Nonnull ptr,RustBuffer secret_id,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_9604_ExampleFFISecretsResolver_find_secrets(
-      void*_Nonnull ptr,RustBuffer secret_ids,uint64_t cb,
+RustBuffer didcomm_ff3d_ExampleFFISecretsResolver_find_secrets(
+      void*_Nonnull ptr,RustBuffer secret_ids,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_9604_OnDIDResolverResult_init_callback(
+void ffi_didcomm_ff3d_FFIDIDResolver_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_9604_FFIDIDResolver_init_callback(
+void ffi_didcomm_ff3d_FFISecretsResolver_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_9604_OnGetSecretResult_init_callback(
+void ffi_didcomm_ff3d_OnPackSignedResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_9604_OnFindSecretsResult_init_callback(
+void ffi_didcomm_ff3d_OnPackEncryptedResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_9604_FFISecretsResolver_init_callback(
+void ffi_didcomm_ff3d_OnPackPlaintextResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_9604_OnPackSignedResult_init_callback(
+void ffi_didcomm_ff3d_OnUnpackResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_9604_OnPackEncryptedResult_init_callback(
-      ForeignCallback  _Nonnull callback_stub,
-    RustCallStatus *_Nonnull out_status
-    );
-void ffi_didcomm_9604_OnPackPlaintextResult_init_callback(
-      ForeignCallback  _Nonnull callback_stub,
-    RustCallStatus *_Nonnull out_status
-    );
-void ffi_didcomm_9604_OnUnpackResult_init_callback(
-      ForeignCallback  _Nonnull callback_stub,
-    RustCallStatus *_Nonnull out_status
-    );
-RustBuffer didcomm_9604_pack_plaintext(
+RustBuffer didcomm_ff3d_pack_plaintext(
       RustBuffer msg,uint64_t did_resolver,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_9604_pack_signed(
+RustBuffer didcomm_ff3d_pack_signed(
       RustBuffer msg,RustBuffer sign_by,uint64_t did_resolver,uint64_t secret_resolver,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_9604_pack_encrypted(
+RustBuffer didcomm_ff3d_pack_encrypted(
       RustBuffer msg,RustBuffer to,RustBuffer from,RustBuffer sign_by,uint64_t did_resolver,uint64_t secret_resolver,RustBuffer options,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_9604_unpack(
+RustBuffer didcomm_ff3d_unpack(
       RustBuffer msg,uint64_t did_resolver,uint64_t secret_resolver,RustBuffer options,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_9604_rustbuffer_alloc(
+RustBuffer ffi_didcomm_ff3d_rustbuffer_alloc(
       int32_t size,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_9604_rustbuffer_from_bytes(
+RustBuffer ffi_didcomm_ff3d_rustbuffer_from_bytes(
       ForeignBytes bytes,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_9604_rustbuffer_free(
+void ffi_didcomm_ff3d_rustbuffer_free(
       RustBuffer buf,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_9604_rustbuffer_reserve(
+RustBuffer ffi_didcomm_ff3d_rustbuffer_reserve(
       RustBuffer buf,int32_t additional,
     RustCallStatus *_Nonnull out_status
     );
