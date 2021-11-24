@@ -18,8 +18,6 @@ pub(crate) async fn _try_unpack_plaintext<'dr, 'sr>(
         let (unpacked_from_prior, from_prior_issuer_kid) =
             FromPrior::unpack(from_prior, did_resolver).await?;
 
-        // TODO: Add validation of FromPrior and Message fields consistency
-
         metadata.from_prior = Some(unpacked_from_prior);
         metadata.from_prior_issuer_kid = Some(from_prior_issuer_kid);
     };
