@@ -14,11 +14,11 @@ use crate::{did_resolver::OnDIDResolverResult, FFIDIDResolver};
 use async_trait::async_trait;
 
 pub(crate) struct FFIDIDResolverAdapter {
-    did_resolver: Box<dyn FFIDIDResolver>,
+    did_resolver: Arc<Box<dyn FFIDIDResolver>>,
 }
 
 impl FFIDIDResolverAdapter {
-    pub fn new(did_resolver: Box<dyn FFIDIDResolver>) -> Self {
+    pub fn new(did_resolver: Arc<Box<dyn FFIDIDResolver>>) -> Self {
         FFIDIDResolverAdapter { did_resolver }
     }
 }

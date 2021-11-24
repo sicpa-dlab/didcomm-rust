@@ -154,8 +154,8 @@ interface ExampleFFIDIDResolver {
 // 4. SECRETS RESOLVER
 
 callback interface FFISecretsResolver {
-  ErrorCode get_secret(string secretId, OnGetSecretResult cb); // should be secretId, not secret_id to avoid an error in generated code
-  ErrorCode find_secrets(sequence<string> secretIds, OnFindSecretsResult cb); // should be secretIds, not secret_ids to avoid an error in generated code
+  ErrorCode get_secret(string secretId, OnGetSecretResult cb); // should be in camel case
+  ErrorCode find_secrets(sequence<string> secretIds, OnFindSecretsResult cb); // should be in camel case
 };
 
 interface OnGetSecretResult {
@@ -305,6 +305,7 @@ enum SignAlg {
     "ES256K",
 };
 
+// 7. FROM PRIOR
 dictionary FromPrior {
   string iss;
   string sub;
@@ -315,13 +316,42 @@ dictionary FromPrior {
   string? jti;
 };
 
+interface FromPriorExt {
+  constructor(string iss, string sub, u64? exp);
+
+  string get_iss();
+  string get_sub();
+  u64? get_exp();
+
+};
+
+callback interface OnFromPriorPackResult {
+  void success(string fromPriorJwt, string kid); // should be in camel case
+  void error(ErrorKind err, string msg);
+};
+
+callback interface OnFromPriorUnpackResult {
+  void success(FromPrior fromPrior, string kid); // should be in camel case
+  void error(ErrorKind err, string msg);
+};
 
 
-// 7. PACK / UNPACK FUNCTIONS
+// 8. FORWARD
+
+// 9. PACK / UNPACK FUNCTIONS
+
+interface DIDComm {
+  constructor(FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver);
+
+  ErrorCode pack_plaintext([ByRef] Message msg, OnPackPlaintextResult cb);
+  ErrorCode pack_signed([ByRef] Message msg, string sign_by, OnPackSignedResult cb);
+  ErrorCode pack_encrypted([ByRef] Message msg, string to, string? from, string? sign_by, [ByRef] PackEncryptedOptions options, OnPackEncryptedResult cb);
+  ErrorCode unpack(string msg, [ByRef] UnpackOptions options, OnUnpackResult cb);
+
+  ErrorCode pack_from_prior([ByRef] FromPriorExt msg, string? issuer_kid, OnFromPriorPackResult cb);
+  ErrorCode unpack_from_prior(string from_prior_jwt, OnFromPriorUnpackResult cb);
+
+};
 
 namespace didcomm {
-  ErrorCode pack_plaintext([ByRef] Message msg, FFIDIDResolver did_resolver, OnPackPlaintextResult cb);
-  ErrorCode pack_signed([ByRef] Message msg, string sign_by, FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver, OnPackSignedResult cb);
-  ErrorCode pack_encrypted([ByRef] Message msg, string to, string? from, string? sign_by, FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver, [ByRef] PackEncryptedOptions options, OnPackEncryptedResult cb);
-  ErrorCode unpack(string msg, FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver, [ByRef] UnpackOptions options, OnUnpackResult cb);
 };
