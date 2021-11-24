@@ -2,9 +2,11 @@ use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use didcomm::error::{err_msg, ErrorKind, Result, ResultExt, ResultExtNoContext};
+use didcomm::error::{ErrorKind, Result, ResultExt};
 use didcomm::secrets::{Secret, SecretsResolver};
 use futures::channel::oneshot;
+
+use crate::secrets_resolver::{OnFindSecretsResult, OnGetSecretResult};
 
 use super::FFISecretsResolver;
 
@@ -58,85 +60,5 @@ impl SecretsResolver for FFISecretsResolverAdapter {
             .filter(|&&sid| res.iter().find(|&s| s == sid).is_some())
             .map(|sid| *sid)
             .collect())
-    }
-}
-
-pub struct OnGetSecretResult {
-    sender: Mutex<RefCell<Option<oneshot::Sender<Result<Option<Secret>>>>>>,
-}
-
-impl OnGetSecretResult {
-    pub fn new(sender: Mutex<RefCell<Option<oneshot::Sender<Result<Option<Secret>>>>>>) -> Self {
-        OnGetSecretResult { sender }
-    }
-
-    pub fn success(&self, result: Option<Secret>) -> std::result::Result<(), ErrorKind> {
-        let sender = self
-            .sender
-            .lock()
-            .to_error_kind(ErrorKind::InvalidState)?
-            .replace(None);
-        match sender {
-            Some(sender) => sender
-                .send(Ok(result))
-                .to_error_kind(ErrorKind::InvalidState)?,
-            None => Err(ErrorKind::InvalidState)?,
-        };
-        Ok(())
-    }
-
-    pub fn error(&self, err: ErrorKind, msg: String) -> std::result::Result<(), ErrorKind> {
-        let sender = self
-            .sender
-            .lock()
-            .to_error_kind(ErrorKind::InvalidState)?
-            .replace(None);
-        match sender {
-            Some(sender) => sender
-                .send(Err(err_msg(err, msg)))
-                .to_error_kind(ErrorKind::InvalidState)?,
-            None => Err(ErrorKind::InvalidState)?,
-        };
-        Ok(())
-    }
-}
-
-pub struct OnFindSecretsResult {
-    sender: Mutex<RefCell<Option<oneshot::Sender<Result<Vec<String>>>>>>,
-}
-
-impl OnFindSecretsResult {
-    pub fn new(sender: Mutex<RefCell<Option<oneshot::Sender<Result<Vec<String>>>>>>) -> Self {
-        OnFindSecretsResult { sender }
-    }
-
-    pub fn success(&self, result: Vec<String>) -> std::result::Result<(), ErrorKind> {
-        let sender = self
-            .sender
-            .lock()
-            .to_error_kind(ErrorKind::InvalidState)?
-            .replace(None);
-        match sender {
-            Some(sender) => sender
-                .send(Ok(result))
-                .to_error_kind(ErrorKind::InvalidState)?,
-            None => Err(ErrorKind::InvalidState)?,
-        };
-        Ok(())
-    }
-
-    pub fn error(&self, err: ErrorKind, msg: String) -> std::result::Result<(), ErrorKind> {
-        let sender = self
-            .sender
-            .lock()
-            .to_error_kind(ErrorKind::InvalidState)?
-            .replace(None);
-        match sender {
-            Some(sender) => sender
-                .send(Err(err_msg(err, msg)))
-                .to_error_kind(ErrorKind::InvalidState)?,
-            None => Err(ErrorKind::InvalidState)?,
-        };
-        Ok(())
     }
 }

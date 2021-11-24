@@ -5,11 +5,11 @@ use std::{
 
 use didcomm::{
     did::{DIDDoc, DIDResolver},
-    error::{err_msg, ErrorKind, Result, ResultExt, ResultExtNoContext},
+    error::{ErrorKind, Result, ResultExt},
 };
 use futures::channel::oneshot;
 
-use crate::FFIDIDResolver;
+use crate::{did_resolver::OnDIDResolverResult, FFIDIDResolver};
 
 use async_trait::async_trait;
 
@@ -40,45 +40,5 @@ impl DIDResolver for FFIDIDResolverAdapter {
             .kind(ErrorKind::InvalidState, "can not resolve DID Doc")?;
 
         Ok(res)
-    }
-}
-
-pub struct OnDIDResolverResult {
-    sender: Mutex<RefCell<Option<oneshot::Sender<Result<Option<DIDDoc>>>>>>,
-}
-
-impl OnDIDResolverResult {
-    pub fn new(sender: Mutex<RefCell<Option<oneshot::Sender<Result<Option<DIDDoc>>>>>>) -> Self {
-        OnDIDResolverResult { sender }
-    }
-
-    pub fn success(&self, result: Option<DIDDoc>) -> std::result::Result<(), ErrorKind> {
-        let sender = self
-            .sender
-            .lock()
-            .to_error_kind(ErrorKind::InvalidState)?
-            .replace(None);
-        match sender {
-            Some(sender) => sender
-                .send(Ok(result))
-                .to_error_kind(ErrorKind::InvalidState)?,
-            None => Err(ErrorKind::InvalidState)?,
-        };
-        Ok(())
-    }
-
-    pub fn error(&self, err: ErrorKind, msg: String) -> std::result::Result<(), ErrorKind> {
-        let sender = self
-            .sender
-            .lock()
-            .to_error_kind(ErrorKind::InvalidState)?
-            .replace(None);
-        match sender {
-            Some(sender) => sender
-                .send(Err(err_msg(err, msg)))
-                .to_error_kind(ErrorKind::InvalidState)?,
-            None => Err(ErrorKind::InvalidState)?,
-        };
-        Ok(())
     }
 }

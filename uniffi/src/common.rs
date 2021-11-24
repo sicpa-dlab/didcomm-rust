@@ -1,11 +1,8 @@
-use std::{
-    cmp,
-    sync::atomic::{AtomicUsize, Ordering},
-};
+use std::{cell::RefCell, cmp, sync::Mutex};
 
 use crate::UniffiCustomTypeWrapper;
-use didcomm::error::ToResult;
-use futures::executor::ThreadPool;
+use didcomm::error::{err_msg, ErrorKind, Result, ResultExtNoContext, ToResult};
+use futures::{channel::oneshot, executor::ThreadPool};
 use lazy_static::lazy_static;
 
 pub enum ErrorCode {
@@ -19,12 +16,6 @@ lazy_static! {
         .pool_size(cmp::max(8, num_cpus::get()))
         .create()
         .unwrap();
-
-    static ref IDS_COUNTER: AtomicUsize = AtomicUsize::new(1);
-}
-
-pub fn get_next_id() -> i32 {
-    (IDS_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32
 }
 
 // We use `JsonValue` in our UDL. It moves to and from Uniffi bindings via a string.
@@ -40,5 +31,45 @@ impl UniffiCustomTypeWrapper for JsonValue {
 
     fn unwrap(obj: Self) -> Self::Wrapped {
         obj.to_string()
+    }
+}
+
+pub struct OnResult<T> {
+    sender: Mutex<RefCell<Option<oneshot::Sender<Result<T>>>>>,
+}
+
+impl<T> OnResult<T> {
+    pub fn new(sender: Mutex<RefCell<Option<oneshot::Sender<Result<T>>>>>) -> Self {
+        OnResult { sender }
+    }
+
+    pub fn success(&self, result: T) -> std::result::Result<(), ErrorKind> {
+        let sender = self
+            .sender
+            .lock()
+            .to_error_kind(ErrorKind::InvalidState)?
+            .replace(None);
+        match sender {
+            Some(sender) => sender
+                .send(Ok(result))
+                .to_error_kind(ErrorKind::InvalidState)?,
+            None => Err(ErrorKind::InvalidState)?,
+        };
+        Ok(())
+    }
+
+    pub fn error(&self, err: ErrorKind, msg: String) -> std::result::Result<(), ErrorKind> {
+        let sender = self
+            .sender
+            .lock()
+            .to_error_kind(ErrorKind::InvalidState)?
+            .replace(None);
+        match sender {
+            Some(sender) => sender
+                .send(Err(err_msg(err, msg)))
+                .to_error_kind(ErrorKind::InvalidState)?,
+            None => Err(ErrorKind::InvalidState)?,
+        };
+        Ok(())
     }
 }

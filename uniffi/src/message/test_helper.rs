@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::fmt;
 use std::sync::Mutex;
 
 use didcomm::error::{err_msg, Error, ErrorKind, Result};
@@ -43,24 +44,28 @@ pub(crate) fn create_did_resolver() -> Box<dyn FFIDIDResolver> {
     ]))
 }
 
-pub(crate) struct PackResult {
-    sender: Mutex<RefCell<Option<oneshot::Sender<Result<String>>>>>,
+pub(crate) struct TestResult<T>
+where
+    T: fmt::Debug + 'static,
+{
+    sender: Mutex<RefCell<Option<oneshot::Sender<Result<T>>>>>,
 }
 
-impl PackResult {
-    pub(crate) fn new() -> (Box<Self>, Receiver<Result<String>>) {
-        let (sender, receiver) = oneshot::channel::<Result<String>>();
+impl<T> TestResult<T>
+where
+    T: fmt::Debug + 'static,
+{
+    pub(crate) fn new() -> (Box<Self>, Receiver<Result<T>>) {
+        let (sender, receiver) = oneshot::channel::<Result<T>>();
         (
-            Box::new(PackResult {
+            Box::new(TestResult {
                 sender: Mutex::new(RefCell::new(Some(sender))),
             }),
             receiver,
         )
     }
-}
 
-impl OnPackPlaintextResult for PackResult {
-    fn success(&self, result: String) {
+    fn _success(&self, result: T) {
         self.sender
             .lock()
             .expect("Unable lock")
@@ -70,7 +75,7 @@ impl OnPackPlaintextResult for PackResult {
             .expect("Unable send");
     }
 
-    fn error(&self, err: ErrorKind, msg: String) {
+    fn _error(&self, err: ErrorKind, msg: String) {
         self.sender
             .lock()
             .expect("Unable lock")
@@ -78,87 +83,49 @@ impl OnPackPlaintextResult for PackResult {
             .expect("Callback has been already called")
             .send(Err(err_msg(err, msg)))
             .expect("Unable send");
+    }
+}
+
+pub(crate) type PackResult = TestResult<String>;
+
+impl OnPackPlaintextResult for PackResult {
+    fn success(&self, result: String) {
+        self._success(result);
+    }
+
+    fn error(&self, err: ErrorKind, msg: String) {
+        self._error(err, msg);
     }
 }
 
 impl OnPackSignedResult for PackResult {
     fn success(&self, result: String, _metadata: PackSignedMetadata) {
-        self.sender
-            .lock()
-            .expect("Unable lock")
-            .replace(None)
-            .expect("Callback has been already called")
-            .send(Ok(result))
-            .expect("Unable send");
+        self._success(result);
     }
 
     fn error(&self, err: ErrorKind, msg: String) {
-        self.sender
-            .lock()
-            .expect("Unable lock")
-            .replace(None)
-            .expect("Callback has been already called")
-            .send(Err(err_msg(err, msg)))
-            .expect("Unable send");
+        self._error(err, msg);
     }
 }
 
 impl OnPackEncryptedResult for PackResult {
     fn success(&self, result: String, _metadata: PackEncryptedMetadata) {
-        self.sender
-            .lock()
-            .expect("Unable lock")
-            .replace(None)
-            .expect("Callback has been already called")
-            .send(Ok(result))
-            .expect("Unable send");
+        self._success(result);
     }
 
     fn error(&self, err: ErrorKind, msg: String) {
-        self.sender
-            .lock()
-            .expect("Unable lock")
-            .replace(None)
-            .expect("Callback has been already called")
-            .send(Err(err_msg(err, msg)))
-            .expect("Unable send");
+        self._error(err, msg);
     }
 }
 
-pub(crate) struct UnpackResult {
-    sender: Mutex<RefCell<Option<oneshot::Sender<Result<Message>>>>>,
-}
-
-impl UnpackResult {
-    pub(crate) fn new() -> (Box<Self>, Receiver<Result<Message>>) {
-        let (sender, receiver) = oneshot::channel::<Result<Message>>();
-        (
-            Box::new(UnpackResult {
-                sender: Mutex::new(RefCell::new(Some(sender))),
-            }),
-            receiver,
-        )
-    }
-}
+pub(crate) type UnpackResult = TestResult<Message>;
 
 impl OnUnpackResult for UnpackResult {
     fn success(&self, result: Message, _metadata: UnpackMetadata) {
-        self.sender
-            .lock()
-            .expect("Unable lock")
-            .replace(None)
-            .expect("Callback has been already called")
-            .send(Ok(result))
-            .expect("Unable send");
+        self._success(result);
     }
 
     fn error(&self, err: ErrorKind, msg: String) {
-        self.sender
-            .lock()
-            .expect("Unable lock")
-            .replace(None)
-            .expect("Callback has been already called")
-            .send(Err(err_msg(err, msg)))
-            .expect("Unable send");
+        self._error(err, msg);
     }
 }

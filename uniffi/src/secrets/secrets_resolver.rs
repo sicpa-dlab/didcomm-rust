@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use crate::{
-    common::ErrorCode,
-    secrets_resolver_adapter::{OnFindSecretsResult, OnGetSecretResult},
-};
+use didcomm::secrets::Secret;
+
+use crate::common::{ErrorCode, OnResult};
 
 /// Interface for secrets resolver.
 /// Resolves secrets such as private keys to be used for signing and encryption.
@@ -31,3 +30,6 @@ pub trait FFISecretsResolver: Sync + Send {
     ///
     fn find_secrets(&self, secret_ids: Vec<String>, cb: Arc<OnFindSecretsResult>) -> ErrorCode;
 }
+
+pub type OnGetSecretResult = OnResult<Option<Secret>>;
+pub type OnFindSecretsResult = OnResult<Vec<String>>;
