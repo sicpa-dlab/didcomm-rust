@@ -2,9 +2,6 @@
 name = 'pack_signed'
 harness = false
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
 [[bench]]
 name = 'pack_encrypted'
 harness = false

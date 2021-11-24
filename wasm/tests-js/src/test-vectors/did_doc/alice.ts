@@ -55,7 +55,7 @@ export const ALICE_VERIFICATION_METHOD_KEY_AGREEM_P521: VerificationMethod = {
   },
 };
 
-export const ALICE_AUTH_METHOD_ED25519: VerificationMethod = {
+export const ALICE_AUTH_METHOD_25519: VerificationMethod = {
   id: "did:example:alice#key-1",
   type: "JsonWebKey2020",
   controller: "did:example:alice#key-1",
@@ -113,7 +113,7 @@ export const ALICE_DID_DOC: DIDDoc = {
     ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
     ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
     ALICE_VERIFICATION_METHOD_KEY_AGREEM_P521,
-    ALICE_AUTH_METHOD_ED25519,
+    ALICE_AUTH_METHOD_25519,
     ALICE_AUTH_METHOD_P256,
     ALICE_AUTH_METHOD_SECP256K1,
   ],
