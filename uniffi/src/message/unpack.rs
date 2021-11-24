@@ -39,8 +39,7 @@ pub fn unpack<'a>(
 #[cfg(test)]
 mod tests {
     use crate::message::test_helper::{
-        create_did_resolver, create_pack_callback, create_secrets_resolver, create_unpack_cb,
-        get_pack_result, get_unpack_error, get_unpack_result,
+        create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult, UnpackResult,
     };
     use crate::message::unpack::unpack;
     use crate::message::{pack_encrypted, pack_plaintext, pack_signed};
@@ -53,19 +52,19 @@ mod tests {
     async fn unpack_works_plaintext() {
         let msg = simple_message();
 
-        let (pack_cb, pack_cb_cb_id) = create_pack_callback();
-        pack_plaintext(&msg, create_did_resolver(), pack_cb);
-        let res = get_pack_result(pack_cb_cb_id).await;
+        let (cb, receiver) = PackResult::new();
+        pack_plaintext(&msg, create_did_resolver(), cb);
+        let res = get_ok(receiver).await;
 
-        let (unpack_cb, unpack_cb_cb_id) = create_unpack_cb();
+        let (cb, receiver) = UnpackResult::new();
         unpack(
             res,
             create_did_resolver(),
             create_secrets_resolver(),
             &UnpackOptions::default(),
-            unpack_cb,
+            cb,
         );
-        let res = get_unpack_result(unpack_cb_cb_id).await;
+        let res = get_ok(receiver).await;
 
         assert_eq!(res, msg);
     }
@@ -74,25 +73,25 @@ mod tests {
     async fn unpack_works_signed() {
         let msg = simple_message();
 
-        let (pack_cb, pack_cb_cb_id) = create_pack_callback();
+        let (cb, receiver) = PackResult::new();
         pack_signed(
             &msg,
             String::from(ALICE_DID),
             create_did_resolver(),
             create_secrets_resolver(),
-            pack_cb,
+            cb,
         );
-        let res = get_pack_result(pack_cb_cb_id).await;
+        let res = get_ok(receiver).await;
 
-        let (unpack_cb, unpack_cb_cb_id) = create_unpack_cb();
+        let (cb, receiver) = UnpackResult::new();
         unpack(
             res,
             create_did_resolver(),
             create_secrets_resolver(),
             &UnpackOptions::default(),
-            unpack_cb,
+            cb,
         );
-        let res = get_unpack_result(unpack_cb_cb_id).await;
+        let res = get_ok(receiver).await;
 
         assert_eq!(res, msg);
     }
@@ -101,7 +100,7 @@ mod tests {
     async fn unpack_works_encrypted() {
         let msg = simple_message();
 
-        let (pack_cb, pack_cb_cb_id) = create_pack_callback();
+        let (cb, receiver) = PackResult::new();
         pack_encrypted(
             &msg,
             String::from(BOB_DID),
@@ -113,34 +112,34 @@ mod tests {
                 forward: false,
                 ..PackEncryptedOptions::default()
             },
-            pack_cb,
+            cb,
         );
-        let res = get_pack_result(pack_cb_cb_id).await;
+        let res = get_ok(receiver).await;
 
-        let (unpack_cb, unpack_cb_cb_id) = create_unpack_cb();
+        let (cb, receiver) = UnpackResult::new();
         unpack(
             res,
             create_did_resolver(),
             create_secrets_resolver(),
             &UnpackOptions::default(),
-            unpack_cb,
+            cb,
         );
-        let res = get_unpack_result(unpack_cb_cb_id).await;
+        let res = get_ok(receiver).await;
 
         assert_eq!(res, msg);
     }
 
     #[tokio::test]
     async fn unpack_works_malformed() {
-        let (unpack_cb, unpack_cb_cb_id) = create_unpack_cb();
+        let (cb, receiver) = UnpackResult::new();
         unpack(
             String::from("invalid message"),
             create_did_resolver(),
             create_secrets_resolver(),
             &UnpackOptions::default(),
-            unpack_cb,
+            cb,
         );
-        let res = get_unpack_error(unpack_cb_cb_id).await;
+        let res = get_error(receiver).await;
 
         assert_eq!(res.kind(), ErrorKind::Malformed);
     }

@@ -32,18 +32,19 @@ pub fn pack_plaintext(
 
 #[cfg(test)]
 mod tests {
-    use crate::message::pack_plaintext;
-    use crate::message::test_helper::{create_did_resolver, create_pack_callback, get_pack_result};
 
+    use crate::message::pack_plaintext;
+
+    use crate::message::test_helper::{create_did_resolver, get_ok, PackResult};
     use crate::test_vectors::simple_message;
 
     #[tokio::test]
     async fn pack_plaintext_works() {
-        let (test_cb, cb_id) = create_pack_callback();
+        let (cb, receiver) = PackResult::new();
 
-        pack_plaintext(&simple_message(), create_did_resolver(), test_cb);
+        pack_plaintext(&simple_message(), create_did_resolver(), cb);
 
-        let res = get_pack_result(cb_id).await;
+        let res = get_ok(receiver).await;
         assert!(res.contains("body"));
     }
 }

@@ -50,8 +50,7 @@ pub fn pack_encrypted<'a, 'b>(
 #[cfg(test)]
 mod tests {
     use crate::message::test_helper::{
-        create_did_resolver, create_pack_callback, create_secrets_resolver, get_pack_error,
-        get_pack_result,
+        create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult,
     };
     use crate::pack_encrypted;
     use crate::test_vectors::{simple_message, ALICE_DID, BOB_DID};
@@ -61,7 +60,7 @@ mod tests {
 
     #[tokio::test]
     async fn pack_encrypted_works() {
-        let (test_cb, cb_id) = create_pack_callback();
+        let (cb, receiver) = PackResult::new();
 
         pack_encrypted(
             &simple_message(),
@@ -74,10 +73,10 @@ mod tests {
                 forward: false,
                 ..PackEncryptedOptions::default()
             },
-            test_cb,
+            cb,
         );
 
-        let res = get_pack_result(cb_id).await;
+        let res = get_ok(receiver).await;
         assert!(res.contains("ciphertext"));
     }
 
@@ -92,7 +91,7 @@ mod tests {
         .from(ALICE_DID.to_owned())
         .finalize();
 
-        let (test_cb, cb_id) = create_pack_callback();
+        let (cb, receiver) = PackResult::new();
 
         pack_encrypted(
             &msg,
@@ -105,16 +104,16 @@ mod tests {
                 forward: false,
                 ..PackEncryptedOptions::default()
             },
-            test_cb,
+            cb,
         );
 
-        let res = get_pack_error(cb_id).await;
+        let res = get_error(receiver).await;
         assert_eq!(res.kind(), ErrorKind::DIDNotResolved);
     }
 
     #[tokio::test]
     async fn pack_encrypted_works_did_url_not_found() {
-        let (test_cb, cb_id) = create_pack_callback();
+        let (cb, receiver) = PackResult::new();
 
         pack_encrypted(
             &simple_message(),
@@ -127,16 +126,16 @@ mod tests {
                 forward: false,
                 ..PackEncryptedOptions::default()
             },
-            test_cb,
+            cb,
         );
 
-        let res = get_pack_error(cb_id).await;
+        let res = get_error(receiver).await;
         assert_eq!(res.kind(), ErrorKind::DIDUrlNotFound);
     }
 
     #[tokio::test]
     async fn pack_encrypted_works_secret_not_found() {
-        let (test_cb, cb_id) = create_pack_callback();
+        let (cb, receiver) = PackResult::new();
 
         pack_encrypted(
             &simple_message(),
@@ -152,16 +151,16 @@ mod tests {
                 forward: false,
                 ..PackEncryptedOptions::default()
             },
-            test_cb,
+            cb,
         );
 
-        let res = get_pack_error(cb_id).await;
+        let res = get_error(receiver).await;
         assert_eq!(res.kind(), ErrorKind::SecretNotFound);
     }
 
     #[tokio::test]
     async fn pack_encrypted_works_illegal_argument() {
-        let (test_cb, cb_id) = create_pack_callback();
+        let (cb, receiver) = PackResult::new();
 
         pack_encrypted(
             &simple_message(),
@@ -174,10 +173,10 @@ mod tests {
                 forward: false,
                 ..PackEncryptedOptions::default()
             },
-            test_cb,
+            cb,
         );
 
-        let res = get_pack_error(cb_id).await;
+        let res = get_error(receiver).await;
         assert_eq!(res.kind(), ErrorKind::IllegalArgument);
     }
 }
