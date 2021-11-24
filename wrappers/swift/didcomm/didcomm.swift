@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_didcomm_67df_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_didcomm_cce7_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_didcomm_67df_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_didcomm_cce7_rustbuffer_free(self, $0) }
     }
 }
 
@@ -1037,7 +1037,7 @@ public func packPlaintext(msg: Message, didResolver: FfididResolver, cb: OnPackP
     
     rustCall() {
     
-    didcomm_67df_pack_plaintext(msg.lower(), ffiConverterCallbackInterfaceFfididResolver.lower(didResolver), ffiConverterCallbackInterfaceOnPackPlaintextResult.lower(cb) , $0)
+    didcomm_cce7_pack_plaintext(msg.lower(), ffiConverterCallbackInterfaceFfididResolver.lower(didResolver), ffiConverterCallbackInterfaceOnPackPlaintextResult.lower(cb) , $0)
 }
     return try! ErrorCode.lift(_retval)
 }
@@ -1050,7 +1050,7 @@ public func packSigned(msg: Message, signBy: String, didResolver: FfididResolver
     
     rustCall() {
     
-    didcomm_67df_pack_signed(msg.lower(), signBy.lower(), ffiConverterCallbackInterfaceFfididResolver.lower(didResolver), ffiConverterCallbackInterfaceFfiSecretsResolver.lower(secretResolver), ffiConverterCallbackInterfaceOnPackSignedResult.lower(cb) , $0)
+    didcomm_cce7_pack_signed(msg.lower(), signBy.lower(), ffiConverterCallbackInterfaceFfididResolver.lower(didResolver), ffiConverterCallbackInterfaceFfiSecretsResolver.lower(secretResolver), ffiConverterCallbackInterfaceOnPackSignedResult.lower(cb) , $0)
 }
     return try! ErrorCode.lift(_retval)
 }
@@ -1063,7 +1063,7 @@ public func packEncrypted(msg: Message, to: String, from: String?, signBy: Strin
     
     rustCall() {
     
-    didcomm_67df_pack_encrypted(msg.lower(), to.lower(), FfiConverterOptionString.lower(from), FfiConverterOptionString.lower(signBy), ffiConverterCallbackInterfaceFfididResolver.lower(didResolver), ffiConverterCallbackInterfaceFfiSecretsResolver.lower(secretResolver), options.lower(), ffiConverterCallbackInterfaceOnPackEncryptedResult.lower(cb) , $0)
+    didcomm_cce7_pack_encrypted(msg.lower(), to.lower(), FfiConverterOptionString.lower(from), FfiConverterOptionString.lower(signBy), ffiConverterCallbackInterfaceFfididResolver.lower(didResolver), ffiConverterCallbackInterfaceFfiSecretsResolver.lower(secretResolver), options.lower(), ffiConverterCallbackInterfaceOnPackEncryptedResult.lower(cb) , $0)
 }
     return try! ErrorCode.lift(_retval)
 }
@@ -1076,7 +1076,7 @@ public func unpack(msg: String, didResolver: FfididResolver, secretResolver: Ffi
     
     rustCall() {
     
-    didcomm_67df_unpack(msg.lower(), ffiConverterCallbackInterfaceFfididResolver.lower(didResolver), ffiConverterCallbackInterfaceFfiSecretsResolver.lower(secretResolver), options.lower(), ffiConverterCallbackInterfaceOnUnpackResult.lower(cb) , $0)
+    didcomm_cce7_unpack(msg.lower(), ffiConverterCallbackInterfaceFfididResolver.lower(didResolver), ffiConverterCallbackInterfaceFfiSecretsResolver.lower(secretResolver), options.lower(), ffiConverterCallbackInterfaceOnUnpackResult.lower(cb) , $0)
 }
     return try! ErrorCode.lift(_retval)
 }
@@ -1098,18 +1098,9 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
     required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
-    public convenience init(cbId: Int32 )  {
-        self.init(unsafeFromRawPointer: try!
-    
-    
-    rustCall() {
-    
-    didcomm_67df_OnDIDResolverResult_new(cbId.lower() , $0)
-})
-    }
 
     deinit {
-        try! rustCall { ffi_didcomm_67df_OnDIDResolverResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_cce7_OnDIDResolverResult_object_free(pointer, $0) }
     }
 
     
@@ -1119,7 +1110,7 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_67df_OnDIDResolverResult_success(self.pointer, FfiConverterOptionRecordDidDoc.lower(result) , $0
+    didcomm_cce7_OnDIDResolverResult_success(self.pointer, FfiConverterOptionRecordDidDoc.lower(result) , $0
     )
 }
     }
@@ -1127,7 +1118,7 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_67df_OnDIDResolverResult_error(self.pointer, err.lower(), msg.lower() , $0
+    didcomm_cce7_OnDIDResolverResult_error(self.pointer, err.lower(), msg.lower() , $0
     )
 }
     }
@@ -1191,12 +1182,12 @@ public class ExampleFfididResolver: ExampleFFIDIDResolverProtocol {
     
     rustCall() {
     
-    didcomm_67df_ExampleFFIDIDResolver_new(FfiConverterSequenceString.lower(knownDids) , $0)
+    didcomm_cce7_ExampleFFIDIDResolver_new(FfiConverterSequenceString.lower(knownDids) , $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_67df_ExampleFFIDIDResolver_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_cce7_ExampleFFIDIDResolver_object_free(pointer, $0) }
     }
 
     
@@ -1206,7 +1197,7 @@ public class ExampleFfididResolver: ExampleFFIDIDResolverProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_67df_ExampleFFIDIDResolver_resolve(self.pointer, did.lower(), cb.lower() , $0
+    didcomm_cce7_ExampleFFIDIDResolver_resolve(self.pointer, did.lower(), cb.lower() , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1266,18 +1257,9 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
     required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
-    public convenience init(cbId: Int32 )  {
-        self.init(unsafeFromRawPointer: try!
-    
-    
-    rustCall() {
-    
-    didcomm_67df_OnGetSecretResult_new(cbId.lower() , $0)
-})
-    }
 
     deinit {
-        try! rustCall { ffi_didcomm_67df_OnGetSecretResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_cce7_OnGetSecretResult_object_free(pointer, $0) }
     }
 
     
@@ -1287,7 +1269,7 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_67df_OnGetSecretResult_success(self.pointer, FfiConverterOptionRecordSecret.lower(result) , $0
+    didcomm_cce7_OnGetSecretResult_success(self.pointer, FfiConverterOptionRecordSecret.lower(result) , $0
     )
 }
     }
@@ -1295,7 +1277,7 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_67df_OnGetSecretResult_error(self.pointer, err.lower(), msg.lower() , $0
+    didcomm_cce7_OnGetSecretResult_error(self.pointer, err.lower(), msg.lower() , $0
     )
 }
     }
@@ -1354,18 +1336,9 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
     required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
-    public convenience init(cbId: Int32 )  {
-        self.init(unsafeFromRawPointer: try!
-    
-    
-    rustCall() {
-    
-    didcomm_67df_OnFindSecretsResult_new(cbId.lower() , $0)
-})
-    }
 
     deinit {
-        try! rustCall { ffi_didcomm_67df_OnFindSecretsResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_cce7_OnFindSecretsResult_object_free(pointer, $0) }
     }
 
     
@@ -1375,7 +1348,7 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_67df_OnFindSecretsResult_success(self.pointer, FfiConverterSequenceString.lower(result) , $0
+    didcomm_cce7_OnFindSecretsResult_success(self.pointer, FfiConverterSequenceString.lower(result) , $0
     )
 }
     }
@@ -1383,7 +1356,7 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_67df_OnFindSecretsResult_error(self.pointer, err.lower(), msg.lower() , $0
+    didcomm_cce7_OnFindSecretsResult_error(self.pointer, err.lower(), msg.lower() , $0
     )
 }
     }
@@ -1448,12 +1421,12 @@ public class ExampleFfiSecretsResolver: ExampleFFISecretsResolverProtocol {
     
     rustCall() {
     
-    didcomm_67df_ExampleFFISecretsResolver_new(FfiConverterSequenceString.lower(knownSecrets) , $0)
+    didcomm_cce7_ExampleFFISecretsResolver_new(FfiConverterSequenceString.lower(knownSecrets) , $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_67df_ExampleFFISecretsResolver_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_cce7_ExampleFFISecretsResolver_object_free(pointer, $0) }
     }
 
     
@@ -1463,7 +1436,7 @@ public class ExampleFfiSecretsResolver: ExampleFFISecretsResolverProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_67df_ExampleFFISecretsResolver_get_secret(self.pointer, secretId.lower(), cb.lower() , $0
+    didcomm_cce7_ExampleFFISecretsResolver_get_secret(self.pointer, secretId.lower(), cb.lower() , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1472,7 +1445,7 @@ public class ExampleFfiSecretsResolver: ExampleFFISecretsResolverProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_67df_ExampleFFISecretsResolver_find_secrets(self.pointer, FfiConverterSequenceString.lower(secretIds), cb.lower() , $0
+    didcomm_cce7_ExampleFFISecretsResolver_find_secrets(self.pointer, FfiConverterSequenceString.lower(secretIds), cb.lower() , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -2860,7 +2833,7 @@ fileprivate let foreignCallbackCallbackInterfaceFfididResolver : ForeignCallback
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceFfididResolver: FfiConverterCallbackInterface<FfididResolver> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_67df_FFIDIDResolver_init_callback(foreignCallbackCallbackInterfaceFfididResolver, err)
+            ffi_didcomm_cce7_FFIDIDResolver_init_callback(foreignCallbackCallbackInterfaceFfididResolver, err)
     }
     return FfiConverterCallbackInterface<FfididResolver>()
 }()
@@ -2927,7 +2900,7 @@ fileprivate let foreignCallbackCallbackInterfaceFfiSecretsResolver : ForeignCall
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceFfiSecretsResolver: FfiConverterCallbackInterface<FfiSecretsResolver> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_67df_FFISecretsResolver_init_callback(foreignCallbackCallbackInterfaceFfiSecretsResolver, err)
+            ffi_didcomm_cce7_FFISecretsResolver_init_callback(foreignCallbackCallbackInterfaceFfiSecretsResolver, err)
     }
     return FfiConverterCallbackInterface<FfiSecretsResolver>()
 }()
@@ -2990,7 +2963,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackSignedResult : ForeignCall
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackSignedResult: FfiConverterCallbackInterface<OnPackSignedResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_67df_OnPackSignedResult_init_callback(foreignCallbackCallbackInterfaceOnPackSignedResult, err)
+            ffi_didcomm_cce7_OnPackSignedResult_init_callback(foreignCallbackCallbackInterfaceOnPackSignedResult, err)
     }
     return FfiConverterCallbackInterface<OnPackSignedResult>()
 }()
@@ -3053,7 +3026,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackEncryptedResult : ForeignC
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackEncryptedResult: FfiConverterCallbackInterface<OnPackEncryptedResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_67df_OnPackEncryptedResult_init_callback(foreignCallbackCallbackInterfaceOnPackEncryptedResult, err)
+            ffi_didcomm_cce7_OnPackEncryptedResult_init_callback(foreignCallbackCallbackInterfaceOnPackEncryptedResult, err)
     }
     return FfiConverterCallbackInterface<OnPackEncryptedResult>()
 }()
@@ -3115,7 +3088,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackPlaintextResult : ForeignC
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackPlaintextResult: FfiConverterCallbackInterface<OnPackPlaintextResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_67df_OnPackPlaintextResult_init_callback(foreignCallbackCallbackInterfaceOnPackPlaintextResult, err)
+            ffi_didcomm_cce7_OnPackPlaintextResult_init_callback(foreignCallbackCallbackInterfaceOnPackPlaintextResult, err)
     }
     return FfiConverterCallbackInterface<OnPackPlaintextResult>()
 }()
@@ -3178,19 +3151,10 @@ fileprivate let foreignCallbackCallbackInterfaceOnUnpackResult : ForeignCallback
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnUnpackResult: FfiConverterCallbackInterface<OnUnpackResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_67df_OnUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnUnpackResult, err)
+            ffi_didcomm_cce7_OnUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnUnpackResult, err)
     }
     return FfiConverterCallbackInterface<OnUnpackResult>()
 }()
-extension Int32: Primitive, ViaFfi {
-    fileprivate static func read(from buf: Reader) throws -> Self {
-        return try self.lift(buf.readInt())
-    }
-
-    fileprivate func write(into buf: Writer) {
-        buf.writeInt(self.lower())
-    }
-}
 extension UInt64: Primitive, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> Self {
         return try self.lift(buf.readInt())

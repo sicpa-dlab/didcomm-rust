@@ -46,135 +46,123 @@ typedef struct RustCallStatus {
 // ⚠️ increment the version suffix in all instances of UNIFFI_SHARED_HEADER_V3 in this file.           ⚠️
 #endif // def UNIFFI_SHARED_H
 
-void ffi_didcomm_67df_OnDIDResolverResult_object_free(
+void ffi_didcomm_cce7_OnDIDResolverResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_67df_OnDIDResolverResult_new(
-      int32_t cb_id,
-    RustCallStatus *_Nonnull out_status
-    );
-void didcomm_67df_OnDIDResolverResult_success(
+void didcomm_cce7_OnDIDResolverResult_success(
       void*_Nonnull ptr,RustBuffer result,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_67df_OnDIDResolverResult_error(
+void didcomm_cce7_OnDIDResolverResult_error(
       void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_ExampleFFIDIDResolver_object_free(
+void ffi_didcomm_cce7_ExampleFFIDIDResolver_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_67df_ExampleFFIDIDResolver_new(
+void*_Nonnull didcomm_cce7_ExampleFFIDIDResolver_new(
       RustBuffer known_dids,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_67df_ExampleFFIDIDResolver_resolve(
+RustBuffer didcomm_cce7_ExampleFFIDIDResolver_resolve(
       void*_Nonnull ptr,RustBuffer did,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_OnGetSecretResult_object_free(
+void ffi_didcomm_cce7_OnGetSecretResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_67df_OnGetSecretResult_new(
-      int32_t cb_id,
-    RustCallStatus *_Nonnull out_status
-    );
-void didcomm_67df_OnGetSecretResult_success(
+void didcomm_cce7_OnGetSecretResult_success(
       void*_Nonnull ptr,RustBuffer result,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_67df_OnGetSecretResult_error(
+void didcomm_cce7_OnGetSecretResult_error(
       void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_OnFindSecretsResult_object_free(
+void ffi_didcomm_cce7_OnFindSecretsResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_67df_OnFindSecretsResult_new(
-      int32_t cb_id,
-    RustCallStatus *_Nonnull out_status
-    );
-void didcomm_67df_OnFindSecretsResult_success(
+void didcomm_cce7_OnFindSecretsResult_success(
       void*_Nonnull ptr,RustBuffer result,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_67df_OnFindSecretsResult_error(
+void didcomm_cce7_OnFindSecretsResult_error(
       void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_ExampleFFISecretsResolver_object_free(
+void ffi_didcomm_cce7_ExampleFFISecretsResolver_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_67df_ExampleFFISecretsResolver_new(
+void*_Nonnull didcomm_cce7_ExampleFFISecretsResolver_new(
       RustBuffer known_secrets,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_67df_ExampleFFISecretsResolver_get_secret(
+RustBuffer didcomm_cce7_ExampleFFISecretsResolver_get_secret(
       void*_Nonnull ptr,RustBuffer secret_id,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_67df_ExampleFFISecretsResolver_find_secrets(
+RustBuffer didcomm_cce7_ExampleFFISecretsResolver_find_secrets(
       void*_Nonnull ptr,RustBuffer secret_ids,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_FFIDIDResolver_init_callback(
+void ffi_didcomm_cce7_FFIDIDResolver_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_FFISecretsResolver_init_callback(
+void ffi_didcomm_cce7_FFISecretsResolver_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_OnPackSignedResult_init_callback(
+void ffi_didcomm_cce7_OnPackSignedResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_OnPackEncryptedResult_init_callback(
+void ffi_didcomm_cce7_OnPackEncryptedResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_OnPackPlaintextResult_init_callback(
+void ffi_didcomm_cce7_OnPackPlaintextResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_OnUnpackResult_init_callback(
+void ffi_didcomm_cce7_OnUnpackResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_67df_pack_plaintext(
+RustBuffer didcomm_cce7_pack_plaintext(
       RustBuffer msg,uint64_t did_resolver,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_67df_pack_signed(
+RustBuffer didcomm_cce7_pack_signed(
       RustBuffer msg,RustBuffer sign_by,uint64_t did_resolver,uint64_t secret_resolver,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_67df_pack_encrypted(
+RustBuffer didcomm_cce7_pack_encrypted(
       RustBuffer msg,RustBuffer to,RustBuffer from,RustBuffer sign_by,uint64_t did_resolver,uint64_t secret_resolver,RustBuffer options,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_67df_unpack(
+RustBuffer didcomm_cce7_unpack(
       RustBuffer msg,uint64_t did_resolver,uint64_t secret_resolver,RustBuffer options,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_67df_rustbuffer_alloc(
+RustBuffer ffi_didcomm_cce7_rustbuffer_alloc(
       int32_t size,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_67df_rustbuffer_from_bytes(
+RustBuffer ffi_didcomm_cce7_rustbuffer_from_bytes(
       ForeignBytes bytes,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_67df_rustbuffer_free(
+void ffi_didcomm_cce7_rustbuffer_free(
       RustBuffer buf,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_67df_rustbuffer_reserve(
+RustBuffer ffi_didcomm_cce7_rustbuffer_reserve(
       RustBuffer buf,int32_t additional,
     RustCallStatus *_Nonnull out_status
     );

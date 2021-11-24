@@ -85,8 +85,6 @@ callback interface FFIDIDResolver {
 };
 
 interface OnDIDResolverResult {
-  constructor(i32 cb_id);
-
   [Throws=ErrorKind]
   void success(DIDDoc? result);
 
@@ -161,8 +159,6 @@ callback interface FFISecretsResolver {
 };
 
 interface OnGetSecretResult {
-  constructor(i32 cb_id);
-
   [Throws=ErrorKind]
   void success(Secret? result);
 
@@ -171,8 +167,6 @@ interface OnGetSecretResult {
 };
 
 interface OnFindSecretsResult {
-  constructor(i32 cb_id);
-
   [Throws=ErrorKind]  
   void success(sequence<string> result);
 
