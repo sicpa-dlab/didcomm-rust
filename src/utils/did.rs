@@ -31,8 +31,8 @@ pub(crate) fn did_or_url(did_or_url: &str) -> (&str, Option<&str>) {
 impl AsKnownKeyPair for VerificationMethod {
     fn key_alg(&self) -> KnownKeyAlg {
         match (&self.type_, &self.verification_material) {
-            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::JWK(ref jwk)) => {
-                match (jwk["kty"].as_str(), jwk["crv"].as_str()) {
+            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::JWK { ref value }) => {
+                match (value["kty"].as_str(), value["crv"].as_str()) {
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => KnownKeyAlg::P256,
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
                         KnownKeyAlg::K256
@@ -48,19 +48,19 @@ impl AsKnownKeyPair for VerificationMethod {
             }
             (
                 VerificationMethodType::X25519KeyAgreementKey2019,
-                VerificationMaterial::Base58(ref _b58_value),
+                VerificationMaterial::Base58 { value: _ },
             ) => KnownKeyAlg::X25519,
             (
                 VerificationMethodType::Ed25519VerificationKey2018,
-                VerificationMaterial::Base58(ref _b58_value),
+                VerificationMaterial::Base58 { value: _ },
             ) => KnownKeyAlg::Ed25519,
             (
                 VerificationMethodType::X25519KeyAgreementKey2020,
-                VerificationMaterial::Multibase(ref _multibase_value),
+                VerificationMaterial::Multibase { value: _ },
             ) => KnownKeyAlg::X25519,
             (
                 VerificationMethodType::Ed25519VerificationKey2020,
-                VerificationMaterial::Multibase(ref _multibase_value),
+                VerificationMaterial::Multibase { value: _ },
             ) => KnownKeyAlg::Ed25519,
             _ => KnownKeyAlg::Unsupported,
         }
@@ -68,25 +68,25 @@ impl AsKnownKeyPair for VerificationMethod {
 
     fn as_key_pair(&self) -> Result<KnownKeyPair> {
         match (&self.type_, &self.verification_material) {
-            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::JWK(ref jwk)) => {
-                match (jwk["kty"].as_str(), jwk["crv"].as_str()) {
+            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::JWK { ref value }) => {
+                match (value["kty"].as_str(), value["crv"].as_str()) {
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
-                        P256KeyPair::from_jwk_value(jwk)
+                        P256KeyPair::from_jwk_value(value)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
                             .map(KnownKeyPair::P256)
                     }
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
-                        K256KeyPair::from_jwk_value(jwk)
+                        K256KeyPair::from_jwk_value(value)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
                             .map(KnownKeyPair::K256)
                     }
                     (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
-                        Ed25519KeyPair::from_jwk_value(jwk)
+                        Ed25519KeyPair::from_jwk_value(value)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
                             .map(KnownKeyPair::Ed25519)
                     }
                     (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
-                        X25519KeyPair::from_jwk_value(jwk)
+                        X25519KeyPair::from_jwk_value(value)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
                             .map(KnownKeyPair::X25519)
                     }
@@ -99,9 +99,9 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::X25519KeyAgreementKey2019,
-                VerificationMaterial::Base58(ref b58_value),
+                VerificationMaterial::Base58 { ref value },
             ) => {
-                let decoded_value = bs58::decode(b58_value)
+                let decoded_value = bs58::decode(value)
                     .into_vec()
                     .to_didcomm("Wrong base58 value in verification material")?;
                 let base64_url_value =
@@ -123,9 +123,9 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::Ed25519VerificationKey2018,
-                VerificationMaterial::Base58(ref b58_value),
+                VerificationMaterial::Base58 { ref value },
             ) => {
-                let decoded_value = bs58::decode(b58_value)
+                let decoded_value = bs58::decode(value)
                     .into_vec()
                     .to_didcomm("Wrong base58 value in verification material")?;
                 let base64_url_value =
@@ -147,15 +147,15 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::X25519KeyAgreementKey2020,
-                VerificationMaterial::Multibase(ref multibase_value),
+                VerificationMaterial::Multibase { ref value },
             ) => {
-                if !multibase_value.starts_with('z') {
+                if !value.starts_with('z') {
                     Err(err_msg(
                         ErrorKind::IllegalArgument,
                         "Multibase value must start with 'z'",
                     ))?
                 };
-                let decoded_value = bs58::decode(&multibase_value[1..])
+                let decoded_value = bs58::decode(&value[1..])
                     .into_vec()
                     .to_didcomm("Wrong multibase value in verification material")?;
 
@@ -185,15 +185,15 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::Ed25519VerificationKey2020,
-                VerificationMaterial::Multibase(ref multibase_value),
+                VerificationMaterial::Multibase { ref value },
             ) => {
-                if !multibase_value.starts_with('z') {
+                if !value.starts_with('z') {
                     Err(err_msg(
                         ErrorKind::IllegalArgument,
                         "Multibase must start with 'z'",
                     ))?
                 }
-                let decoded_value = bs58::decode(&multibase_value[1..])
+                let decoded_value = bs58::decode(&value[1..])
                     .into_vec()
                     .to_didcomm("Wrong multibase value in verification material")?;
 
@@ -231,8 +231,8 @@ impl AsKnownKeyPair for VerificationMethod {
 impl AsKnownKeyPair for Secret {
     fn key_alg(&self) -> KnownKeyAlg {
         match (&self.type_, &self.secret_material) {
-            (SecretType::JsonWebKey2020, SecretMaterial::JWK(ref jwk)) => {
-                match (jwk["kty"].as_str(), jwk["crv"].as_str()) {
+            (SecretType::JsonWebKey2020, SecretMaterial::JWK { ref value }) => {
+                match (value["kty"].as_str(), value["crv"].as_str()) {
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => KnownKeyAlg::P256,
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
                         KnownKeyAlg::K256
@@ -246,45 +246,43 @@ impl AsKnownKeyPair for Secret {
                     _ => KnownKeyAlg::Unsupported,
                 }
             }
-            (SecretType::X25519KeyAgreementKey2019, SecretMaterial::Base58(ref _b58_value)) => {
+            (SecretType::X25519KeyAgreementKey2019, SecretMaterial::Base58 { value: _ }) => {
                 KnownKeyAlg::X25519
             }
-            (SecretType::Ed25519VerificationKey2018, SecretMaterial::Base58(ref _b58_value)) => {
+            (SecretType::Ed25519VerificationKey2018, SecretMaterial::Base58 { value: _ }) => {
                 KnownKeyAlg::Ed25519
             }
-            (
-                SecretType::X25519KeyAgreementKey2020,
-                SecretMaterial::Multibase(ref _multibase_value),
-            ) => KnownKeyAlg::X25519,
-            (
-                SecretType::Ed25519VerificationKey2020,
-                SecretMaterial::Multibase(ref _multibase_value),
-            ) => KnownKeyAlg::Ed25519,
+            (SecretType::X25519KeyAgreementKey2020, SecretMaterial::Multibase { value: _ }) => {
+                KnownKeyAlg::X25519
+            }
+            (SecretType::Ed25519VerificationKey2020, SecretMaterial::Multibase { value: _ }) => {
+                KnownKeyAlg::Ed25519
+            }
             _ => KnownKeyAlg::Unsupported,
         }
     }
 
     fn as_key_pair(&self) -> Result<KnownKeyPair> {
         match (&self.type_, &self.secret_material) {
-            (SecretType::JsonWebKey2020, SecretMaterial::JWK(ref jwk)) => {
-                match (jwk["kty"].as_str(), jwk["crv"].as_str()) {
+            (SecretType::JsonWebKey2020, SecretMaterial::JWK { ref value }) => {
+                match (value["kty"].as_str(), value["crv"].as_str()) {
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
-                        P256KeyPair::from_jwk_value(jwk)
+                        P256KeyPair::from_jwk_value(value)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
                             .map(KnownKeyPair::P256)
                     }
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
-                        K256KeyPair::from_jwk_value(jwk)
+                        K256KeyPair::from_jwk_value(value)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
                             .map(KnownKeyPair::K256)
                     }
                     (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
-                        Ed25519KeyPair::from_jwk_value(jwk)
+                        Ed25519KeyPair::from_jwk_value(value)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
                             .map(KnownKeyPair::Ed25519)
                     }
                     (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
-                        X25519KeyPair::from_jwk_value(jwk)
+                        X25519KeyPair::from_jwk_value(value)
                             .kind(ErrorKind::Malformed, "Unable parse jwk")
                             .map(KnownKeyPair::X25519)
                     }
@@ -295,8 +293,8 @@ impl AsKnownKeyPair for Secret {
                 }
             }
 
-            (SecretType::X25519KeyAgreementKey2019, SecretMaterial::Base58(ref b58_value)) => {
-                let decoded_value = bs58::decode(b58_value)
+            (SecretType::X25519KeyAgreementKey2019, SecretMaterial::Base58 { ref value }) => {
+                let decoded_value = bs58::decode(value)
                     .into_vec()
                     .to_didcomm("Wrong base58 value in secret material")?;
 
@@ -317,8 +315,8 @@ impl AsKnownKeyPair for Secret {
                     .map(KnownKeyPair::X25519)
             }
 
-            (SecretType::Ed25519VerificationKey2018, SecretMaterial::Base58(ref b58_value)) => {
-                let decoded_value = bs58::decode(b58_value)
+            (SecretType::Ed25519VerificationKey2018, SecretMaterial::Base58 { ref value }) => {
+                let decoded_value = bs58::decode(value)
                     .into_vec()
                     .to_didcomm("Wrong base58 value in secret material")?;
 
@@ -338,17 +336,14 @@ impl AsKnownKeyPair for Secret {
                     .map(KnownKeyPair::Ed25519)
             }
 
-            (
-                SecretType::X25519KeyAgreementKey2020,
-                SecretMaterial::Multibase(ref multibase_value),
-            ) => {
-                if !multibase_value.starts_with('z') {
+            (SecretType::X25519KeyAgreementKey2020, SecretMaterial::Multibase { ref value }) => {
+                if !value.starts_with('z') {
                     Err(err_msg(
                         ErrorKind::IllegalArgument,
                         "Multibase must start with 'z'",
                     ))?
                 }
-                let decoded_multibase_value = bs58::decode(&multibase_value[1..])
+                let decoded_multibase_value = bs58::decode(&value[1..])
                     .into_vec()
                     .to_didcomm("Wrong multibase value in secret material")?;
 
@@ -380,17 +375,14 @@ impl AsKnownKeyPair for Secret {
                     .map(KnownKeyPair::X25519)
             }
 
-            (
-                SecretType::Ed25519VerificationKey2020,
-                SecretMaterial::Multibase(ref multibase_value),
-            ) => {
-                if !multibase_value.starts_with('z') {
+            (SecretType::Ed25519VerificationKey2020, SecretMaterial::Multibase { ref value }) => {
+                if !value.starts_with('z') {
                     Err(err_msg(
                         ErrorKind::IllegalArgument,
                         "Multibase must start with 'z'",
                     ))?
                 }
-                let decoded_multibase_value = bs58::decode(&multibase_value[1..])
+                let decoded_multibase_value = bs58::decode(&value[1..])
                     .into_vec()
                     .to_didcomm("Wrong multibase value in secret material")?;
 
@@ -481,7 +473,9 @@ mod tests {
         let actual_key = Secret {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: SecretType::X25519KeyAgreementKey2019,
-            secret_material: (SecretMaterial::Base58("2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqFyjLPWt7rv5kL3UPeG3e4B9Sy4H2Q2zAuWcP2RNtgJ4t".to_string())),
+            secret_material: (SecretMaterial::Base58{
+                value:"2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqFyjLPWt7rv5kL3UPeG3e4B9Sy4H2Q2zAuWcP2RNtgJ4t".to_string()
+            }),
         }.as_key_pair().unwrap();
 
         let expected_key = X25519KeyPair::from_jwk_value(&json!({
@@ -500,7 +494,9 @@ mod tests {
         let actual_key = Secret {
             id: "did:example:eve#key-ed25519-1".to_string(),
             type_: SecretType::Ed25519VerificationKey2018,
-            secret_material: (SecretMaterial::Base58("2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqATnLmZDx7Seu6NqTuFKkxuHNT27GcoxVZQCkWJhNvaUQ".to_string())),
+            secret_material: (SecretMaterial::Base58{
+                value: "2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqATnLmZDx7Seu6NqTuFKkxuHNT27GcoxVZQCkWJhNvaUQ".to_string()
+            }),
         }.as_key_pair().unwrap();
 
         let expected_key = Ed25519KeyPair::from_jwk_value(&json!({
@@ -519,7 +515,9 @@ mod tests {
         let actual_key = Secret {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: SecretType::X25519KeyAgreementKey2020,
-            secret_material: (SecretMaterial::Multibase("zshCmpUZKtFrAfudMf7NzD3oR6yhWe6i2434FDktk9CYZfkndn7suDrqnRWvrVDHk95Z7vBRJChFxTgBF9qzq7D3xPe".to_string())),
+            secret_material: (SecretMaterial::Multibase{
+                value: "zshCmpUZKtFrAfudMf7NzD3oR6yhWe6i2434FDktk9CYZfkndn7suDrqnRWvrVDHk95Z7vBRJChFxTgBF9qzq7D3xPe".to_string()
+            }),
         }.as_key_pair().unwrap();
 
         let expected_key = X25519KeyPair::from_jwk_value(&json!({
@@ -538,7 +536,9 @@ mod tests {
         let actual_key = Secret {
             id: "did:example:eve#key-ed25519-1".to_string(),
             type_: SecretType::Ed25519VerificationKey2020,
-            secret_material: (SecretMaterial::Multibase("zrv2DyJwnoQWzS74nPkHHdM7NYH27BRNFBG9To7Fca9YzWhfBVa9Mek52H9bJexjdNqxML1F3TGCpjLNkCwwgQDvd5J".to_string())),
+            secret_material: (SecretMaterial::Multibase{
+                value: "zrv2DyJwnoQWzS74nPkHHdM7NYH27BRNFBG9To7Fca9YzWhfBVa9Mek52H9bJexjdNqxML1F3TGCpjLNkCwwgQDvd5J".to_string()
+            }),
         }.as_key_pair().unwrap();
 
         let expected_key = Ed25519KeyPair::from_jwk_value(&json!({
@@ -558,9 +558,9 @@ mod tests {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: VerificationMethodType::X25519KeyAgreementKey2019,
             controller: "did:example:eve#key-x25519-1".to_string(),
-            verification_material: (VerificationMaterial::Base58(
-                "JhNWeSVLMYccCk7iopQW4guaSJTojqpMEELgSLhKwRr".to_string(),
-            )),
+            verification_material: (VerificationMaterial::Base58 {
+                value: "JhNWeSVLMYccCk7iopQW4guaSJTojqpMEELgSLhKwRr".to_string(),
+            }),
         }
         .as_key_pair()
         .unwrap();
@@ -581,9 +581,9 @@ mod tests {
             id: "did:example:eve#key-ed25519-1".to_string(),
             type_: VerificationMethodType::Ed25519VerificationKey2018,
             controller: "did:example:eve#key-ed25519-1".to_string(),
-            verification_material: (VerificationMaterial::Base58(
-                "ByHnpUCFb1vAfh9CFZ8ZkmUZguURW8nSw889hy6rD8L7".to_string(),
-            )),
+            verification_material: (VerificationMaterial::Base58 {
+                value: "ByHnpUCFb1vAfh9CFZ8ZkmUZguURW8nSw889hy6rD8L7".to_string(),
+            }),
         }
         .as_key_pair()
         .unwrap();
@@ -604,9 +604,9 @@ mod tests {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: VerificationMethodType::X25519KeyAgreementKey2020,
             controller: "did:example:eve#key-x25519-1".to_string(),
-            verification_material: (VerificationMaterial::Multibase(
-                "z6LSbysY2xFMRpGMhb7tFTLMpeuPRaqaWM1yECx2AtzE3KCc".to_string(),
-            )),
+            verification_material: (VerificationMaterial::Multibase {
+                value: "z6LSbysY2xFMRpGMhb7tFTLMpeuPRaqaWM1yECx2AtzE3KCc".to_string(),
+            }),
         }
         .as_key_pair()
         .unwrap();
@@ -627,9 +627,9 @@ mod tests {
             id: "did:example:eve#key-ed25519-1".to_string(),
             type_: VerificationMethodType::Ed25519VerificationKey2020,
             controller: "did:example:eve#key-ed25519-1".to_string(),
-            verification_material: (VerificationMaterial::Multibase(
-                "z6MkqRYqQiSgvZQdnBytw86Qbs2ZWUkGv22od935YF4s8M7V".to_string(),
-            )),
+            verification_material: (VerificationMaterial::Multibase {
+                value: "z6MkqRYqQiSgvZQdnBytw86Qbs2ZWUkGv22od935YF4s8M7V".to_string(),
+            }),
         }
         .as_key_pair()
         .unwrap();

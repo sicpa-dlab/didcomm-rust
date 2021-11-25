@@ -23,7 +23,7 @@ name = 'rotate_did'
 
 [package]
 name = 'didcomm'
-version = '0.2.1'
+version = '0.3.0'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'DIDComm for Rust'
@@ -73,3 +73,6 @@ features = ['js']
 [dev-dependencies.criterion]
 version = '0.3'
 features = ['async_futures']
+
+[features]
+uniffi = []

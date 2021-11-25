@@ -1,6 +1,8 @@
 mod anoncrypt;
 mod authcrypt;
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -191,7 +193,7 @@ impl Message {
 }
 
 /// Allow fine configuration of packing process.
-#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
 pub struct PackEncryptedOptions {
     /// If `true` and message is authenticated than information about sender will be protected from mediators, but
     /// additional re-encryption will be required. For anonymous messages this property will be ignored.
@@ -205,7 +207,7 @@ pub struct PackEncryptedOptions {
 
     /// if forward is enabled these optional headers can be passed to the wrapping `Forward` messages.
     /// If forward is disabled this property will be ignored.
-    pub forward_headers: Option<Vec<(String, Value)>>,
+    pub forward_headers: Option<HashMap<String, Value>>,
 
     /// Identifier (DID URL) of messaging service (https://identity.foundation/didcomm-messaging/spec/#did-document-service-endpoint).
     /// If DID doc contains multiple messaging services it allows specify what service to use.
@@ -1750,10 +1752,10 @@ mod tests {
                     &did_resolver,
                     &alice_secrets_resolver,
                     &PackEncryptedOptions {
-                        forward_headers: Some(vec![
+                        forward_headers: Some(HashMap::from([
                             ("example-header-1".into(), json!("example-header-1-value")),
                             ("example-header-2".into(), json!("example-header-2-value")),
-                        ]),
+                        ])),
                         ..PackEncryptedOptions::default()
                     },
                 )
@@ -2857,15 +2859,15 @@ mod tests {
             let to_kid = &to_key.id;
 
             let from_key = match from_key.verification_material {
-                VerificationMaterial::JWK(ref jwk) => {
-                    KE::from_jwk_value(jwk).expect("Unable from_jwk_value")
+                VerificationMaterial::JWK { ref value } => {
+                    KE::from_jwk_value(value).expect("Unable from_jwk_value")
                 }
                 _ => panic!("Unexpected verification method"),
             };
 
             let to_key = match to_key.secret_material {
-                SecretMaterial::JWK(ref jwk) => {
-                    KE::from_jwk_value(jwk).expect("Unable from_jwk_value")
+                SecretMaterial::JWK { ref value } => {
+                    KE::from_jwk_value(value).expect("Unable from_jwk_value")
                 }
                 _ => panic!("Unexpected verification method"),
             };
@@ -2924,8 +2926,8 @@ mod tests {
             let to_kid = &to_key.id;
 
             let to_key = match to_key.secret_material {
-                SecretMaterial::JWK(ref jwk) => {
-                    KE::from_jwk_value(jwk).expect("Unable from_jwk_value")
+                SecretMaterial::JWK { ref value } => {
+                    KE::from_jwk_value(value).expect("Unable from_jwk_value")
                 }
                 _ => panic!("Unexpected verification method"),
             };
@@ -2972,8 +2974,8 @@ mod tests {
         let sign_key_id = &sign_key.id;
 
         let sign_key = match sign_key.verification_material {
-            VerificationMaterial::JWK(ref jwk) => {
-                Key::from_jwk_value(jwk).expect("Unable from_jwk_value")
+            VerificationMaterial::JWK { ref value } => {
+                Key::from_jwk_value(value).expect("Unable from_jwk_value")
             }
             _ => panic!("Unexpected verification_material"),
         };

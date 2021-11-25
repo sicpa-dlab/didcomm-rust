@@ -12,23 +12,27 @@ lazy_static! {
             id: "did:example:charlie#key-x25519-1".into(),
             controller: "did:example:charlie#key-x25519-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::JWK(json!(
-            {
-                "kty": "OKP",
-                "crv": "X25519",
-                "x": "nTiVFj7DChMsETDdxd5dIzLAJbSQ4j4UG6ZU1ogLNlw",
-            })),
+            verification_material: VerificationMaterial::JWK {
+                value: json!(
+                {
+                    "kty": "OKP",
+                    "crv": "X25519",
+                    "x": "nTiVFj7DChMsETDdxd5dIzLAJbSQ4j4UG6ZU1ogLNlw",
+                })
+            },
         };
     pub(crate) static ref CHARLIE_AUTH_METHOD_25519: VerificationMethod = VerificationMethod {
         id: "did:example:charlie#key-1".into(),
         controller: "did:example:charlie#key-1".into(),
         type_: VerificationMethodType::JsonWebKey2020,
-        verification_material: VerificationMaterial::JWK(json!(
-        {
-            "kty": "OKP",
-            "crv": "Ed25519",
-            "x": "VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE",
-        })),
+        verification_material: VerificationMaterial::JWK {
+            value: json!(
+            {
+                "kty": "OKP",
+                "crv": "Ed25519",
+                "x": "VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE",
+            })
+        },
     };
     pub(crate) static ref CHARLIE_DID_COMM_MESSAGING_SERVICE: DIDCommMessagingService =
         DIDCommMessagingService {
@@ -41,7 +45,9 @@ lazy_static! {
         };
     pub(crate) static ref CHARLIE_SERVICE: Service = Service {
         id: "did:example:charlie#didcomm-1".into(),
-        kind: ServiceKind::DIDCommMessaging(CHARLIE_DID_COMM_MESSAGING_SERVICE.clone()),
+        kind: ServiceKind::DIDCommMessaging {
+            value: CHARLIE_DID_COMM_MESSAGING_SERVICE.clone()
+        },
     };
     pub(crate) static ref CHARLIE_DID_DOC: DIDDoc = DIDDoc {
         did: "did:example:charlie".into(),

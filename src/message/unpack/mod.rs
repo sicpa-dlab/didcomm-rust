@@ -129,7 +129,7 @@ impl Message {
 }
 
 /// Allows fine customization of unpacking process
-#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
 pub struct UnpackOptions {
     /// Whether the plaintext must be decryptable by all keys resolved by the secrets resolver. False by default.
     #[serde(default)]

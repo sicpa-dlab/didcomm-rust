@@ -19,8 +19,8 @@ pub mod secrets;
 
 pub use message::{
     Attachment, AttachmentBuilder, AttachmentData, Base64AttachmentData, FromPrior,
-    JsonAttachmentData, LinksAttachmentData, Message, MessageBuilder, PackEncryptedMetadata,
-    PackEncryptedOptions, PackSignedMetadata, UnpackMetadata, UnpackOptions,
+    JsonAttachmentData, LinksAttachmentData, Message, MessageBuilder, MessagingServiceMetadata,
+    PackEncryptedMetadata, PackEncryptedOptions, PackSignedMetadata, UnpackMetadata, UnpackOptions,
 };
 
 #[cfg(test)]

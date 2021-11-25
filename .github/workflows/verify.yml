@@ -94,3 +94,47 @@ jobs:
 
       - name: Test
         run: cargo test --verbose
+
+  verify-uniffi:
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set rustup profile & toolchain
+        run: |
+          rustup set profile minimal
+          rustup toolchain install stable
+        shell: bash
+
+      - name: Get timestamp for cache
+        id: date
+        run: echo ::set-output name=yearmo::$(date +%Y%m)
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{steps.date.outputs.yearmo}}
+
+      - name: Go to uniffi folder
+        run: cd uniffi
+
+      - name: Cargo fmt
+        # TODO enable that once https://github.com/rust-lang/rustfmt/issues/4477
+        #      is resolved
+        if: runner.os != 'Windows'
+        run: cargo fmt --all -- --check
+
+      - name: Debug build
+        run: cargo build --verbose
+
+      - name: Test
+        run: cargo test --verbose
