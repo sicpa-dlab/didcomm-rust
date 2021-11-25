@@ -4,27 +4,27 @@ use std::{
 };
 
 use didcomm_core::{
-    did::{DIDDoc, DIDResolver},
+    did::{DIDDoc, DIDResolver as _DIDResolver},
     error::{ErrorKind, Result, ResultExt},
 };
 use futures::channel::oneshot;
 
-use crate::{did_resolver::OnDIDResolverResult, FFIDIDResolver};
+use crate::{did_resolver::OnDIDResolverResult, DIDResolver};
 
 use async_trait::async_trait;
 
-pub(crate) struct FFIDIDResolverAdapter {
-    did_resolver: Arc<Box<dyn FFIDIDResolver>>,
+pub(crate) struct DIDResolverAdapter {
+    did_resolver: Arc<Box<dyn DIDResolver>>,
 }
 
-impl FFIDIDResolverAdapter {
-    pub fn new(did_resolver: Arc<Box<dyn FFIDIDResolver>>) -> Self {
-        FFIDIDResolverAdapter { did_resolver }
+impl DIDResolverAdapter {
+    pub fn new(did_resolver: Arc<Box<dyn DIDResolver>>) -> Self {
+        DIDResolverAdapter { did_resolver }
     }
 }
 
 #[async_trait]
-impl DIDResolver for FFIDIDResolverAdapter {
+impl _DIDResolver for DIDResolverAdapter {
     async fn resolve(&self, did: &str) -> Result<Option<DIDDoc>> {
         let (sender, receiver) = oneshot::channel::<Result<Option<DIDDoc>>>();
 
