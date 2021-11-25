@@ -3,23 +3,21 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use didcomm_core::secrets::Secret;
 
-use crate::{
-    common::ErrorCode, secrets::FFISecretsResolver, OnFindSecretsResult, OnGetSecretResult,
-};
+use crate::{common::ErrorCode, secrets::SecretsResolver, OnFindSecretsResult, OnGetSecretResult};
 
 /// Allows resolve pre-defined did's for `example` and other methods.
-pub struct ExampleFFISecretsResolver {
+pub struct ExampleSecretsResolver {
     known_secrets: Vec<Secret>,
 }
 
-impl ExampleFFISecretsResolver {
+impl ExampleSecretsResolver {
     pub fn new(known_secrets: Vec<Secret>) -> Self {
-        ExampleFFISecretsResolver { known_secrets }
+        ExampleSecretsResolver { known_secrets }
     }
 }
 
 #[async_trait]
-impl FFISecretsResolver for ExampleFFISecretsResolver {
+impl SecretsResolver for ExampleSecretsResolver {
     fn get_secret(&self, secret_id: String, cb: Arc<OnGetSecretResult>) -> ErrorCode {
         let secret = self
             .known_secrets

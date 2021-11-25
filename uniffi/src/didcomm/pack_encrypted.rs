@@ -2,8 +2,8 @@ use didcomm_core::error::ErrorKind;
 use didcomm_core::{Message, PackEncryptedMetadata, PackEncryptedOptions};
 
 use crate::common::{ErrorCode, EXECUTOR};
-use crate::did_resolver_adapter::FFIDIDResolverAdapter;
-use crate::secrets::secrets_resolver_adapter::FFISecretsResolverAdapter;
+use crate::did_resolver_adapter::DIDResolverAdapter;
+use crate::secrets::secrets_resolver_adapter::SecretsResolverAdapter;
 use crate::DIDComm;
 
 pub trait OnPackEncryptedResult: Sync + Send {
@@ -24,8 +24,8 @@ impl DIDComm {
         // TODO; avoid cloning
         let msg = msg.clone();
         let options = options.clone();
-        let did_resolver = FFIDIDResolverAdapter::new(self.did_resolver.clone());
-        let secret_resolver = FFISecretsResolverAdapter::new(self.secret_resolver.clone());
+        let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
+        let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());
 
         let future = async move {
             msg.pack_encrypted(

@@ -5,8 +5,8 @@ use didcomm_core::{error::ErrorKind, FromPrior as _FromPrior};
 use crate::DIDComm;
 
 use crate::common::{ErrorCode, EXECUTOR};
-use crate::did_resolver_adapter::FFIDIDResolverAdapter;
-use crate::secrets_resolver_adapter::FFISecretsResolverAdapter;
+use crate::did_resolver_adapter::DIDResolverAdapter;
+use crate::secrets_resolver_adapter::SecretsResolverAdapter;
 
 pub trait OnFromPriorPackResult: Sync + Send {
     fn success(&self, from_prior_jwt: String, kid: String);
@@ -53,8 +53,8 @@ impl DIDComm {
         cb: Box<dyn OnFromPriorPackResult>,
     ) -> ErrorCode {
         let msg = msg.0.clone();
-        let did_resolver = FFIDIDResolverAdapter::new(self.did_resolver.clone());
-        let secret_resolver = FFISecretsResolverAdapter::new(self.secret_resolver.clone());
+        let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
+        let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());
 
         let future = async move {
             msg.pack(issuer_kid.as_deref(), &did_resolver, &secret_resolver)
@@ -75,7 +75,7 @@ impl DIDComm {
         from_prior_jwt: String,
         cb: Box<dyn OnFromPriorUnpackResult>,
     ) -> ErrorCode {
-        let did_resolver = FFIDIDResolverAdapter::new(self.did_resolver.clone());
+        let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
 
         let future = async move { _FromPrior::unpack(&from_prior_jwt, &did_resolver).await };
         EXECUTOR.spawn_ok(async move {
@@ -98,7 +98,7 @@ mod tests {
         test_vectors::test_helper::{
             create_did_resolver, get_ok, FromPriorPackResult, FromPriorUnpackResult,
         },
-        DIDComm, ExampleFFISecretsResolver, FromPriorExt,
+        DIDComm, ExampleSecretsResolver, FromPriorExt,
     };
 
     #[tokio::test]
@@ -109,7 +109,7 @@ mod tests {
 
         DIDComm::new(
             create_did_resolver(),
-            Box::new(ExampleFFISecretsResolver::new(
+            Box::new(ExampleSecretsResolver::new(
                 CHARLIE_ROTATED_TO_ALICE_SECRETS.clone(),
             )),
         )
@@ -128,7 +128,7 @@ mod tests {
         let (cb, receiver) = FromPriorPackResult::new();
         let did_comm = DIDComm::new(
             create_did_resolver(),
-            Box::new(ExampleFFISecretsResolver::new(
+            Box::new(ExampleSecretsResolver::new(
                 CHARLIE_ROTATED_TO_ALICE_SECRETS.clone(),
             )),
         );

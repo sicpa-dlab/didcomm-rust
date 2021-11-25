@@ -12,9 +12,9 @@ use crate::test_vectors::{
     MEDIATOR3_DID_DOC, MEDIATOR3_SECRETS,
 };
 use crate::{
-    ExampleFFIDIDResolver, ExampleFFISecretsResolver, FFIDIDResolver, FFISecretsResolver,
-    OnFromPriorPackResult, OnFromPriorUnpackResult, OnPackEncryptedResult, OnPackPlaintextResult,
-    OnPackSignedResult, OnUnpackResult, OnWrapInForwardResult,
+    DIDResolver, ExampleDIDResolver, ExampleSecretsResolver, OnFromPriorPackResult,
+    OnFromPriorUnpackResult, OnPackEncryptedResult, OnPackPlaintextResult, OnPackSignedResult,
+    OnUnpackResult, OnWrapInForwardResult, SecretsResolver,
 };
 
 pub(crate) async fn get_ok<T>(receiver: Receiver<Result<T>>) -> T {
@@ -32,8 +32,8 @@ pub(crate) async fn get_error<T>(receiver: Receiver<Result<T>>) -> Error {
         .expect("result is ok")
 }
 
-pub(crate) fn create_secrets_resolver() -> Box<dyn FFISecretsResolver> {
-    Box::new(ExampleFFISecretsResolver::new(
+pub(crate) fn create_secrets_resolver() -> Box<dyn SecretsResolver> {
+    Box::new(ExampleSecretsResolver::new(
         ALICE_SECRETS
             .clone()
             .into_iter()
@@ -46,8 +46,8 @@ pub(crate) fn create_secrets_resolver() -> Box<dyn FFISecretsResolver> {
     ))
 }
 
-pub(crate) fn create_did_resolver() -> Box<dyn FFIDIDResolver> {
-    Box::new(ExampleFFIDIDResolver::new(vec![
+pub(crate) fn create_did_resolver() -> Box<dyn DIDResolver> {
+    Box::new(ExampleDIDResolver::new(vec![
         ALICE_DID_DOC_WITH_NO_SECRETS.clone(),
         BOB_DID_DOC.clone(),
         CHARLIE_DID_DOC.clone(),

@@ -2,8 +2,8 @@ use didcomm_core::Message;
 use didcomm_core::{error::ErrorKind, PackSignedMetadata};
 
 use crate::common::{ErrorCode, EXECUTOR};
-use crate::did_resolver_adapter::FFIDIDResolverAdapter;
-use crate::secrets::secrets_resolver_adapter::FFISecretsResolverAdapter;
+use crate::did_resolver_adapter::DIDResolverAdapter;
+use crate::secrets::secrets_resolver_adapter::SecretsResolverAdapter;
 use crate::DIDComm;
 
 pub trait OnPackSignedResult: Sync + Send {
@@ -20,8 +20,8 @@ impl DIDComm {
     ) -> ErrorCode {
         // TODO; avoid cloning
         let msg = msg.clone();
-        let did_resolver = FFIDIDResolverAdapter::new(self.did_resolver.clone());
-        let secret_resolver = FFISecretsResolverAdapter::new(self.secret_resolver.clone());
+        let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
+        let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());
 
         let future = async move {
             msg.pack_signed(&sign_by, &did_resolver, &secret_resolver)

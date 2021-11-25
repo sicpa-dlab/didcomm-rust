@@ -3,25 +3,25 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use didcomm_core::error::{ErrorKind, Result, ResultExt};
-use didcomm_core::secrets::{Secret, SecretsResolver};
+use didcomm_core::secrets::{Secret, SecretsResolver as _SecretsResolver};
 use futures::channel::oneshot;
 
 use crate::secrets_resolver::{OnFindSecretsResult, OnGetSecretResult};
 
-use super::FFISecretsResolver;
+use super::SecretsResolver;
 
-pub struct FFISecretsResolverAdapter {
-    secrets_resolver: Arc<Box<dyn FFISecretsResolver>>,
+pub struct SecretsResolverAdapter {
+    secrets_resolver: Arc<Box<dyn SecretsResolver>>,
 }
 
-impl FFISecretsResolverAdapter {
-    pub fn new(secrets_resolver: Arc<Box<dyn FFISecretsResolver>>) -> Self {
-        FFISecretsResolverAdapter { secrets_resolver }
+impl SecretsResolverAdapter {
+    pub fn new(secrets_resolver: Arc<Box<dyn SecretsResolver>>) -> Self {
+        SecretsResolverAdapter { secrets_resolver }
     }
 }
 
 #[async_trait]
-impl SecretsResolver for FFISecretsResolverAdapter {
+impl _SecretsResolver for SecretsResolverAdapter {
     async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>> {
         let (sender, receiver) = oneshot::channel::<Result<Option<Secret>>>();
 

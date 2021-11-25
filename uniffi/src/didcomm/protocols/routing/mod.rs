@@ -6,7 +6,7 @@ use didcomm_core::{
 use serde_json::Value;
 
 use crate::common::EXECUTOR;
-use crate::{did_resolver_adapter::FFIDIDResolverAdapter, DIDComm, ErrorCode};
+use crate::{did_resolver_adapter::DIDResolverAdapter, DIDComm, ErrorCode};
 
 pub trait OnWrapInForwardResult: Sync + Send {
     fn success(&self, result: String);
@@ -23,7 +23,7 @@ impl DIDComm {
         enc_alg_anon: &AnonCryptAlg,
         cb: Box<dyn OnWrapInForwardResult>,
     ) -> ErrorCode {
-        let did_resolver = FFIDIDResolverAdapter::new(self.did_resolver.clone());
+        let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
         let headers = headers.clone();
         let routing_keys = routing_keys.clone();
         let enc_alg_anon = enc_alg_anon.clone();

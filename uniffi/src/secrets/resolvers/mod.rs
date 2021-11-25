@@ -1,3 +1,3 @@
 mod example;
 
-pub use example::ExampleFFISecretsResolver;
+pub use example::ExampleSecretsResolver;

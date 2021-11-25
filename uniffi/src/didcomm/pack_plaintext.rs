@@ -2,7 +2,7 @@ use didcomm_core::error::ErrorKind;
 use didcomm_core::Message;
 
 use crate::common::{ErrorCode, EXECUTOR};
-use crate::did_resolver_adapter::FFIDIDResolverAdapter;
+use crate::did_resolver_adapter::DIDResolverAdapter;
 use crate::DIDComm;
 
 pub trait OnPackPlaintextResult: Sync + Send {
@@ -14,7 +14,7 @@ impl DIDComm {
     pub fn pack_plaintext(&self, msg: &Message, cb: Box<dyn OnPackPlaintextResult>) -> ErrorCode {
         // TODO; avoid cloning
         let msg = msg.clone();
-        let did_resolver = FFIDIDResolverAdapter::new(self.did_resolver.clone());
+        let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
 
         let future = async move { msg.pack_plaintext(&did_resolver).await };
 

@@ -6,7 +6,7 @@ use crate::common::{ErrorCode, OnResult};
 
 /// Interface for secrets resolver.
 /// Resolves secrets such as private keys to be used for signing and encryption.
-pub trait FFISecretsResolver: Sync + Send {
+pub trait SecretsResolver: Sync + Send {
     /// Finds secret (usually private key) identified by the given key ID.
     ///
     /// # Parameters

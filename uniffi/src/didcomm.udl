@@ -80,7 +80,7 @@ enum ErrorCode {
 
 // 3. DID RESOLVER
 
-callback interface FFIDIDResolver {
+callback interface DIDResolver {
   ErrorCode resolve(string did, OnDIDResolverResult cb);
 };
 
@@ -143,7 +143,7 @@ dictionary DIDCommMessagingService {
   sequence<string> routing_keys;
 };
 
-interface ExampleFFIDIDResolver {
+interface ExampleDIDResolver {
   constructor(sequence<DIDDoc> known_dids);
   ErrorCode resolve(string did, OnDIDResolverResult cb);
 };
@@ -153,7 +153,7 @@ interface ExampleFFIDIDResolver {
 
 // 4. SECRETS RESOLVER
 
-callback interface FFISecretsResolver {
+callback interface SecretsResolver {
   ErrorCode get_secret(string secretId, OnGetSecretResult cb); // should be in camel case
   ErrorCode find_secrets(sequence<string> secretIds, OnFindSecretsResult cb); // should be in camel case
 };
@@ -199,7 +199,7 @@ enum SecretType {
     "Other",
 };
 
-interface ExampleFFISecretsResolver {
+interface ExampleSecretsResolver {
   constructor(sequence<Secret> known_secrets);
   ErrorCode get_secret(string secret_id, OnGetSecretResult cb);
   ErrorCode find_secrets(sequence<string> secret_ids, OnFindSecretsResult cb);
@@ -346,7 +346,7 @@ callback interface OnWrapInForwardResult {
 // 9. PACK / UNPACK FUNCTIONS
 
 interface DIDComm {
-  constructor(FFIDIDResolver did_resolver, FFISecretsResolver secret_resolver);
+  constructor(DIDResolver did_resolver, SecretsResolver secret_resolver);
 
   ErrorCode pack_plaintext([ByRef] Message msg, OnPackPlaintextResult cb);
   ErrorCode pack_signed([ByRef] Message msg, string sign_by, OnPackSignedResult cb);

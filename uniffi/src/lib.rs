@@ -10,9 +10,12 @@ pub use did::resolvers::*;
 pub use did::*;
 pub use didcomm::*;
 pub use didcomm_core::algorithms::*;
-pub use didcomm_core::did::*;
+pub use didcomm_core::did::{
+    DIDCommMessagingService, DIDDoc, Service, ServiceKind, VerificationMaterial,
+    VerificationMethod, VerificationMethodType,
+};
 pub use didcomm_core::error::*;
-pub use didcomm_core::secrets::*;
+pub use didcomm_core::secrets::{Secret, SecretMaterial, SecretType};
 pub use didcomm_core::*;
 pub use message::*;
 pub use secrets::resolvers::*;

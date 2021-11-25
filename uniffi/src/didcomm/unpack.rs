@@ -1,9 +1,9 @@
 use didcomm_core::{error::ErrorKind, Message, UnpackMetadata, UnpackOptions};
 
 use crate::common::EXECUTOR;
-use crate::did_resolver_adapter::FFIDIDResolverAdapter;
+use crate::did_resolver_adapter::DIDResolverAdapter;
 use crate::DIDComm;
-use crate::{secrets_resolver_adapter::FFISecretsResolverAdapter, ErrorCode};
+use crate::{secrets_resolver_adapter::SecretsResolverAdapter, ErrorCode};
 
 pub trait OnUnpackResult: Sync + Send {
     fn success(&self, result: Message, metadata: UnpackMetadata);
@@ -19,8 +19,8 @@ impl DIDComm {
     ) -> ErrorCode {
         let msg = msg.clone();
         let options = options.clone();
-        let did_resolver = FFIDIDResolverAdapter::new(self.did_resolver.clone());
-        let secret_resolver = FFISecretsResolverAdapter::new(self.secret_resolver.clone());
+        let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
+        let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());
 
         let future =
             async move { Message::unpack(&msg, &did_resolver, &secret_resolver, &options).await };
