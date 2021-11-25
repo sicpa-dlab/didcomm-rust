@@ -1,7 +1,6 @@
 mod common;
 mod did;
 mod didcomm;
-mod message;
 mod secrets;
 
 pub use common::ErrorCode;
@@ -17,7 +16,6 @@ pub use didcomm_core::did::{
 pub use didcomm_core::error::*;
 pub use didcomm_core::secrets::{Secret, SecretMaterial, SecretType};
 pub use didcomm_core::*;
-pub use message::*;
 pub use secrets::resolvers::*;
 pub use secrets::*;
 

@@ -1,6 +1,4 @@
-use std::sync::Arc;
-
-use didcomm_core::{error::ErrorKind, FromPrior as _FromPrior};
+use didcomm_core::{error::ErrorKind, FromPrior};
 
 use crate::DIDComm;
 
@@ -14,45 +12,18 @@ pub trait OnFromPriorPackResult: Sync + Send {
 }
 
 pub trait OnFromPriorUnpackResult: Sync + Send {
-    // TODO: return FromPriorExt
-    fn success(&self, from_prior: _FromPrior, kid: String);
+    fn success(&self, from_prior: FromPrior, kid: String);
     fn error(&self, err: ErrorKind, err_msg: String);
-}
-
-pub struct FromPriorExt(Arc<_FromPrior>);
-
-impl FromPriorExt {
-    pub fn new(iss: String, sub: String, exp: Option<u64>) -> Self {
-        FromPriorExt(Arc::new(_FromPrior {
-            iss: iss,
-            sub: sub,
-            exp: exp,
-            aud: None,
-            iat: None,
-            jti: None,
-            nbf: None,
-        }))
-    }
-
-    pub fn get_iss(&self) -> String {
-        self.0.iss.clone()
-    }
-    pub fn get_sub(&self) -> String {
-        self.0.sub.clone()
-    }
-    pub fn get_exp(&self) -> Option<u64> {
-        self.0.exp
-    }
 }
 
 impl DIDComm {
     pub fn pack_from_prior(
         &self,
-        msg: &FromPriorExt,
+        msg: &FromPrior,
         issuer_kid: Option<String>,
         cb: Box<dyn OnFromPriorPackResult>,
     ) -> ErrorCode {
-        let msg = msg.0.clone();
+        let msg = msg.clone();
         let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
         let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());
 
@@ -77,7 +48,7 @@ impl DIDComm {
     ) -> ErrorCode {
         let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
 
-        let future = async move { _FromPrior::unpack(&from_prior_jwt, &did_resolver).await };
+        let future = async move { FromPrior::unpack(&from_prior_jwt, &did_resolver).await };
         EXECUTOR.spawn_ok(async move {
             match future.await {
                 Ok((from_prior_jwt, kid)) => cb.success(from_prior_jwt, kid),
@@ -91,6 +62,8 @@ impl DIDComm {
 
 #[cfg(test)]
 mod tests {
+    use didcomm_core::FromPrior;
+
     use crate::test_vectors::{
         ALICE_DID, CHARLIE_DID, CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519,
     };
@@ -98,14 +71,14 @@ mod tests {
         test_vectors::test_helper::{
             create_did_resolver, get_ok, FromPriorPackResult, FromPriorUnpackResult,
         },
-        DIDComm, ExampleSecretsResolver, FromPriorExt,
+        DIDComm, ExampleSecretsResolver,
     };
 
     #[tokio::test]
     async fn pack_from_prior_works() {
         let (cb, receiver) = FromPriorPackResult::new();
 
-        let from_prior = FromPriorExt::new(CHARLIE_DID.into(), ALICE_DID.into(), None);
+        let from_prior = FromPrior::build(CHARLIE_DID.into(), ALICE_DID.into()).finalize();
 
         DIDComm::new(
             create_did_resolver(),
@@ -133,7 +106,7 @@ mod tests {
             )),
         );
 
-        let from_prior = FromPriorExt::new(CHARLIE_DID.into(), ALICE_DID.into(), Some(1234));
+        let from_prior = FromPrior::build(CHARLIE_DID.into(), ALICE_DID.into()).exp(1234).finalize();
         did_comm.pack_from_prior(
             &from_prior,
             Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone()),

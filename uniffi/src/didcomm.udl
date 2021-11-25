@@ -1,7 +1,24 @@
 [Wrapped]
 typedef string JsonValue;
 
-// 1. MESSAGE
+// 1. MAIN DIDCOMM INTERFACE 
+
+interface DIDComm {
+  constructor(DIDResolver did_resolver, SecretsResolver secret_resolver);
+
+  ErrorCode pack_plaintext([ByRef] Message msg, OnPackPlaintextResult cb);
+  ErrorCode pack_signed([ByRef] Message msg, string sign_by, OnPackSignedResult cb);
+  ErrorCode pack_encrypted([ByRef] Message msg, string to, string? from, string? sign_by, [ByRef] PackEncryptedOptions options, OnPackEncryptedResult cb);
+  ErrorCode unpack(string msg, [ByRef] UnpackOptions options, OnUnpackResult cb);
+
+  ErrorCode pack_from_prior([ByRef] FromPrior msg, string? issuer_kid, OnFromPriorPackResult cb);
+  ErrorCode unpack_from_prior(string from_prior_jwt, OnFromPriorUnpackResult cb);
+
+  ErrorCode wrap_in_forward(string msg, [ByRef] record<DOMString, JsonValue> headers, string to, [ByRef] sequence<string> routing_keys, [ByRef] AnonCryptAlg enc_alg_anon, OnWrapInForwardResult cb);
+
+};
+
+// 2. MESSAGE
 
 dictionary Message {
   string id;
@@ -56,7 +73,7 @@ dictionary LinksAttachmentData {
 
 
 
-// 2. ERRORS
+// 3. ERRORS
 
 [Error]
 enum ErrorKind {
@@ -78,7 +95,7 @@ enum ErrorCode {
 
 
 
-// 3. DID RESOLVER
+// 4. DID RESOLVER
 
 callback interface DIDResolver {
   ErrorCode resolve(string did, OnDIDResolverResult cb);
@@ -151,7 +168,7 @@ interface ExampleDIDResolver {
 
 
 
-// 4. SECRETS RESOLVER
+// 5. SECRETS RESOLVER
 
 callback interface SecretsResolver {
   ErrorCode get_secret(string secretId, OnGetSecretResult cb); // should be in camel case
@@ -208,7 +225,7 @@ interface ExampleSecretsResolver {
 
 
 
-// 5. PACK SIGNED
+// 6. PACK SIGNED
 
 callback interface OnPackSignedResult {
   void success(string result, PackSignedMetadata metadata);
@@ -221,7 +238,7 @@ dictionary PackSignedMetadata {
 
 
 
-// 6. PACK ENCRYPTED
+// 7. PACK ENCRYPTED
 
 callback interface OnPackEncryptedResult {
   void success(string result, PackEncryptedMetadata metadata);
@@ -261,7 +278,7 @@ dictionary PackEncryptedOptions {
 
 
 
-// 6. PACK PLAINTEXT
+// 8. PACK PLAINTEXT
 
 callback interface OnPackPlaintextResult {
   void success(string result);
@@ -270,7 +287,7 @@ callback interface OnPackPlaintextResult {
 
 
 
-// 7. UNPACK
+// 9. UNPACK
 
 callback interface OnUnpackResult {
   void success(Message result, UnpackMetadata metadata);
@@ -305,7 +322,7 @@ enum SignAlg {
     "ES256K",
 };
 
-// 7. FROM PRIOR
+// 10. FROM PRIOR
 dictionary FromPrior {
   string iss;
   string sub;
@@ -314,15 +331,6 @@ dictionary FromPrior {
   u64? nbf;
   u64? iat;
   string? jti;
-};
-
-interface FromPriorExt {
-  constructor(string iss, string sub, u64? exp);
-
-  string get_iss();
-  string get_sub();
-  u64? get_exp();
-
 };
 
 callback interface OnFromPriorPackResult {
@@ -336,28 +344,13 @@ callback interface OnFromPriorUnpackResult {
 };
 
 
-// 8. FORWARD
+// 11. FORWARD
 
 callback interface OnWrapInForwardResult {
   void success(string result); 
   void error(ErrorKind err, string msg);
 };
 
-// 9. PACK / UNPACK FUNCTIONS
 
-interface DIDComm {
-  constructor(DIDResolver did_resolver, SecretsResolver secret_resolver);
-
-  ErrorCode pack_plaintext([ByRef] Message msg, OnPackPlaintextResult cb);
-  ErrorCode pack_signed([ByRef] Message msg, string sign_by, OnPackSignedResult cb);
-  ErrorCode pack_encrypted([ByRef] Message msg, string to, string? from, string? sign_by, [ByRef] PackEncryptedOptions options, OnPackEncryptedResult cb);
-  ErrorCode unpack(string msg, [ByRef] UnpackOptions options, OnUnpackResult cb);
-
-  ErrorCode pack_from_prior([ByRef] FromPriorExt msg, string? issuer_kid, OnFromPriorPackResult cb);
-  ErrorCode unpack_from_prior(string from_prior_jwt, OnFromPriorUnpackResult cb);
-
-  ErrorCode wrap_in_forward(string msg, [ByRef] record<DOMString, JsonValue> headers, string to, [ByRef] sequence<string> routing_keys, [ByRef] AnonCryptAlg enc_alg_anon, OnWrapInForwardResult cb);
-
-};
 
 namespace didcomm {};

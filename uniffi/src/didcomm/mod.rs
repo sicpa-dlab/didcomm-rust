@@ -5,7 +5,7 @@ mod pack_signed;
 mod protocols;
 mod unpack;
 
-pub use from_prior::{FromPriorExt, OnFromPriorPackResult, OnFromPriorUnpackResult};
+pub use from_prior::{OnFromPriorPackResult, OnFromPriorUnpackResult};
 pub use pack_encrypted::OnPackEncryptedResult;
 pub use pack_plaintext::OnPackPlaintextResult;
 pub use pack_signed::OnPackSignedResult;
