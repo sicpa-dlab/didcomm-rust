@@ -142,7 +142,7 @@ impl Message {
         to: &str,
         from: Option<&str>,
         sign_by: Option<&str>,
-    ) -> Result<bool> {
+    ) -> Result<()> {
         if !is_did(to) {
             Err(err_msg(
                 ErrorKind::IllegalArgument,
@@ -186,7 +186,7 @@ impl Message {
             _ => {}
         }
 
-        Ok(true)
+        Ok(())
     }
 }
 

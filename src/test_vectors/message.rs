@@ -24,6 +24,21 @@ lazy_static! {
 }
 
 lazy_static! {
+    pub(crate) static ref MESSAGE_FROM_PRIOR_MISMATCHED_SUB_AND_FROM: Message =
+        Message::build(
+            "1234567890".to_owned(),
+            "http://example.com/protocols/lets_do_lunch/1.0/proposal".to_owned(),
+            json!({"messagespecificattribute": "and its value"}),
+        )
+        .from(BOB_DID.to_owned())
+        .to(ALICE_DID.to_owned())
+        .created_time(1516269022)
+        .expires_time(1516385931)
+        .from_prior("eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImtpZCI6ImRpZDpleGFtcGxlOmNoYXJsaWUja2V5LTEifQ.eyJpc3MiOiJkaWQ6ZXhhbXBsZTpjaGFybGllIiwic3ViIjoiZGlkOmV4YW1wbGU6YWxpY2UiLCJhdWQiOiIxMjMiLCJleHAiOjEyMzQsIm5iZiI6MTIzNDUsImlhdCI6MTIzNDU2LCJqdGkiOiJkZmcifQ.ir0tegXiGJIZIMagO5P853KwhzGTEw0OpFFAyarUV-nQrtbI_ELbxT9l7jPBoPve_-60ifGJ9v3ArmFjELFlDA".into())
+        .finalize();
+}
+
+lazy_static! {
     pub(crate) static ref MESSAGE_ATTACHMENT_BASE64: Message = _message()
         .attachment(
             Attachment::base64("qwerty".to_owned())

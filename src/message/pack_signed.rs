@@ -115,7 +115,7 @@ impl Message {
         Ok((msg, metadata))
     }
 
-    fn _validate_pack_signed(&self, sign_by: &str) -> Result<bool> {
+    fn _validate_pack_signed(&self, sign_by: &str) -> Result<()> {
         if !is_did(sign_by) {
             Err(err_msg(
                 ErrorKind::IllegalArgument,
@@ -123,7 +123,7 @@ impl Message {
             ))?;
         }
 
-        Ok(true)
+        Ok(())
     }
 }
 
