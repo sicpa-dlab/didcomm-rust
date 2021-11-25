@@ -5,7 +5,7 @@ use didcomm_core::did::DIDDoc;
 use crate::{common::OnResult, ErrorCode};
 
 /// Represents DID Doc resolver (https://www.w3.org/TR/did-core/#did-resolution).
-pub trait FFIDIDResolver: Sync + Send {
+pub trait DIDResolver: Sync + Send {
     /// Resolves a DID document by the given DID.
     ///
     /// # Params

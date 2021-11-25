@@ -1,3 +1,3 @@
 mod example;
 
-pub use example::ExampleFFIDIDResolver;
+pub use example::ExampleDIDResolver;
