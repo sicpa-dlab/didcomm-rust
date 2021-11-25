@@ -20,11 +20,9 @@ pub struct DIDDoc {
     /// All local verification methods including embedded to
     /// key agreement and authentication sections.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    // TODO: Remove allow
     pub verification_methods: Vec<VerificationMethod>,
 
     /// All services (https://www.w3.org/TR/did-core/#services)
-    // TODO: Remove allow
     pub services: Vec<Service>,
 }
 

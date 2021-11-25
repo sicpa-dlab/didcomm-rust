@@ -180,7 +180,7 @@ lazy_static! {
         };
     pub(crate) static ref BOB_SERVICE: Service = Service {
         id: "did:example:bob#didcomm-1".into(),
-        kind: ServiceKind::DIDCommMessaging(BOB_DID_COMM_MESSAGING_SERVICE.clone()),
+        kind: ServiceKind::DIDCommMessaging{value: BOB_DID_COMM_MESSAGING_SERVICE.clone()},
     };
     pub(crate) static ref BOB_DID_DOC: DIDDoc = DIDDoc {
         did: "did:example:bob".into(),

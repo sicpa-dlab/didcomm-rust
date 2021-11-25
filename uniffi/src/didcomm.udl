@@ -140,7 +140,7 @@ interface ServiceKind {
 dictionary DIDCommMessagingService {
   string service_endpoint;
   sequence<string> accept;
-  sequence<string> route_keys;
+  sequence<string> routing_keys;
 };
 
 interface ExampleFFIDIDResolver {
