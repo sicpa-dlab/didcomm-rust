@@ -4,14 +4,14 @@ use anoncrypt::_try_unpack_anoncrypt;
 use authcrypt::_try_unpack_authcrypt;
 use sign::_try_unapck_sign;
 
-use crate::message::unpack::plaintext::_try_unpack_plaintext;
-use crate::protocols::routing::try_parse_forward;
-use crate::utils::did::did_or_url;
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
     did::DIDResolver,
-    error::{err_msg, ErrorKind, Result},
+    error::{err_msg, ErrorKind, Result, ResultExt},
+    message::unpack::plaintext::_try_unpack_plaintext,
+    protocols::routing::try_parse_forward,
     secrets::SecretsResolver,
+    utils::did::did_or_url,
     FromPrior, Message,
 };
 
@@ -79,27 +79,24 @@ impl Message {
 
         loop {
             anoncrypted =
-                _try_unpack_anoncrypt(&msg, secrets_resolver, options, &mut metadata).await?;
+                _try_unpack_anoncrypt(msg, secrets_resolver, options, &mut metadata).await?;
 
             if options.unwrap_re_wrapping_forward && anoncrypted.is_some() {
-                if let Ok(plaintext) = Message::from_str(anoncrypted.as_deref().unwrap()) {
-                    if let Some(forward_msg) = try_parse_forward(&plaintext) {
-                        if has_key_agreement_secret(
-                            &forward_msg.next,
-                            did_resolver,
-                            secrets_resolver,
-                        )
-                        .await?
-                        {
-                            metadata.re_wrapped_in_forward = true;
+                let forwarded_msg_opt = Self::_try_unwrap_forwarded_message(
+                    anoncrypted.as_deref().unwrap(),
+                    did_resolver,
+                    secrets_resolver,
+                )
+                .await?;
 
-                            forwarded_msg = serde_json::to_string(&forward_msg.forwarded_msg)?;
-                            msg = &forwarded_msg;
+                if forwarded_msg_opt.is_some() {
+                    forwarded_msg = forwarded_msg_opt.unwrap();
+                    msg = &forwarded_msg;
 
-                            continue;
-                        }
-                    }
-                };
+                    metadata.re_wrapped_in_forward = true;
+
+                    continue;
+                }
             }
 
             break;
@@ -125,6 +122,34 @@ impl Message {
             })?;
 
         Ok((msg, metadata))
+    }
+
+    async fn _try_unwrap_forwarded_message<'dr, 'sr>(
+        msg: &str,
+        did_resolver: &'dr (dyn DIDResolver + 'dr),
+        secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+    ) -> Result<Option<String>> {
+        let plaintext = match Message::from_str(msg) {
+            Ok(m) => m,
+            Err(e) if e.kind() == ErrorKind::Malformed => return Ok(None),
+            Err(e) => Err(e)?,
+        };
+
+        if let Some(forward_msg) = try_parse_forward(&plaintext) {
+            if has_key_agreement_secret(&forward_msg.next, did_resolver, secrets_resolver).await? {
+                // TODO: Think how to avoid extra serialization of forwarded_msg here.
+                // (This serializtion is a double work because forwarded_msg will then
+                // be deserialized in _try_unpack_anoncrypt.)
+                let forwarded_msg = serde_json::to_string(&forward_msg.forwarded_msg).kind(
+                    ErrorKind::InvalidState,
+                    "Unable serialize forwarded message",
+                )?;
+
+                return Ok(Some(forwarded_msg));
+            }
+        }
+
+        Ok(None)
     }
 }
 
@@ -637,7 +662,7 @@ mod test {
             let forward =
                 try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
 
-            assert_eq!(&forward.msg, &unpacked_msg_mediator1);
+            assert_eq!(forward.msg, &unpacked_msg_mediator1);
             assert_eq!(&forward.next, to);
 
             assert!(unpack_metadata_mediator1.encrypted);
@@ -765,7 +790,7 @@ mod test {
             let forward_at_mediator1 =
                 try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator1.msg, &unpacked_msg_mediator1);
+            assert_eq!(forward_at_mediator1.msg, &unpacked_msg_mediator1);
             assert_eq!(&forward_at_mediator1.next, to);
 
             assert!(unpack_metadata_mediator1.encrypted);
@@ -804,7 +829,7 @@ mod test {
             let forward_at_bob =
                 try_parse_forward(&unpacked_once_msg).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_bob.msg, &unpacked_once_msg);
+            assert_eq!(forward_at_bob.msg, &unpacked_once_msg);
             assert_eq!(&forward_at_bob.next, to);
 
             assert!(unpack_once_metadata.encrypted);

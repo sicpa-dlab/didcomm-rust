@@ -85,6 +85,13 @@ impl Message {
         // TODO: Think how to avoid resolving of did multiple times
         // and perform async operations in parallel
 
+        // TODO:
+        // 1. Extract JWE-related steps to a separate method, so that pack_encrypted uses
+        // the extarcted method for JWE steps and wrap_in_forward_if_needed for Routing steps.
+        // 2. Make anoncrypt/authcrypt separate non-public modules (not sub-modules), so that
+        // both pack_encrypted and Routing implementation use them (to avoid cross dependencies
+        // between message::pack_encrypted and protocols::routing modules).
+
         let (msg, sign_by_kid) = if let Some(sign_by) = sign_by {
             let (msg, PackSignedMetadata { sign_by_kid }) = self
                 .pack_signed(sign_by, did_resolver, secrets_resolver)
@@ -1620,7 +1627,7 @@ mod tests {
             let forward =
                 try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
 
-            assert_eq!(&forward.msg, &unpacked_msg_mediator1);
+            assert_eq!(forward.msg, &unpacked_msg_mediator1);
             assert_eq!(&forward.next, to);
 
             assert!(unpack_metadata_mediator1.encrypted);
@@ -1811,7 +1818,7 @@ mod tests {
             let forward_at_mediator3 =
                 try_parse_forward(&unpacked_msg_mediator3).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator3.msg, &unpacked_msg_mediator3);
+            assert_eq!(forward_at_mediator3.msg, &unpacked_msg_mediator3);
 
             assert_eq!(
                 &forward_at_mediator3.msg.extra_headers,
@@ -1848,7 +1855,7 @@ mod tests {
             let forward_at_mediator2 =
                 try_parse_forward(&unpacked_msg_mediator2).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator2.msg, &unpacked_msg_mediator2);
+            assert_eq!(forward_at_mediator2.msg, &unpacked_msg_mediator2);
 
             assert_eq!(
                 &forward_at_mediator2.msg.extra_headers,
@@ -1885,7 +1892,7 @@ mod tests {
             let forward_at_mediator1 =
                 try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator1.msg, &unpacked_msg_mediator1);
+            assert_eq!(forward_at_mediator1.msg, &unpacked_msg_mediator1);
 
             assert_eq!(
                 &forward_at_mediator1.msg.extra_headers,
@@ -2027,7 +2034,7 @@ mod tests {
             let forward_at_mediator1 =
                 try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator1.msg, &unpacked_msg_mediator1);
+            assert_eq!(forward_at_mediator1.msg, &unpacked_msg_mediator1);
             assert_eq!(&forward_at_mediator1.next, to);
 
             assert!(unpack_metadata_mediator1.encrypted);
@@ -2063,7 +2070,7 @@ mod tests {
             let forward_at_mediator2 =
                 try_parse_forward(&unpacked_msg_mediator2).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator2.msg, &unpacked_msg_mediator2);
+            assert_eq!(forward_at_mediator2.msg, &unpacked_msg_mediator2);
             assert_eq!(&forward_at_mediator2.next, to);
 
             assert!(unpack_metadata_mediator2.encrypted);
