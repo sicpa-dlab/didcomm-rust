@@ -25,7 +25,7 @@ lazy_static! {
 
 lazy_static! {
     pub(crate) static ref MESSAGE_ATTACHMENT_BASE64: Message = _message()
-        .attachement(
+        .attachment(
             Attachment::base64("qwerty".to_owned())
                 .id("23".to_owned())
                 .finalize(),
@@ -35,7 +35,7 @@ lazy_static! {
 
 lazy_static! {
     pub(crate) static ref MESSAGE_ATTACHMENT_LINKS: Message = _message()
-        .attachement(
+        .attachment(
             Attachment::links(
                 ["1".to_owned(), "2".to_owned(), "3".to_owned()].into(),
                 "qwerty".into(),
@@ -48,7 +48,7 @@ lazy_static! {
 
 lazy_static! {
     pub(crate) static ref MESSAGE_ATTACHMENT_JSON: Message = _message()
-        .attachement(
+        .attachment(
             Attachment::json(json!({"foo": "bar", "links": [2, 3]}))
                 .id("23".to_owned())
                 .finalize(),
@@ -58,7 +58,7 @@ lazy_static! {
 
 lazy_static! {
     pub(crate) static ref MESSAGE_ATTACHMENT_MULTI_1: Message = _message()
-        .attachements(
+        .attachments(
             [
                 Attachment::json(json!({"foo": "bar", "links": [2, 3]}))
                     .id("23".to_owned())
@@ -80,7 +80,7 @@ lazy_static! {
 
 lazy_static! {
     pub(crate) static ref MESSAGE_ATTACHMENT_MULTI_2: Message = _message()
-        .attachements(
+        .attachments(
             [
                 Attachment::links(
                     ["1".to_owned(), "2".to_owned(), "3".to_owned()].into(),

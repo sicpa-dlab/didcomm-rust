@@ -80,5 +80,5 @@ pub enum ServiceKind {
 pub struct DIDCommMessagingService {
     pub service_endpoint: String,
     pub accept: Vec<String>,
-    pub route_keys: Vec<String>,
+    pub routing_keys: Vec<String>,
 }

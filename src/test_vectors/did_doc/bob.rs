@@ -2,7 +2,8 @@ use lazy_static::lazy_static;
 use serde_json::json;
 
 use crate::didcomm::did::{
-    DIDDoc, VerificationMaterial, VerificationMethod, VerificationMethodType,
+    DIDCommMessagingService, DIDDoc, Service, ServiceKind, VerificationMaterial,
+    VerificationMethod, VerificationMethodType,
 };
 
 lazy_static! {
@@ -171,6 +172,16 @@ lazy_static! {
                 "y": "AEJipR0Dc-aBZYDqN51SKHYSWs9hM58SmRY1MxgXANgZrPaq1EeGMGOjkbLMEJtBThdjXhkS5VlXMkF0cYhZELiH",
             })),
         };
+    pub(crate) static ref BOB_DID_COMM_MESSAGING_SERVICE: DIDCommMessagingService =
+        DIDCommMessagingService {
+            service_endpoint: "http://example.com/path".into(),
+            accept: vec!["didcomm/v2".into(), "didcomm/aip2;env=rfc587".into()],
+            routing_keys: vec!["did:example:mediator1#key-x25519-1".into()],
+        };
+    pub(crate) static ref BOB_SERVICE: Service = Service {
+        id: "did:example:bob#didcomm-1".into(),
+        kind: ServiceKind::DIDCommMessaging(BOB_DID_COMM_MESSAGING_SERVICE.clone()),
+    };
     pub(crate) static ref BOB_DID_DOC: DIDDoc = DIDDoc {
         did: "did:example:bob".into(),
         authentications: vec![],
@@ -185,7 +196,7 @@ lazy_static! {
             "did:example:bob#key-p521-1".into(),
             "did:example:bob#key-p521-2".into(),
         ],
-        services: vec![],
+        services: vec![BOB_SERVICE.clone()],
         verification_methods: vec![
             BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_1.clone(),
             BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_2.clone(),
@@ -216,7 +227,7 @@ lazy_static! {
             "did:example:bob#key-p521-2".into(),
             "did:example:bob#key-p521-not-secrets-1".into(),
         ],
-        services: vec![], // TODO: Add forward service
+        services: vec![BOB_SERVICE.clone()],
         verification_methods: vec![
             BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_1.clone(),
             BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_2.clone(),
