@@ -1,7 +1,7 @@
 use std::{cell::RefCell, cmp, sync::Mutex};
 
 use crate::UniffiCustomTypeWrapper;
-use didcomm::error::{err_msg, ErrorKind, Result, ResultExtNoContext, ToResult};
+use didcomm_core::error::{err_msg, ErrorKind, Result, ResultExtNoContext, ToResult};
 use futures::{channel::oneshot, executor::ThreadPool};
 use lazy_static::lazy_static;
 

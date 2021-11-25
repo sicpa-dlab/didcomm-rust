@@ -1,5 +1,5 @@
-use didcomm::error::ErrorKind;
-use didcomm::Message;
+use didcomm_core::error::ErrorKind;
+use didcomm_core::Message;
 
 use crate::common::{ErrorCode, EXECUTOR};
 use crate::did_resolver_adapter::FFIDIDResolverAdapter;

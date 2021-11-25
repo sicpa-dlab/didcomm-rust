@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use serde_json::json;
 
-use didcomm::did::{
+use didcomm_core::did::{
     DIDCommMessagingService, DIDDoc, Service, ServiceKind, VerificationMaterial,
     VerificationMethod, VerificationMethodType,
 };

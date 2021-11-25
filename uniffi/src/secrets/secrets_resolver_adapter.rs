@@ -2,8 +2,8 @@ use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use didcomm::error::{ErrorKind, Result, ResultExt};
-use didcomm::secrets::{Secret, SecretsResolver};
+use didcomm_core::error::{ErrorKind, Result, ResultExt};
+use didcomm_core::secrets::{Secret, SecretsResolver};
 use futures::channel::oneshot;
 
 use crate::secrets_resolver::{OnFindSecretsResult, OnGetSecretResult};

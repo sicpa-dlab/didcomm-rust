@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 
-use didcomm::secrets::Secret;
+use didcomm_core::secrets::Secret;
 
 use super::{
     alice::{

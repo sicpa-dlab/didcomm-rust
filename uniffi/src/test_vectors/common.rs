@@ -1,4 +1,4 @@
-use didcomm::{Message, MessageBuilder};
+use didcomm_core::{Message, MessageBuilder};
 use serde_json::json;
 
 pub(crate) const ALICE_DID: &str = "did:example:alice";

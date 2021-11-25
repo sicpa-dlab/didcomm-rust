@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use serde_json::json;
 
-use didcomm::did::{DIDDoc, VerificationMaterial, VerificationMethod, VerificationMethodType};
+use didcomm_core::did::{DIDDoc, VerificationMaterial, VerificationMethod, VerificationMethodType};
 
 lazy_static! {
     pub(crate) static ref MEDIATOR1_VERIFICATION_METHOD_KEY_AGREEM_X25519_1: VerificationMethod =

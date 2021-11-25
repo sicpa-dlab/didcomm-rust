@@ -12,9 +12,10 @@ crate-type = [
     'cdylib'
 ]
 
-[dependencies.didcomm]
+[dependencies.didcomm_core]
 path = '..'
 features = ['uniffi']
+package = "didcomm"
 
 [dependencies]
 uniffi_macros = "0.15.2"

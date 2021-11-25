@@ -1,4 +1,4 @@
-use didcomm::{error::ErrorKind, Message, UnpackMetadata, UnpackOptions};
+use didcomm_core::{error::ErrorKind, Message, UnpackMetadata, UnpackOptions};
 
 use crate::common::EXECUTOR;
 use crate::did_resolver_adapter::FFIDIDResolverAdapter;
@@ -41,8 +41,8 @@ mod tests {
         create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult, UnpackResult,
     };
     use crate::DIDComm;
-    use didcomm::error::ErrorKind;
-    use didcomm::{PackEncryptedOptions, UnpackOptions};
+    use didcomm_core::error::ErrorKind;
+    use didcomm_core::{PackEncryptedOptions, UnpackOptions};
 
     use crate::test_vectors::{simple_message, ALICE_DID, BOB_DID};
 

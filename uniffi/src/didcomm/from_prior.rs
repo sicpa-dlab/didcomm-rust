@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use didcomm::{error::ErrorKind, FromPrior as _FromPrior};
+use didcomm_core::{error::ErrorKind, FromPrior as _FromPrior};
 
 use crate::DIDComm;
 
@@ -96,8 +96,7 @@ mod tests {
     };
     use crate::{
         test_vectors::test_helper::{
-            create_did_resolver, create_secrets_resolver, get_ok, FromPriorPackResult,
-            FromPriorUnpackResult,
+            create_did_resolver, get_ok, FromPriorPackResult, FromPriorUnpackResult,
         },
         DIDComm, ExampleFFISecretsResolver, FromPriorExt,
     };

@@ -2,8 +2,8 @@ use std::cell::RefCell;
 use std::fmt;
 use std::sync::Mutex;
 
-use didcomm::error::{err_msg, Error, ErrorKind, Result};
-use didcomm::{FromPrior, Message, PackEncryptedMetadata, PackSignedMetadata, UnpackMetadata};
+use didcomm_core::error::{err_msg, Error, ErrorKind, Result};
+use didcomm_core::{FromPrior, Message, PackEncryptedMetadata, PackSignedMetadata, UnpackMetadata};
 use futures::channel::oneshot::{self, Receiver};
 
 use crate::test_vectors::{

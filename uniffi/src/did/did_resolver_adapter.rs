@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use didcomm::{
+use didcomm_core::{
     did::{DIDDoc, DIDResolver},
     error::{ErrorKind, Result, ResultExt},
 };

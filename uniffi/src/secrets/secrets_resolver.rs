@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use didcomm::secrets::Secret;
+use didcomm_core::secrets::Secret;
 
 use crate::common::{ErrorCode, OnResult};
 

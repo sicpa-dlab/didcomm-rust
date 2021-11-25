@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use serde_json::json;
 
-use didcomm::secrets::{Secret, SecretMaterial, SecretType};
+use didcomm_core::secrets::{Secret, SecretMaterial, SecretType};
 
 lazy_static! {
     pub(crate) static ref CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519: Secret = Secret {

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use didcomm::did::DIDDoc;
+use didcomm_core::did::DIDDoc;
 
 use crate::{common::ErrorCode, did::FFIDIDResolver, OnDIDResolverResult};
 

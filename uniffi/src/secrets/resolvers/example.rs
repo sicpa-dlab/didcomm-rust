@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use didcomm::secrets::Secret;
+use didcomm_core::secrets::Secret;
 
 use crate::{
     common::ErrorCode, secrets::FFISecretsResolver, OnFindSecretsResult, OnGetSecretResult,

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use didcomm::did::DIDDoc;
+use didcomm_core::did::DIDDoc;
 
 use crate::{common::OnResult, ErrorCode};
 

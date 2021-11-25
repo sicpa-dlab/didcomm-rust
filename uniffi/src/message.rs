@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use didcomm::Message;
+use didcomm_core::Message;
 use serde_json::Value;
 
 pub struct MessageExt(Arc<Message>);

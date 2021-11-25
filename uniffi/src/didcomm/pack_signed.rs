@@ -1,5 +1,5 @@
-use didcomm::Message;
-use didcomm::{error::ErrorKind, PackSignedMetadata};
+use didcomm_core::Message;
+use didcomm_core::{error::ErrorKind, PackSignedMetadata};
 
 use crate::common::{ErrorCode, EXECUTOR};
 use crate::did_resolver_adapter::FFIDIDResolverAdapter;
@@ -41,8 +41,8 @@ impl DIDComm {
 
 #[cfg(test)]
 mod tests {
-    use didcomm::error::ErrorKind;
-    use didcomm::Message;
+    use didcomm_core::error::ErrorKind;
+    use didcomm_core::Message;
     use serde_json::json;
 
     use crate::test_vectors::test_helper::{

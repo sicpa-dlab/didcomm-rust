@@ -1,5 +1,5 @@
-use didcomm::error::ErrorKind;
-use didcomm::{Message, PackEncryptedMetadata, PackEncryptedOptions};
+use didcomm_core::error::ErrorKind;
+use didcomm_core::{Message, PackEncryptedMetadata, PackEncryptedOptions};
 
 use crate::common::{ErrorCode, EXECUTOR};
 use crate::did_resolver_adapter::FFIDIDResolverAdapter;
@@ -56,8 +56,8 @@ mod tests {
     };
     use crate::test_vectors::{simple_message, ALICE_DID, BOB_DID};
     use crate::DIDComm;
-    use didcomm::error::ErrorKind;
-    use didcomm::{Message, PackEncryptedOptions};
+    use didcomm_core::error::ErrorKind;
+    use didcomm_core::{Message, PackEncryptedOptions};
     use serde_json::json;
 
     #[tokio::test]

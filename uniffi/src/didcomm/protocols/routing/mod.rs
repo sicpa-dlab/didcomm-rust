@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use didcomm::{algorithms::AnonCryptAlg, error::ErrorKind, protocols::routing::wrap_in_forward};
+use didcomm_core::{
+    algorithms::AnonCryptAlg, error::ErrorKind, protocols::routing::wrap_in_forward,
+};
 use serde_json::Value;
 
 use crate::common::EXECUTOR;
@@ -64,9 +66,9 @@ mod tests {
         MEDIATOR2_VERIFICATION_METHOD_KEY_AGREEM_X25519_1,
     };
     use crate::DIDComm;
-    use didcomm::algorithms::AnonCryptAlg;
-    use didcomm::protocols::routing::try_parse_forward;
-    use didcomm::{Message, PackEncryptedOptions, UnpackOptions};
+    use didcomm_core::algorithms::AnonCryptAlg;
+    use didcomm_core::protocols::routing::try_parse_forward;
+    use didcomm_core::{Message, PackEncryptedOptions, UnpackOptions};
     use serde_json::json;
 
     #[tokio::test]
