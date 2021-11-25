@@ -109,7 +109,31 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref ALICE_DID_DOC: String = serde_json::to_string(&DIDDoc {
+    pub(crate) static ref ALICE_DID_DOC: DIDDoc = DIDDoc {
+        did: "did:example:alice".into(),
+        authentications: vec![
+            "did:example:alice#key-1".into(),
+            "did:example:alice#key-2".into(),
+            "did:example:alice#key-3".into(),
+        ],
+        key_agreements: vec![
+            "did:example:alice#key-x25519-not-in-secrets-1".into(),
+            "did:example:alice#key-x25519-1".into(),
+            "did:example:alice#key-p256-1".into(),
+            "did:example:alice#key-p521-1".into(),
+        ],
+        services: vec![],
+        verification_methods: vec![
+            ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.clone(),
+            ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.clone(),
+            ALICE_VERIFICATION_METHOD_KEY_AGREEM_P521.clone(),
+            ALICE_AUTH_METHOD_25519_NOT_IN_SECRET.clone(),
+            ALICE_AUTH_METHOD_25519.clone(),
+            ALICE_AUTH_METHOD_P256.clone(),
+            ALICE_AUTH_METHOD_SECPP256K1.clone(),
+        ],
+    };
+    pub(crate) static ref ALICE_DID_DOC_WITH_NO_SECRETS: DIDDoc = DIDDoc {
         did: "did:example:alice".into(),
         authentications: vec![
             "did:example:alice#key-not-in-secrets-1".into(),
@@ -134,33 +158,5 @@ lazy_static! {
             ALICE_AUTH_METHOD_P256.clone(),
             ALICE_AUTH_METHOD_SECPP256K1.clone(),
         ],
-    })
-    .unwrap();
-    pub(crate) static ref ALICE_DID_DOC_WITH_NO_SECRETS: String = serde_json::to_string(&DIDDoc {
-        did: "did:example:alice".into(),
-        authentications: vec![
-            "did:example:alice#key-not-in-secrets-1".into(),
-            "did:example:alice#key-1".into(),
-            "did:example:alice#key-2".into(),
-            "did:example:alice#key-3".into(),
-        ],
-        key_agreements: vec![
-            "did:example:alice#key-x25519-not-in-secrets-1".into(),
-            "did:example:alice#key-x25519-1".into(),
-            "did:example:alice#key-p256-1".into(),
-            "did:example:alice#key-p521-1".into(),
-        ],
-        services: vec![],
-        verification_methods: vec![
-            ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET.clone(),
-            ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.clone(),
-            ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.clone(),
-            ALICE_VERIFICATION_METHOD_KEY_AGREEM_P521.clone(),
-            ALICE_AUTH_METHOD_25519_NOT_IN_SECRET.clone(),
-            ALICE_AUTH_METHOD_25519.clone(),
-            ALICE_AUTH_METHOD_P256.clone(),
-            ALICE_AUTH_METHOD_SECPP256K1.clone(),
-        ],
-    })
-    .unwrap();
+    };
 }

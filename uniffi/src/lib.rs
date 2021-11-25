@@ -1,6 +1,7 @@
 mod common;
 mod did;
 mod message;
+mod protocols;
 mod secrets;
 
 use std::sync::Arc;
@@ -15,6 +16,7 @@ pub use didcomm::error::*;
 pub use didcomm::secrets::*;
 pub use didcomm::*;
 pub use message::*;
+pub use protocols::routing::*;
 pub use secrets::resolvers::*;
 pub use secrets::*;
 

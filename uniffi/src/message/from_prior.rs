@@ -89,4 +89,66 @@ impl DIDComm {
     }
 }
 
-// TODO: tests
+#[cfg(test)]
+mod tests {
+    use crate::test_vectors::{
+        ALICE_DID, CHARLIE_DID, CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519,
+    };
+    use crate::{
+        test_vectors::test_helper::{
+            create_did_resolver, create_secrets_resolver, get_ok, FromPriorPackResult,
+            FromPriorUnpackResult,
+        },
+        DIDComm, ExampleFFISecretsResolver, FromPriorExt,
+    };
+
+    #[tokio::test]
+    async fn pack_from_prior_works() {
+        let (cb, receiver) = FromPriorPackResult::new();
+
+        let from_prior = FromPriorExt::new(CHARLIE_DID.into(), ALICE_DID.into(), None);
+
+        DIDComm::new(
+            create_did_resolver(),
+            Box::new(ExampleFFISecretsResolver::new(
+                CHARLIE_ROTATED_TO_ALICE_SECRETS.clone(),
+            )),
+        )
+        .pack_from_prior(
+            &from_prior,
+            Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone()),
+            cb,
+        );
+
+        let (_, kid) = get_ok(receiver).await;
+        assert_eq!(kid, CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone());
+    }
+
+    #[tokio::test]
+    async fn unpack_from_prior_works() {
+        let (cb, receiver) = FromPriorPackResult::new();
+        let did_comm = DIDComm::new(
+            create_did_resolver(),
+            Box::new(ExampleFFISecretsResolver::new(
+                CHARLIE_ROTATED_TO_ALICE_SECRETS.clone(),
+            )),
+        );
+
+        let from_prior = FromPriorExt::new(CHARLIE_DID.into(), ALICE_DID.into(), Some(1234));
+        did_comm.pack_from_prior(
+            &from_prior,
+            Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone()),
+            cb,
+        );
+        let (res, _) = get_ok(receiver).await;
+
+        let (cb, receiver) = FromPriorUnpackResult::new();
+        did_comm.unpack_from_prior(res, cb);
+        let (res, kid) = get_ok(receiver).await;
+
+        assert_eq!(kid, CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone());
+        assert_eq!(CHARLIE_DID.clone(), res.iss);
+        assert_eq!(ALICE_DID.clone(), res.sub);
+        assert_eq!(Some(1234), res.exp);
+    }
+}

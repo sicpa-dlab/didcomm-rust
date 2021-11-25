@@ -5,9 +5,6 @@ mod pack_plaintext;
 mod pack_signed;
 mod unpack;
 
-#[cfg(test)]
-mod test_helper;
-
 pub use from_prior::{FromPriorExt, OnFromPriorPackResult, OnFromPriorUnpackResult};
 pub use message::MessageExt;
 pub use pack_encrypted::OnPackEncryptedResult;

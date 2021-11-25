@@ -13,13 +13,8 @@ pub struct ExampleFFISecretsResolver {
 }
 
 impl ExampleFFISecretsResolver {
-    pub fn new(known_secrets: Vec<String>) -> Self {
-        ExampleFFISecretsResolver {
-            known_secrets: known_secrets
-                .iter()
-                .map(|ddoc| serde_json::from_str(ddoc).unwrap())
-                .collect(),
-        }
+    pub fn new(known_secrets: Vec<Secret>) -> Self {
+        ExampleFFISecretsResolver { known_secrets }
     }
 }
 

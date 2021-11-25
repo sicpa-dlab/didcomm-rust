@@ -11,13 +11,8 @@ pub struct ExampleFFIDIDResolver {
 }
 
 impl ExampleFFIDIDResolver {
-    pub fn new(known_dids: Vec<String>) -> Self {
-        ExampleFFIDIDResolver {
-            known_dids: known_dids
-                .iter()
-                .map(|ddoc| serde_json::from_str(ddoc).unwrap())
-                .collect(),
-        }
+    pub fn new(known_dids: Vec<DIDDoc>) -> Self {
+        ExampleFFIDIDResolver { known_dids }
     }
 }
 

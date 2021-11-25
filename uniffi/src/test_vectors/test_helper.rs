@@ -3,13 +3,18 @@ use std::fmt;
 use std::sync::Mutex;
 
 use didcomm::error::{err_msg, Error, ErrorKind, Result};
-use didcomm::{Message, PackEncryptedMetadata, PackSignedMetadata, UnpackMetadata};
+use didcomm::{FromPrior, Message, PackEncryptedMetadata, PackSignedMetadata, UnpackMetadata};
 use futures::channel::oneshot::{self, Receiver};
 
-use crate::test_vectors::{ALICE_DID_DOC, ALICE_SECRETS, BOB_DID_DOC, BOB_SECRETS};
+use crate::test_vectors::{
+    ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS, BOB_DID_DOC, BOB_SECRETS, CHARLIE_DID_DOC,
+    CHARLIE_SECRETS, MEDIATOR1_DID_DOC, MEDIATOR1_SECRETS, MEDIATOR2_DID_DOC, MEDIATOR2_SECRETS,
+    MEDIATOR3_DID_DOC, MEDIATOR3_SECRETS,
+};
 use crate::{
     ExampleFFIDIDResolver, ExampleFFISecretsResolver, FFIDIDResolver, FFISecretsResolver,
-    OnPackEncryptedResult, OnPackPlaintextResult, OnPackSignedResult, OnUnpackResult,
+    OnFromPriorPackResult, OnFromPriorUnpackResult, OnPackEncryptedResult, OnPackPlaintextResult,
+    OnPackSignedResult, OnUnpackResult, OnWrapInForwardResult,
 };
 
 pub(crate) async fn get_ok<T>(receiver: Receiver<Result<T>>) -> T {
@@ -33,14 +38,22 @@ pub(crate) fn create_secrets_resolver() -> Box<dyn FFISecretsResolver> {
             .clone()
             .into_iter()
             .chain(BOB_SECRETS.clone().into_iter())
+            .chain(CHARLIE_SECRETS.clone().into_iter())
+            .chain(MEDIATOR1_SECRETS.clone().into_iter())
+            .chain(MEDIATOR2_SECRETS.clone().into_iter())
+            .chain(MEDIATOR3_SECRETS.clone().into_iter())
             .collect(),
     ))
 }
 
 pub(crate) fn create_did_resolver() -> Box<dyn FFIDIDResolver> {
     Box::new(ExampleFFIDIDResolver::new(vec![
-        ALICE_DID_DOC.clone(),
+        ALICE_DID_DOC_WITH_NO_SECRETS.clone(),
         BOB_DID_DOC.clone(),
+        CHARLIE_DID_DOC.clone(),
+        MEDIATOR1_DID_DOC.clone(),
+        MEDIATOR2_DID_DOC.clone(),
+        MEDIATOR3_DID_DOC.clone(),
     ]))
 }
 
@@ -122,6 +135,42 @@ pub(crate) type UnpackResult = TestResult<Message>;
 
 impl OnUnpackResult for UnpackResult {
     fn success(&self, result: Message, _metadata: UnpackMetadata) {
+        self._success(result);
+    }
+
+    fn error(&self, err: ErrorKind, msg: String) {
+        self._error(err, msg);
+    }
+}
+
+pub(crate) type FromPriorPackResult = TestResult<(String, String)>;
+
+impl OnFromPriorPackResult for FromPriorPackResult {
+    fn success(&self, from_prior_jwt: String, kid: String) {
+        self._success((from_prior_jwt, kid));
+    }
+
+    fn error(&self, err: ErrorKind, msg: String) {
+        self._error(err, msg);
+    }
+}
+
+pub(crate) type FromPriorUnpackResult = TestResult<(FromPrior, String)>;
+
+impl OnFromPriorUnpackResult for FromPriorUnpackResult {
+    fn success(&self, from_prior: FromPrior, kid: String) {
+        self._success((from_prior, kid));
+    }
+
+    fn error(&self, err: ErrorKind, msg: String) {
+        self._error(err, msg);
+    }
+}
+
+pub(crate) type WrapInForwardResult = TestResult<String>;
+
+impl OnWrapInForwardResult for WrapInForwardResult {
+    fn success(&self, result: String) {
         self._success(result);
     }
 

@@ -51,7 +51,7 @@ impl DIDComm {
 
 #[cfg(test)]
 mod tests {
-    use crate::message::test_helper::{
+    use crate::test_vectors::test_helper::{
         create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult,
     };
     use crate::test_vectors::{simple_message, ALICE_DID, BOB_DID};

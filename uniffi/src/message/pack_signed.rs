@@ -45,7 +45,7 @@ mod tests {
     use didcomm::Message;
     use serde_json::json;
 
-    use crate::message::test_helper::{
+    use crate::test_vectors::test_helper::{
         create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult,
     };
     use crate::DIDComm;

@@ -34,10 +34,10 @@ mod tests {
 
     use crate::DIDComm;
 
-    use crate::message::test_helper::{
+    use crate::test_vectors::simple_message;
+    use crate::test_vectors::test_helper::{
         create_did_resolver, create_secrets_resolver, get_ok, PackResult,
     };
-    use crate::test_vectors::simple_message;
 
     #[tokio::test]
     async fn pack_plaintext_works() {

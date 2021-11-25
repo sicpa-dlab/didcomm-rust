@@ -144,7 +144,7 @@ dictionary DIDCommMessagingService {
 };
 
 interface ExampleFFIDIDResolver {
-  constructor(sequence<string> known_dids);
+  constructor(sequence<DIDDoc> known_dids);
   ErrorCode resolve(string did, OnDIDResolverResult cb);
 };
 
@@ -200,7 +200,7 @@ enum SecretType {
 };
 
 interface ExampleFFISecretsResolver {
-  constructor(sequence<string> known_secrets);
+  constructor(sequence<Secret> known_secrets);
   ErrorCode get_secret(string secret_id, OnGetSecretResult cb);
   ErrorCode find_secrets(sequence<string> secret_ids, OnFindSecretsResult cb);
 };
@@ -338,6 +338,11 @@ callback interface OnFromPriorUnpackResult {
 
 // 8. FORWARD
 
+callback interface OnWrapInForwardResult {
+  void success(string result); 
+  void error(ErrorKind err, string msg);
+};
+
 // 9. PACK / UNPACK FUNCTIONS
 
 interface DIDComm {
@@ -351,7 +356,8 @@ interface DIDComm {
   ErrorCode pack_from_prior([ByRef] FromPriorExt msg, string? issuer_kid, OnFromPriorPackResult cb);
   ErrorCode unpack_from_prior(string from_prior_jwt, OnFromPriorUnpackResult cb);
 
+  ErrorCode wrap_in_forward(string msg, [ByRef] record<DOMString, JsonValue> headers, string to, [ByRef] sequence<string> routing_keys, [ByRef] AnonCryptAlg enc_alg_anon, OnWrapInForwardResult cb);
+
 };
 
-namespace didcomm {
-};
+namespace didcomm {};

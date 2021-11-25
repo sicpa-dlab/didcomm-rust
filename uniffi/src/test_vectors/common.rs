@@ -3,6 +3,7 @@ use serde_json::json;
 
 pub(crate) const ALICE_DID: &str = "did:example:alice";
 pub(crate) const BOB_DID: &str = "did:example:bob";
+pub(crate) const CHARLIE_DID: &str = "did:example:charlie";
 
 pub(crate) fn simple_message() -> Message {
     _message().finalize()

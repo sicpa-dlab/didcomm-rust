@@ -2,6 +2,8 @@ mod common;
 mod did_doc;
 mod secrets;
 
+pub mod test_helper;
+
 // TODO: Remove allow
 #[allow(unused_imports)]
 pub(crate) use common::*;
