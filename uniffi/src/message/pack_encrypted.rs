@@ -69,10 +69,7 @@ mod tests {
             String::from(BOB_DID),
             Some(String::from(ALICE_DID)),
             Some(String::from(ALICE_DID)),
-            &PackEncryptedOptions {
-                forward: false,
-                ..PackEncryptedOptions::default()
-            },
+            &PackEncryptedOptions::default(),
             cb,
         );
 
@@ -98,10 +95,7 @@ mod tests {
             String::from("did:unknown:bob"),
             Some(String::from(ALICE_DID)),
             Some(String::from(ALICE_DID)),
-            &PackEncryptedOptions {
-                forward: false,
-                ..PackEncryptedOptions::default()
-            },
+            &PackEncryptedOptions::default(),
             cb,
         );
 
@@ -118,10 +112,7 @@ mod tests {
             String::from(format!("{}#unknown-fragment", BOB_DID)),
             Some(String::from(ALICE_DID)),
             Some(String::from(ALICE_DID)),
-            &PackEncryptedOptions {
-                forward: false,
-                ..PackEncryptedOptions::default()
-            },
+            &PackEncryptedOptions::default(),
             cb,
         );
 
@@ -141,10 +132,7 @@ mod tests {
                 ALICE_DID
             ))),
             Some(String::from(ALICE_DID)),
-            &PackEncryptedOptions {
-                forward: false,
-                ..PackEncryptedOptions::default()
-            },
+            &PackEncryptedOptions::default(),
             cb,
         );
 
@@ -161,10 +149,7 @@ mod tests {
             String::from("not-a-did"),
             Some(String::from(ALICE_DID)),
             Some(String::from(ALICE_DID)),
-            &PackEncryptedOptions {
-                forward: false,
-                ..PackEncryptedOptions::default()
-            },
+            &PackEncryptedOptions::default(),
             cb,
         );
 

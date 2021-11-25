@@ -42,7 +42,7 @@ async fn find_did_comm_service<'dr>(
                     )
                 })?;
 
-            if let ServiceKind::DIDCommMessaging{value: _} = service.kind {
+            if let ServiceKind::DIDCommMessaging { value: _ } = service.kind {
                 Ok(Some(service.clone()))
             } else {
                 Err(err_msg(
@@ -53,7 +53,7 @@ async fn find_did_comm_service<'dr>(
         }
 
         None => Ok(did_doc.services.iter().find_map(|service| {
-            if let ServiceKind::DIDCommMessaging{value: _ } = service.kind {
+            if let ServiceKind::DIDCommMessaging { value: _ } = service.kind {
                 Some(service.clone())
             } else {
                 None
@@ -64,8 +64,8 @@ async fn find_did_comm_service<'dr>(
 
 fn unwrap_did_comm_service(service: &Service) -> Result<&DIDCommMessagingService> {
     match service.kind {
-        ServiceKind::DIDCommMessaging{ref value} => Ok(value),
-        ServiceKind::Other{value: _} => Err(err_msg(
+        ServiceKind::DIDCommMessaging { ref value } => Ok(value),
+        ServiceKind::Other { value: _ } => Err(err_msg(
             ErrorKind::InvalidState,
             "Service is not of DIDCommMessaging type",
         )),
@@ -165,7 +165,7 @@ pub fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
     let json_attachment_data = match msg.attachments {
         Some(ref attachments) => match &attachments[..] {
             [attachment, ..] => match &attachment.data {
-                AttachmentData::Json{ref value} => Some(value),
+                AttachmentData::Json { ref value } => Some(value),
                 _ => None,
             },
             _ => None,
