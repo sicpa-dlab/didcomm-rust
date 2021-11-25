@@ -24,7 +24,7 @@ async fn main() {
     )
     .to(BOB_DID.to_owned())
     .from(ALICE_DID.to_owned())
-    .attachement(Attachment {
+    .attachment(Attachment {
         data: AttachmentData::Json {
             value: JsonAttachmentData {
                 json: json!({"foo": "bar"}),

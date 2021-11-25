@@ -8,11 +8,10 @@ use askar_crypto::{
     kdf::ecdh_es::EcdhEs,
 };
 
-use crate::jwe::envelope::JWE;
 use crate::{
     algorithms::AnonCryptAlg,
     error::{err_msg, ErrorKind, Result, ResultExt},
-    jwe,
+    jwe::{self, envelope::JWE},
     secrets::SecretsResolver,
     utils::{
         crypto::{AsKnownKeyPair, KnownKeyPair},
@@ -21,7 +20,7 @@ use crate::{
     UnpackMetadata, UnpackOptions,
 };
 
-pub(crate) async fn _try_unpack_anoncrypt<'sr>(
+pub(crate) async fn _try_unpack_anoncrypt<'dr, 'sr>(
     msg: &str,
     secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
     opts: &UnpackOptions,

@@ -46,7 +46,7 @@ async fn main() {
                 protect_sender: true,
                 enc_alg_anon: AnonCryptAlg::A256gcmEcdhEsA256kw,
                 forward_headers: Some(HashMap::from([("expires_time".to_string(), json!(99999))])),
-                messaging_service: Some("did:example:123456789abcdefghi#didcomm-1".to_string()),
+                messaging_service: Some("did:example:bob#didcomm-1".to_string()),
                 enc_alg_auth: Default::default(),
             },
         )

@@ -6,7 +6,7 @@ use crate::{
     secrets::SecretsResolver,
     utils::{
         crypto::{AsKnownKeyPair, KnownKeyPair},
-        did::did_or_url,
+        did::{did_or_url, is_did},
     },
     FromPrior,
 };
@@ -18,6 +18,8 @@ impl FromPrior {
         did_resolver: &'dr (dyn DIDResolver + 'dr),
         secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
     ) -> Result<(String, String)> {
+        self.validate_pack(issuer_kid)?;
+
         let from_prior_str = serde_json::to_string(self)
             .kind(ErrorKind::InvalidState, "Unable serialize message")?;
 
@@ -114,6 +116,41 @@ impl FromPrior {
 
         Ok((from_prior_jwt, String::from(kid)))
     }
+
+    pub(crate) fn validate_pack(&self, issuer_kid: Option<&str>) -> Result<()> {
+        if !is_did(&self.iss) || did_or_url(&self.iss).1.is_some() {
+            Err(err_msg(
+                ErrorKind::Malformed,
+                "from_prior `iss` must be a non-fragment DID",
+            ))?;
+        }
+
+        if !is_did(&self.sub) || did_or_url(&self.sub).1.is_some() {
+            Err(err_msg(
+                ErrorKind::Malformed,
+                "from_prior `sub` must be a non-fragment DID",
+            ))?;
+        }
+
+        if &self.iss == &self.sub {
+            Err(err_msg(
+                ErrorKind::Malformed,
+                "from_prior `iss` and `sub` values must not be equal",
+            ))?;
+        }
+
+        if let Some(issuer_kid) = issuer_kid {
+            let (issuer_did, _) = did_or_url(issuer_kid);
+            if issuer_did != &self.iss {
+                Err(err_msg(
+                    ErrorKind::InvalidState,
+                    "from_prior issuer kid does not belong to from_prior `iss`",
+                ))?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -123,9 +160,11 @@ mod tests {
         error::ErrorKind,
         secrets::resolvers::ExampleSecretsResolver,
         test_vectors::{
-            ALICE_DID_DOC, CHARLIE_DID, CHARLIE_DID_DOC, CHARLIE_ROTATED_TO_ALICE_SECRETS,
-            CHARLIE_SECRET_AUTH_KEY_ED25519, FROM_PRIOR_FULL, FROM_PRIOR_INVALID_EQUAL_ISS_AND_SUB,
-            FROM_PRIOR_INVALID_ISS, FROM_PRIOR_INVALID_SUB, FROM_PRIOR_MINIMAL,
+            ALICE_DID_DOC, ALICE_SECRETS, ALICE_SECRET_AUTH_KEY_ED25519, CHARLIE_DID,
+            CHARLIE_DID_DOC, CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519,
+            FROM_PRIOR_FULL, FROM_PRIOR_INVALID_EQUAL_ISS_AND_SUB, FROM_PRIOR_INVALID_ISS,
+            FROM_PRIOR_INVALID_ISS_DID_URL, FROM_PRIOR_INVALID_SUB, FROM_PRIOR_INVALID_SUB_DID_URL,
+            FROM_PRIOR_MINIMAL,
         },
         utils::did::did_or_url,
         FromPrior,
@@ -197,14 +236,76 @@ mod tests {
         }
     }
 
-    #[ignore = "Must be enabled after FromPrior validation is added"]
+    #[tokio::test]
+    async fn from_prior_pack_works_wrong_issuer_kid() {
+        _from_prior_pack_works_wrong_issuer_kid(&FROM_PRIOR_MINIMAL).await;
+        _from_prior_pack_works_wrong_issuer_kid(&FROM_PRIOR_FULL).await;
+
+        async fn _from_prior_pack_works_wrong_issuer_kid(from_prior: &FromPrior) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), CHARLIE_DID_DOC.clone()]);
+            let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+
+            let err = from_prior
+                .pack(
+                    Some(&ALICE_SECRET_AUTH_KEY_ED25519.id),
+                    &did_resolver,
+                    &alice_secrets_resolver,
+                )
+                .await
+                .expect_err("res is ok");
+
+            assert_eq!(err.kind(), ErrorKind::InvalidState);
+
+            assert_eq!(
+                format!("{}", err),
+                "Invalid state: from_prior issuer kid does not belong to from_prior `iss`"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn from_prior_pack_works_invalid() {
-        _from_prior_pack_works_invalid(&FROM_PRIOR_INVALID_ISS).await;
-        _from_prior_pack_works_invalid(&FROM_PRIOR_INVALID_SUB).await;
-        _from_prior_pack_works_invalid(&FROM_PRIOR_INVALID_EQUAL_ISS_AND_SUB).await;
+        _from_prior_pack_works_invalid(
+            &FROM_PRIOR_INVALID_ISS,
+            ErrorKind::Malformed,
+            "Malformed: from_prior `iss` must be a non-fragment DID",
+        )
+        .await;
 
-        async fn _from_prior_pack_works_invalid(from_prior: &FromPrior) {
+        _from_prior_pack_works_invalid(
+            &FROM_PRIOR_INVALID_ISS_DID_URL,
+            ErrorKind::Malformed,
+            "Malformed: from_prior `iss` must be a non-fragment DID",
+        )
+        .await;
+
+        _from_prior_pack_works_invalid(
+            &FROM_PRIOR_INVALID_SUB,
+            ErrorKind::Malformed,
+            "Malformed: from_prior `sub` must be a non-fragment DID",
+        )
+        .await;
+
+        _from_prior_pack_works_invalid(
+            &FROM_PRIOR_INVALID_SUB_DID_URL,
+            ErrorKind::Malformed,
+            "Malformed: from_prior `sub` must be a non-fragment DID",
+        )
+        .await;
+
+        _from_prior_pack_works_invalid(
+            &FROM_PRIOR_INVALID_EQUAL_ISS_AND_SUB,
+            ErrorKind::Malformed,
+            "Malformed: from_prior `iss` and `sub` values must not be equal",
+        )
+        .await;
+
+        async fn _from_prior_pack_works_invalid(
+            from_prior: &FromPrior,
+            err_kind: ErrorKind,
+            err_mgs: &str,
+        ) {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), CHARLIE_DID_DOC.clone()]);
             let charlie_rotated_to_alice_secrets_resolver =
@@ -219,7 +320,8 @@ mod tests {
                 .await
                 .expect_err("res is ok");
 
-            assert_eq!(err.kind(), ErrorKind::Malformed);
+            assert_eq!(err.kind(), err_kind);
+            assert_eq!(format!("{}", err), err_mgs);
         }
     }
 }
