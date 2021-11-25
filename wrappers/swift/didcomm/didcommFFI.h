@@ -46,175 +46,175 @@ typedef struct RustCallStatus {
 // ⚠️ increment the version suffix in all instances of UNIFFI_SHARED_HEADER_V3 in this file.           ⚠️
 #endif // def UNIFFI_SHARED_H
 
-void ffi_didcomm_11d1_OnDIDResolverResult_object_free(
+void ffi_didcomm_b0b0_OnDIDResolverResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_11d1_OnDIDResolverResult_success(
+void didcomm_b0b0_OnDIDResolverResult_success(
       void*_Nonnull ptr,RustBuffer result,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_11d1_OnDIDResolverResult_error(
+void didcomm_b0b0_OnDIDResolverResult_error(
       void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_ExampleFFIDIDResolver_object_free(
+void ffi_didcomm_b0b0_ExampleFFIDIDResolver_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_11d1_ExampleFFIDIDResolver_new(
+void*_Nonnull didcomm_b0b0_ExampleFFIDIDResolver_new(
       RustBuffer known_dids,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_ExampleFFIDIDResolver_resolve(
+RustBuffer didcomm_b0b0_ExampleFFIDIDResolver_resolve(
       void*_Nonnull ptr,RustBuffer did,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_OnGetSecretResult_object_free(
+void ffi_didcomm_b0b0_OnGetSecretResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_11d1_OnGetSecretResult_success(
+void didcomm_b0b0_OnGetSecretResult_success(
       void*_Nonnull ptr,RustBuffer result,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_11d1_OnGetSecretResult_error(
+void didcomm_b0b0_OnGetSecretResult_error(
       void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_OnFindSecretsResult_object_free(
+void ffi_didcomm_b0b0_OnFindSecretsResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_11d1_OnFindSecretsResult_success(
+void didcomm_b0b0_OnFindSecretsResult_success(
       void*_Nonnull ptr,RustBuffer result,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_11d1_OnFindSecretsResult_error(
+void didcomm_b0b0_OnFindSecretsResult_error(
       void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_ExampleFFISecretsResolver_object_free(
+void ffi_didcomm_b0b0_ExampleFFISecretsResolver_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_11d1_ExampleFFISecretsResolver_new(
+void*_Nonnull didcomm_b0b0_ExampleFFISecretsResolver_new(
       RustBuffer known_secrets,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_ExampleFFISecretsResolver_get_secret(
+RustBuffer didcomm_b0b0_ExampleFFISecretsResolver_get_secret(
       void*_Nonnull ptr,RustBuffer secret_id,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_ExampleFFISecretsResolver_find_secrets(
+RustBuffer didcomm_b0b0_ExampleFFISecretsResolver_find_secrets(
       void*_Nonnull ptr,RustBuffer secret_ids,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_FromPriorExt_object_free(
+void ffi_didcomm_b0b0_FromPriorExt_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_11d1_FromPriorExt_new(
+void*_Nonnull didcomm_b0b0_FromPriorExt_new(
       RustBuffer iss,RustBuffer sub,RustBuffer exp,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_FromPriorExt_get_iss(
+RustBuffer didcomm_b0b0_FromPriorExt_get_iss(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_FromPriorExt_get_sub(
+RustBuffer didcomm_b0b0_FromPriorExt_get_sub(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_FromPriorExt_get_exp(
+RustBuffer didcomm_b0b0_FromPriorExt_get_exp(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_DIDComm_object_free(
+void ffi_didcomm_b0b0_DIDComm_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_11d1_DIDComm_new(
+void*_Nonnull didcomm_b0b0_DIDComm_new(
       uint64_t did_resolver,uint64_t secret_resolver,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_DIDComm_pack_plaintext(
+RustBuffer didcomm_b0b0_DIDComm_pack_plaintext(
       void*_Nonnull ptr,RustBuffer msg,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_DIDComm_pack_signed(
+RustBuffer didcomm_b0b0_DIDComm_pack_signed(
       void*_Nonnull ptr,RustBuffer msg,RustBuffer sign_by,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_DIDComm_pack_encrypted(
+RustBuffer didcomm_b0b0_DIDComm_pack_encrypted(
       void*_Nonnull ptr,RustBuffer msg,RustBuffer to,RustBuffer from,RustBuffer sign_by,RustBuffer options,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_DIDComm_unpack(
+RustBuffer didcomm_b0b0_DIDComm_unpack(
       void*_Nonnull ptr,RustBuffer msg,RustBuffer options,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_DIDComm_pack_from_prior(
+RustBuffer didcomm_b0b0_DIDComm_pack_from_prior(
       void*_Nonnull ptr,void*_Nonnull msg,RustBuffer issuer_kid,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_DIDComm_unpack_from_prior(
+RustBuffer didcomm_b0b0_DIDComm_unpack_from_prior(
       void*_Nonnull ptr,RustBuffer from_prior_jwt,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_11d1_DIDComm_wrap_in_forward(
+RustBuffer didcomm_b0b0_DIDComm_wrap_in_forward(
       void*_Nonnull ptr,RustBuffer msg,RustBuffer headers,RustBuffer to,RustBuffer routing_keys,RustBuffer enc_alg_anon,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_FFIDIDResolver_init_callback(
+void ffi_didcomm_b0b0_FFIDIDResolver_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_FFISecretsResolver_init_callback(
+void ffi_didcomm_b0b0_FFISecretsResolver_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_OnPackSignedResult_init_callback(
+void ffi_didcomm_b0b0_OnPackSignedResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_OnPackEncryptedResult_init_callback(
+void ffi_didcomm_b0b0_OnPackEncryptedResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_OnPackPlaintextResult_init_callback(
+void ffi_didcomm_b0b0_OnPackPlaintextResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_OnUnpackResult_init_callback(
+void ffi_didcomm_b0b0_OnUnpackResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_OnFromPriorPackResult_init_callback(
+void ffi_didcomm_b0b0_OnFromPriorPackResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_OnFromPriorUnpackResult_init_callback(
+void ffi_didcomm_b0b0_OnFromPriorUnpackResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_OnWrapInForwardResult_init_callback(
+void ffi_didcomm_b0b0_OnWrapInForwardResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_11d1_rustbuffer_alloc(
+RustBuffer ffi_didcomm_b0b0_rustbuffer_alloc(
       int32_t size,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_11d1_rustbuffer_from_bytes(
+RustBuffer ffi_didcomm_b0b0_rustbuffer_from_bytes(
       ForeignBytes bytes,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_11d1_rustbuffer_free(
+void ffi_didcomm_b0b0_rustbuffer_free(
       RustBuffer buf,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_11d1_rustbuffer_reserve(
+RustBuffer ffi_didcomm_b0b0_rustbuffer_reserve(
       RustBuffer buf,int32_t additional,
     RustCallStatus *_Nonnull out_status
     );
