@@ -184,7 +184,7 @@ let msg = Message::build(
 .finalize();
 
 let (msg, metadata) = msg
-    .pack_signed(ALICE_DID, did_resolver, secrets_resolver)
+    .pack_signed(ALICE_DID, &did_resolver, &secrets_resolver)
     .await
     .expect("Unable pack_signed");
 
@@ -220,7 +220,7 @@ let msg = Message::build(
 .finalize();
 
 let msg = msg
-    .pack_plaintext()
+    .pack_plaintext(&did_resolver)
     .expect("Unable pack_plaintext");
 
 // BOB
