@@ -12,6 +12,19 @@ use crate::{Message, utils::set_panic_hook};
 pub struct ParsedForward(pub(crate) Rc<didcomm::protocols::routing::ParsedForward>);
 
 #[wasm_bindgen]
+impl ParsedForward {
+
+    #[wasm_bindgen(skip_typescript)]
+    pub fn as_value(&self) -> Result<JsValue, JsValue> {
+        let msg = JsValue::from_serde(&*self.0)
+            .kind(ErrorKind::Malformed, "Unable serialize ParsedForward")
+            .as_js()?;
+
+        Ok(msg)
+    }
+}
+
+#[wasm_bindgen]
 impl Message {
 
     #[wasm_bindgen(skip_typescript)]
@@ -71,6 +84,28 @@ impl Message {
     }
 
 }
+
+#[wasm_bindgen(typescript_custom_section)]
+const PARSED_FORWARD_AS_VALUE_TS: &'static str = r#"
+interface ParsedForward {
+    as_value(): IParsedForward;
+}
+"#;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(typescript_type = "IParsedForward")]
+    pub type IParsedForward;
+}
+
+#[wasm_bindgen(typescript_custom_section)]
+const IPARSED_FORWARD_TS: &'static str = r#"
+type IParsedForward = {
+    msg: Message,
+    next: string,
+    forwarded_msg: any
+}
+"#;
 
 #[wasm_bindgen(typescript_custom_section)]
 const MESSAGE_WRAP_IN_FORWARD_TS: &'static str = r#"

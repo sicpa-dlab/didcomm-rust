@@ -1,6 +1,7 @@
-import { Message } from "didcomm-js";
+import { Message, ParsedForward } from "didcomm-js";
 import {
     MESSAGE_SIMPLE,
+    FORWARD_MESSAGE,
   } from "../test-vectors";
   
   test.each([
@@ -13,5 +14,18 @@ import {
     async ({ message }) => {
       const res = message.try_parse_forward();
       expect(res).toBeNull();
+    }
+  );
+
+  test.each([
+    {
+      case: "Forward",
+      message: FORWARD_MESSAGE,
+    }
+  ])(
+    "Message.try-parse-forward handles $case",
+    async ({ message }) => {
+      const res = message.try_parse_forward();
+      expect(res).toEqual(expect.anything());
     }
   );
