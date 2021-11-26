@@ -11,6 +11,12 @@ pub(crate) use crate as didcomm;
 #[cfg(test)]
 mod test_vectors;
 
+#[cfg(feature = "testvectors")]
+pub(crate) use crate as didcomm;
+
+#[cfg(feature = "testvectors")]
+pub mod test_vectors;
+
 pub mod algorithms;
 pub mod did;
 pub mod error;

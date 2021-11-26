@@ -124,17 +124,14 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{steps.date.outputs.yearmo}}
 
-      - name: Go to uniffi folder
-        run: cd uniffi
-
       - name: Cargo fmt
         # TODO enable that once https://github.com/rust-lang/rustfmt/issues/4477
         #      is resolved
         if: runner.os != 'Windows'
-        run: cargo fmt --all -- --check
+        run: cd uniffi && cargo fmt --all -- --check
 
       - name: Debug build
-        run: cargo build --verbose
+        run: cd uniffi && cargo build --verbose
 
       - name: Test
-        run: cargo test --verbose
+        run: cd uniffi && cargo test --verbose

@@ -171,8 +171,8 @@ interface ExampleDIDResolver {
 // 5. SECRETS RESOLVER
 
 callback interface SecretsResolver {
-  ErrorCode get_secret(string secretId, OnGetSecretResult cb); // should be in camel case
-  ErrorCode find_secrets(sequence<string> secretIds, OnFindSecretsResult cb); // should be in camel case
+  ErrorCode get_secret(string secretid, OnGetSecretResult cb); // should be in camel case
+  ErrorCode find_secrets(sequence<string> secretids, OnFindSecretsResult cb); // should be in camel case
 };
 
 interface OnGetSecretResult {
@@ -334,12 +334,12 @@ dictionary FromPrior {
 };
 
 callback interface OnFromPriorPackResult {
-  void success(string fromPriorJwt, string kid); // should be in camel case
+  void success(string frompriorjwt, string kid); // should be in camel case
   void error(ErrorKind err, string msg);
 };
 
 callback interface OnFromPriorUnpackResult {
-  void success(FromPrior fromPrior, string kid); // should be in camel case
+  void success(FromPrior fromprior, string kid); // should be in camel case
   void error(ErrorKind err, string msg);
 };
 

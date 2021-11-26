@@ -20,6 +20,6 @@ pub use secrets::resolvers::*;
 pub use secrets::*;
 
 #[cfg(test)]
-mod test_vectors;
+mod test_helper;
 
 uniffi_macros::include_scaffolding!("didcomm");

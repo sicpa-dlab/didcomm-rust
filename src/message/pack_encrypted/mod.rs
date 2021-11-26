@@ -1752,7 +1752,7 @@ mod tests {
                     &did_resolver,
                     &alice_secrets_resolver,
                     &PackEncryptedOptions {
-                        forward_headers: Some(HashMap::from([
+                        forward_headers: Some(HashMap::from_iter([
                             ("example-header-1".into(), json!("example-header-1-value")),
                             ("example-header-2".into(), json!("example-header-2-value")),
                         ])),
