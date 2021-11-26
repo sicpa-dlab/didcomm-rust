@@ -55,8 +55,10 @@ async function main() {
     await repudiableAuthentcatedEncryption();
     console.log("\n=================== REPUDIABLE NON AUTHENTICATED ENCRYPTION ===================\n")
     await repudiableNonAuthentcatedEncryption();
-    console.log("\n=================== SIGNED UNENCRYPTED ===================")
+    console.log("\n=================== SIGNED UNENCRYPTED ===================\n");
     await signedUnencrypteed();
+    console.log("\n=================== PLAINTEXT ===================")
+    await plaintext();
 }
 
 async function nonRepudiableEncryption() {
@@ -316,6 +318,44 @@ async function signedUnencrypteed() {
 
     const [unpackedMsg, unpackMetadata] = await Message.unpack(
         signedMsg,
+        didResolver,
+        secretsResolver,
+        {}
+    );
+
+    console.log("Reveived message is\n", unpackedMsg.as_value());
+    console.log("Reveived message unpack metadata is\n", unpackMetadata);
+}
+
+async function plaintext() {
+    // --- Building message from ALICE to BOB ---
+    const msg = new Message({
+        id: "1234567890",
+        typ: "application/didcomm-plain+json",
+        type: "http://example.com/protocols/lets_do_lunch/1.0/proposal",
+        from: "did:example:alice",
+        to: ["did:example:bob"],
+        created_time: 1516269022,
+        expires_time: 1516385931,
+        body: {messagespecificattribute: "and its value"},
+    });
+
+    // --- Packing encrypted and authenticated message ---
+    let didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
+
+    const plaintextMsg= await msg.pack_plaintext(
+        didResolver
+    );
+
+    // --- Sending message ---
+    console.log("Sending message\n", plaintextMsg);
+
+    // --- Unpacking message ---
+    didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
+    let secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+
+    const [unpackedMsg, unpackMetadata] = await Message.unpack(
+        plaintextMsg,
         didResolver,
         secretsResolver,
         {}
