@@ -1,5 +1,7 @@
 mod forward;
 
+use std::collections::HashMap;
+
 use serde_json::{json, Value};
 use uuid::Uuid;
 
@@ -43,7 +45,7 @@ async fn find_did_comm_service<'dr>(
                 })?;
 
             match service.kind {
-                ServiceKind::DIDCommMessaging(ref did_comm_service) => {
+                ServiceKind::DIDCommMessaging { ref value: did_comm_service } => {
                     if did_comm_service.accept.contains(&DIDCOMM_V2_PROFILE.into()) {
                         Ok(Some((service.id.clone(), did_comm_service.clone())))
                     } else {
@@ -64,7 +66,7 @@ async fn find_did_comm_service<'dr>(
             .services
             .iter()
             .find_map(|service| match service.kind {
-                ServiceKind::DIDCommMessaging(ref did_comm_service)
+                ServiceKind::DIDCommMessaging { ref value: did_comm_service }
                     if did_comm_service.accept.contains(&DIDCOMM_V2_PROFILE.into()) =>
                 {
                     Some((service.id.clone(), did_comm_service.clone()))
@@ -126,7 +128,7 @@ fn generate_message_id() -> String {
 fn build_forward_message(
     forwarded_msg: &str,
     next: &str,
-    headers: Option<&Vec<(String, Value)>>,
+    headers: Option<&HashMap<String, Value>>,
 ) -> Result<String> {
     let body = json!({ "next": next });
 
@@ -176,7 +178,7 @@ pub fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
     let json_attachment_data = match msg.attachments {
         Some(ref attachments) => match &attachments[..] {
             [attachment, ..] => match &attachment.data {
-                AttachmentData::Json(forwarded_msg_data) => Some(forwarded_msg_data),
+                AttachmentData::Json { ref value } => Some(value),
                 _ => None,
             },
             _ => None,
@@ -199,7 +201,7 @@ pub fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
 
 pub async fn wrap_in_forward<'dr>(
     msg: &str,
-    headers: Option<&Vec<(String, Value)>>,
+    headers: Option<&HashMap<String, Value>>,
     to: &str,
     routing_keys: &Vec<String>,
     enc_alg_anon: &AnonCryptAlg,

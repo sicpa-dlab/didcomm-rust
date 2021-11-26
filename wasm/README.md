@@ -203,9 +203,7 @@ A DIDComm message in its plaintext form that
 They are therefore not normally transported across security boundaries.
 
 ```typescript
-let plaintext = msg
-    .pack_plaintext(didResolver)
-    .expect("Unable pack_plaintext");
+let plaintext = msg.pack_plaintext(didResolver).expect("Unable pack_plaintext");
 ```
 
 ## How to build with `wasm-pack build`
@@ -237,7 +235,6 @@ npm run test-puppeteer
 ```
 
 _Note tests will be executed with jest+puppeteer in Chromium installed inside node_modules._
-
 
 ## Hot to publish to NPM with `wasm-pack publish`
 

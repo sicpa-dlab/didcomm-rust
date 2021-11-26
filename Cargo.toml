@@ -23,7 +23,7 @@ name = 'routing'
 
 [package]
 name = 'didcomm'
-version = '0.2.1'
+version = '0.3.0'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'DIDComm for Rust'
@@ -41,6 +41,7 @@ serde-enum-str = '0.1'
 sha2 = '0.9'
 bs58 = "0.4.0"
 varint = "0.9.0"
+lazy_static = { version = "1.4.0", optional = true }
 
 [dependencies.serde]
 version = '1.0'
@@ -73,3 +74,7 @@ features = ['js']
 [dev-dependencies.criterion]
 version = '0.3'
 features = ['async_futures']
+
+[features]
+uniffi = []
+testvectors = ["lazy_static"]

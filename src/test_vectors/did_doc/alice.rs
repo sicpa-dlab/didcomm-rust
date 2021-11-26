@@ -6,96 +6,111 @@ use crate::didcomm::did::{
 };
 
 lazy_static! {
-    pub(crate) static ref ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET: VerificationMethod =
+    pub static ref ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET: VerificationMethod =
         VerificationMethod {
             id: "did:example:alice#key-x25519-not-in-secrets-1".into(),
             controller: "did:example:alice#key-x25519-not-in-secrets-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::JWK(json!({
-                "kty": "OKP",
-                "crv": "X25519",
-                "x": "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
-            })),
+            verification_material: VerificationMaterial::JWK {
+                value: json!({
+                    "kty": "OKP",
+                    "crv": "X25519",
+                    "x": "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
+                })
+            },
         };
-    pub(crate) static ref ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519: VerificationMethod =
+    pub static ref ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519: VerificationMethod =
         VerificationMethod {
             id: "did:example:alice#key-x25519-1".into(),
             controller: "did:example:alice#key-x25519-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::JWK(json!({
-                "kty": "OKP",
-                "crv": "X25519",
-                "x": "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
-            })),
+            verification_material: VerificationMaterial::JWK {
+                value: json!({
+                    "kty": "OKP",
+                    "crv": "X25519",
+                    "x": "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
+                })
+            },
         };
-    pub(crate) static ref ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256: VerificationMethod =
+    pub static ref ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256: VerificationMethod =
         VerificationMethod {
             id: "did:example:alice#key-p256-1".into(),
             controller: "did:example:alice#key-p256-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::JWK(json!({
-                "kty": "EC",
-                "crv": "P-256",
-                "x": "L0crjMN1g0Ih4sYAJ_nGoHUck2cloltUpUVQDhF2nHE",
-                "y": "SxYgE7CmEJYi7IDhgK5jI4ZiajO8jPRZDldVhqFpYoo",
-            })),
+            verification_material: VerificationMaterial::JWK {
+                value: json!({
+                    "kty": "EC",
+                    "crv": "P-256",
+                    "x": "L0crjMN1g0Ih4sYAJ_nGoHUck2cloltUpUVQDhF2nHE",
+                    "y": "SxYgE7CmEJYi7IDhgK5jI4ZiajO8jPRZDldVhqFpYoo",
+                })
+            },
         };
-    pub(crate) static ref ALICE_VERIFICATION_METHOD_KEY_AGREEM_P521: VerificationMethod =
+    pub static ref ALICE_VERIFICATION_METHOD_KEY_AGREEM_P521: VerificationMethod =
         VerificationMethod {
             id: "did:example:alice#key-p521-1".into(),
             controller: "did:example:alice#key-p521-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::JWK(json!({
-                "kty": "EC",
-                "crv": "P-521",
-                "x": "AHBEVPRhAv-WHDEvxVM9S0px9WxxwHL641Pemgk9sDdxvli9VpKCBdra5gg_4kupBDhz__AlaBgKOC_15J2Byptz",
-                "y": "AciGcHJCD_yMikQvlmqpkBbVqqbg93mMVcgvXBYAQPP-u9AF7adybwZrNfHWCKAQwGF9ugd0Zhg7mLMEszIONFRk",
-            })),
+            verification_material: VerificationMaterial::JWK {
+                value: json!({
+                    "kty": "EC",
+                    "crv": "P-521",
+                    "x": "AHBEVPRhAv-WHDEvxVM9S0px9WxxwHL641Pemgk9sDdxvli9VpKCBdra5gg_4kupBDhz__AlaBgKOC_15J2Byptz",
+                    "y": "AciGcHJCD_yMikQvlmqpkBbVqqbg93mMVcgvXBYAQPP-u9AF7adybwZrNfHWCKAQwGF9ugd0Zhg7mLMEszIONFRk",
+                })
+            },
         };
-    pub(crate) static ref ALICE_AUTH_METHOD_25519_NOT_IN_SECRET: VerificationMethod =
-        VerificationMethod {
-            id: "did:example:alice#key-not-in-secrets-1".into(),
-            controller: "did:example:alice#key-not-in-secrets-1".into(),
-            type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::JWK(json!({
+    pub static ref ALICE_AUTH_METHOD_25519_NOT_IN_SECRET: VerificationMethod = VerificationMethod {
+        id: "did:example:alice#key-not-in-secrets-1".into(),
+        controller: "did:example:alice#key-not-in-secrets-1".into(),
+        type_: VerificationMethodType::JsonWebKey2020,
+        verification_material: VerificationMaterial::JWK {
+            value: json!({
                 "kty": "OKP",
                 "crv": "Ed25519",
                 "x": "G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww",
-            })),
-        };
-    pub(crate) static ref ALICE_AUTH_METHOD_25519: VerificationMethod = VerificationMethod {
+            })
+        },
+    };
+    pub static ref ALICE_AUTH_METHOD_25519: VerificationMethod = VerificationMethod {
         id: "did:example:alice#key-1".into(),
         controller: "did:example:alice#key-1".into(),
         type_: VerificationMethodType::JsonWebKey2020,
-        verification_material: VerificationMaterial::JWK(json!({
-            "kty": "OKP",
-            "crv": "Ed25519",
-            "x": "G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww",
-        })),
+        verification_material: VerificationMaterial::JWK {
+            value: json!({
+                "kty": "OKP",
+                "crv": "Ed25519",
+                "x": "G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww",
+            })
+        },
     };
-    pub(crate) static ref ALICE_AUTH_METHOD_P256: VerificationMethod = VerificationMethod {
+    pub static ref ALICE_AUTH_METHOD_P256: VerificationMethod = VerificationMethod {
         id: "did:example:alice#key-2".into(),
         controller: "did:example:alice#key-2".into(),
         type_: VerificationMethodType::JsonWebKey2020,
-        verification_material: VerificationMaterial::JWK(json!({
-            "kty": "EC",
-            "crv": "P-256",
-            "x": "2syLh57B-dGpa0F8p1JrO6JU7UUSF6j7qL-vfk1eOoY",
-            "y": "BgsGtI7UPsObMRjdElxLOrgAO9JggNMjOcfzEPox18w",
-        })),
+        verification_material: VerificationMaterial::JWK {
+            value: json!({
+                "kty": "EC",
+                "crv": "P-256",
+                "x": "2syLh57B-dGpa0F8p1JrO6JU7UUSF6j7qL-vfk1eOoY",
+                "y": "BgsGtI7UPsObMRjdElxLOrgAO9JggNMjOcfzEPox18w",
+            })
+        },
     };
-    pub(crate) static ref ALICE_AUTH_METHOD_SECPP256K1: VerificationMethod = VerificationMethod {
+    pub static ref ALICE_AUTH_METHOD_SECPP256K1: VerificationMethod = VerificationMethod {
         id: "did:example:alice#key-3".into(),
         controller: "did:example:alice#key-3".into(),
         type_: VerificationMethodType::JsonWebKey2020,
-        verification_material: VerificationMaterial::JWK(json!({
-            "kty": "EC",
-            "crv": "secp256k1",
-            "x": "aToW5EaTq5mlAf8C5ECYDSkqsJycrW-e1SQ6_GJcAOk",
-            "y": "JAGX94caA21WKreXwYUaOCYTBMrqaX4KWIlsQZTHWCk",
-        })),
+        verification_material: VerificationMaterial::JWK {
+            value: json!({
+                "kty": "EC",
+                "crv": "secp256k1",
+                "x": "aToW5EaTq5mlAf8C5ECYDSkqsJycrW-e1SQ6_GJcAOk",
+                "y": "JAGX94caA21WKreXwYUaOCYTBMrqaX4KWIlsQZTHWCk",
+            })
+        },
     };
-    pub(crate) static ref ALICE_DID_DOC: DIDDoc = DIDDoc {
+    pub static ref ALICE_DID_DOC: DIDDoc = DIDDoc {
         did: "did:example:alice".into(),
         authentications: vec![
             "did:example:alice#key-1".into(),
@@ -119,7 +134,7 @@ lazy_static! {
             ALICE_AUTH_METHOD_SECPP256K1.clone(),
         ],
     };
-    pub(crate) static ref ALICE_DID_DOC_WITH_NO_SECRETS: DIDDoc = DIDDoc {
+    pub static ref ALICE_DID_DOC_WITH_NO_SECRETS: DIDDoc = DIDDoc {
         did: "did:example:alice".into(),
         authentications: vec![
             "did:example:alice#key-not-in-secrets-1".into(),

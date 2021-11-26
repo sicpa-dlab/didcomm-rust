@@ -14,6 +14,8 @@ use didcomm::{
     Message, PackEncryptedOptions, UnpackOptions,
 };
 use serde_json::json;
+use std::collections::HashMap;
+use std::iter::FromIterator;
 use test_vectors::{
     ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRETS, MEDIATOR1_DID_DOC,
     MEDIATOR1_SECRETS,
@@ -52,7 +54,10 @@ async fn main() {
             &PackEncryptedOptions {
                 protect_sender: true,
                 forward: true,
-                forward_headers: Some(vec![("expires_time".to_string(), json!(99999))]),
+                forward_headers: Some(HashMap::from_iter([(
+                    "expires_time".to_string(),
+                    json!(99999),
+                )])),
                 messaging_service: Some("did:example:bob#didcomm-1".to_string()),
                 enc_alg_auth: AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
                 enc_alg_anon: AnonCryptAlg::A256gcmEcdhEsA256kw,

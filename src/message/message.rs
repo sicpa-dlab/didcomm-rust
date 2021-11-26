@@ -84,7 +84,7 @@ impl Message {
         serde_json::from_str(s).to_didcomm("Unable deserialize jwm")
     }
 
-    pub fn validate(self) -> Result<Self> {
+    pub(crate) fn validate(self) -> Result<Self> {
         if self.typ != PLAINTEXT_TYP {
             Err(err_msg(
                 ErrorKind::Malformed,

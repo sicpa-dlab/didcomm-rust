@@ -8,28 +8,28 @@ mod mediator3;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use mediator1::*;
+pub use mediator1::*;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use mediator2::*;
+pub use mediator2::*;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use mediator3::*;
+pub use mediator3::*;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use alice::*;
+pub use alice::*;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use bob::*;
+pub use bob::*;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use charlie::*;
+pub use charlie::*;
 
 // TODO: Remove allow
 #[allow(unused_imports)]
-pub(crate) use charlie_rotated_to_alice::*;
+pub use charlie_rotated_to_alice::*;
