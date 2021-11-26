@@ -18,6 +18,9 @@ name = 'basic'
 [[example]]
 name = 'rotate_did'
 
+[[example]]
+name = 'routing'
+
 [package]
 name = 'didcomm'
 version = '0.2.1'

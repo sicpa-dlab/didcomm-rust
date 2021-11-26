@@ -1937,49 +1937,49 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn wrap_in_forward_works_mediator_unknown_by_sender() {
-        _wrap_in_forward_works_mediator_unknown_by_sender(BOB_DID, None, None).await;
+    async fn wrap_in_forward_works_mediator_unknown_to_sender() {
+        _wrap_in_forward_works_mediator_unknown_to_sender(BOB_DID, None, None).await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(BOB_DID, None, Some(ALICE_DID)).await;
+        _wrap_in_forward_works_mediator_unknown_to_sender(BOB_DID, None, Some(ALICE_DID)).await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(BOB_DID, Some(ALICE_DID), None).await;
+        _wrap_in_forward_works_mediator_unknown_to_sender(BOB_DID, Some(ALICE_DID), None).await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(
+        _wrap_in_forward_works_mediator_unknown_to_sender(
             BOB_DID,
             Some(ALICE_DID),
             Some(ALICE_DID),
         )
         .await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(
+        _wrap_in_forward_works_mediator_unknown_to_sender(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             None,
             None,
         )
         .await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(
+        _wrap_in_forward_works_mediator_unknown_to_sender(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             None,
             Some(ALICE_DID),
         )
         .await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(
+        _wrap_in_forward_works_mediator_unknown_to_sender(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             Some(ALICE_DID),
             None,
         )
         .await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(
+        _wrap_in_forward_works_mediator_unknown_to_sender(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             Some(ALICE_DID),
             Some(ALICE_DID),
         )
         .await;
 
-        async fn _wrap_in_forward_works_mediator_unknown_by_sender(
+        async fn _wrap_in_forward_works_mediator_unknown_to_sender(
             to: &str,
             from: Option<&str>,
             sign_by: Option<&str>,
