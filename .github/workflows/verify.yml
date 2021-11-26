@@ -96,7 +96,6 @@ jobs:
         run: |
           rustup set profile minimal
           rustup toolchain install stable
-        shell: bash
 
       - name: Get timestamp for cache
         id: date
@@ -129,6 +128,9 @@ jobs:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
         node: [ 14, 16 ]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: wasm
 
     steps:
       - name: Checkout
@@ -138,7 +140,6 @@ jobs:
         run: |
           rustup set profile minimal
           rustup toolchain install stable
-        shell: bash
 
       - name: Get timestamp for cache
         id: date
@@ -157,7 +158,7 @@ jobs:
         # TODO enable that once https://github.com/rust-lang/rustfmt/issues/4477
         #      is resolved
         if: runner.os != 'Windows'
-        run: cd wasm && cargo fmt --all -- --check
+        run: cargo fmt --all -- --check
 
       - name: Cargo checks
         run: cargo check --all-targets
@@ -170,45 +171,39 @@ jobs:
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-        shell: bash
 
       - name: Build pkg (nodejs)
-        run: |
-          cd wasm && rm -rf
-          wasm-pack build --target nodejs
-        shell: bash
+        run: rm -rf pkg && wasm-pack build --target nodejs
 
       - name: Lint test-js
         run: |
-          cd wasm/test-js
+          cd test-js
           npm install  
           npm run check  
-        shell: bash
 
       - name: Test test-js (nodejs)
-        run: cd wasm/test-js && npm test
-        shell: bash
+        run: cd test-js && npm test
 
       - name: Test test-js in browser (nodejs)
-        run: cd wasm/test-js && npm run test-puppeter
-        shell: bash
+        run: cd test-js && npm run test-puppeter
 
       - name: Lint demo
         run: |
-          cd wasm/demo
+          cd demo
           npm install  
           npm run check  
-        shell: bash
 
       - name: Test demo (nodejs)
-        run: cd wasm/demo && npm run start
-        shell: bash
+        run: cd demo && npm run start
 
   verify-uniffi:
     strategy:
       matrix:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: uniffi
 
     steps:
       - name: Checkout
@@ -218,7 +213,6 @@ jobs:
         run: |
           rustup set profile minimal
           rustup toolchain install stable
-        shell: bash
 
       - name: Get timestamp for cache
         id: date
@@ -237,10 +231,10 @@ jobs:
         # TODO enable that once https://github.com/rust-lang/rustfmt/issues/4477
         #      is resolved
         if: runner.os != 'Windows'
-        run: cd uniffi && cargo fmt --all -- --check
+        run: cargo fmt --all -- --check
 
       - name: Debug build
-        run: cd uniffi && cargo build --verbose
+        run: cargo build --verbose
 
       - name: Test
-        run: cd uniffi && cargo test --verbose
+        run: cargo test --verbose
