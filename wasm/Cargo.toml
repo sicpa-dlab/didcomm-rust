@@ -6,6 +6,7 @@ edition = '2018'
 description = 'WASM based javascript wrapper for DIDComm'
 license = 'Apache-2.0'
 repository = 'https://github.com/sicpa-dlab/didcomm-rust'
+readme = 'README.md'
 
 [lib]
 crate-type = [
