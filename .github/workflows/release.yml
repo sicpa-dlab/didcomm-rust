@@ -168,7 +168,7 @@ jobs:
           cd wasm
           rm -rf pkg
 
-          sed -i -r "s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME }}\1~" ./Cargo.toml
+          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME }}\1~}" ./Cargo.toml
           wasm-pack build --target bundler
 
           # verify
@@ -199,7 +199,7 @@ jobs:
           cd wasm
           rm -rf pkg
 
-          sed -i -r "s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME_NODEJS }}\1~" ./Cargo.toml
+          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME_NODEJS }}\1~}" ./Cargo.toml
           wasm-pack build --target bundler
 
           # verify
@@ -240,7 +240,7 @@ jobs:
         run: |
           cd wasm
           rm -rf pkg
-          sed -i -r "s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME }}\1~" ./Cargo.toml
+          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME }}\1~}" ./Cargo.toml
           wasm-pack build --target nodejs
           echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >pkg/.npmrc
           wasm-pack publish
@@ -253,7 +253,7 @@ jobs:
         run: |
           cd wasm
           rm -rf pkg
-          sed -i -r "s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME_NODEJS }}\1~" ./Cargo.toml
+          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME_NODEJS }}\1~}" ./Cargo.toml
           wasm-pack build --target nodejs
           echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >pkg/.npmrc
           wasm-pack publish
@@ -303,6 +303,7 @@ jobs:
           cd wasm
           rm -rf pkg
 
+          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME }}\1~}" ./Cargo.toml
           wasm-pack build --target bundler
 
           # verify
@@ -326,7 +327,7 @@ jobs:
           cd wasm
           rm -rf pkg
 
-          sed -i -r "s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME_NODEJS }}\1~" ./Cargo.toml
+          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME_NODEJS }}\1~}" ./Cargo.toml
           wasm-pack build --target nodejs
 
           # verify

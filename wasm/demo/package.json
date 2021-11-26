@@ -10,7 +10,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "didcomm-js": "file:../pkg"
+    "didcomm": "file:../pkg"
   },
   "devDependencies": {
     "ts-node": "^10.4.0",

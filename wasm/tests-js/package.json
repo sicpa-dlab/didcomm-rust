@@ -11,7 +11,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "didcomm-js": "file:../pkg"
+    "didcomm": "file:../pkg"
   },
   "devDependencies": {
     "@types/jest": "^27.0.2",

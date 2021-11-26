@@ -13,7 +13,7 @@ import {
   DIDResolver,
   Secret,
   SecretsResolver,
-} from "didcomm-js";
+} from "didcomm";
 import {
   CHARLIE_DID,
   CHARLIE_DID_DOC,

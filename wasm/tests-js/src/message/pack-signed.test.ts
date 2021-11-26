@@ -15,7 +15,7 @@ import {
   ALICE_AUTH_METHOD_SECP256K1,
 } from "../test-vectors";
 
-import { FromPrior, Message, PackSignedMetadata } from "didcomm-js";
+import { FromPrior, Message, PackSignedMetadata } from "didcomm";
 
 test.each([
   {

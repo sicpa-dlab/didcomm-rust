@@ -1,4 +1,4 @@
-import { FromPrior } from "didcomm-js";
+import { FromPrior } from "didcomm";
 import {
   ALICE_DID_DOC,
   CHARLIE_DID_DOC,

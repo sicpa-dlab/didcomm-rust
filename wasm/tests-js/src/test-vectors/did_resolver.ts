@@ -1,4 +1,4 @@
-import { DIDResolver, DIDDoc } from "didcomm-js";
+import { DIDResolver, DIDDoc } from "didcomm";
 
 export class ExampleDIDResolver implements DIDResolver {
   knownDids: DIDDoc[];

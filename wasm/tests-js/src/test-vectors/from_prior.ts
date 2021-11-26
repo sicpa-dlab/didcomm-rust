@@ -1,4 +1,4 @@
-import { FromPrior, IFromPrior } from "didcomm-js";
+import { FromPrior, IFromPrior } from "didcomm";
 import { ALICE_DID, BOB_DID, CHARLIE_DID } from ".";
 
 export const IFROM_PRIOR_MINIMAL: IFromPrior = {

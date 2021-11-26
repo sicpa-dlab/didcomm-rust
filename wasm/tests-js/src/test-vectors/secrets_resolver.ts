@@ -1,4 +1,4 @@
-import { Secret, SecretsResolver } from "didcomm-js";
+import { Secret, SecretsResolver } from "didcomm";
 
 export class ExampleSecretsResolver implements SecretsResolver {
   knownSecrets: Secret[];

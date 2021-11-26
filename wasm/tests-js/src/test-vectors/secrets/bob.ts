@@ -1,4 +1,4 @@
-import { Secret } from "didcomm-js";
+import { Secret } from "didcomm";
 
 export const BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1: Secret = {
   id: "did:example:bob#key-x25519-1",
