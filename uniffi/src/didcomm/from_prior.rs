@@ -106,7 +106,9 @@ mod tests {
             )),
         );
 
-        let from_prior = FromPrior::build(CHARLIE_DID.into(), ALICE_DID.into()).exp(1234).finalize();
+        let from_prior = FromPrior::build(CHARLIE_DID.into(), ALICE_DID.into())
+            .exp(1234)
+            .finalize();
         did_comm.pack_from_prior(
             &from_prior,
             Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone()),

@@ -18,7 +18,6 @@ impl DIDComm {
         sign_by: String,
         cb: Box<dyn OnPackSignedResult>,
     ) -> ErrorCode {
-        // TODO; avoid cloning
         let msg = msg.clone();
         let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
         let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());

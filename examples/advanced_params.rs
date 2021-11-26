@@ -13,6 +13,7 @@ use didcomm::{
 };
 use serde_json::json;
 use std::collections::HashMap;
+use std::iter::FromIterator;
 use test_vectors::{ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRETS};
 
 #[tokio::main(flavor = "current_thread")]
@@ -45,7 +46,10 @@ async fn main() {
                 forward: false, // Forward wrapping is unsupported in current version
                 protect_sender: true,
                 enc_alg_anon: AnonCryptAlg::A256gcmEcdhEsA256kw,
-                forward_headers: Some(HashMap::from([("expires_time".to_string(), json!(99999))])),
+                forward_headers: Some(HashMap::from_iter([(
+                    "expires_time".to_string(),
+                    json!(99999),
+                )])),
                 messaging_service: Some("did:example:bob#didcomm-1".to_string()),
                 enc_alg_auth: Default::default(),
             },

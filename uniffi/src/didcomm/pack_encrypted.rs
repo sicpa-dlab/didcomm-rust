@@ -21,7 +21,6 @@ impl DIDComm {
         options: &'b PackEncryptedOptions,
         cb: Box<dyn OnPackEncryptedResult>,
     ) -> ErrorCode {
-        // TODO; avoid cloning
         let msg = msg.clone();
         let options = options.clone();
         let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());

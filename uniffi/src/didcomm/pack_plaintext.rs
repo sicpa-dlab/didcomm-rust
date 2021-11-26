@@ -12,7 +12,6 @@ pub trait OnPackPlaintextResult: Sync + Send {
 
 impl DIDComm {
     pub fn pack_plaintext(&self, msg: &Message, cb: Box<dyn OnPackPlaintextResult>) -> ErrorCode {
-        // TODO; avoid cloning
         let msg = msg.clone();
         let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
 
