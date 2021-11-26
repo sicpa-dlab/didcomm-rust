@@ -16,9 +16,6 @@ name = 'advanced_params'
 name = 'basic'
 
 [[example]]
-name = 'plaintext'
-
-[[example]]
 name = 'rotate_did'
 
 [package]

@@ -2105,6 +2105,8 @@ mod tests {
         }
     }
 
+    // TODO: Add negative tests for Routing protocol
+
     #[tokio::test]
     async fn pack_encrypted_works_from_not_did_or_did_url() {
         let did_resolver =

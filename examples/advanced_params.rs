@@ -6,13 +6,18 @@ mod test_vectors;
 // Allows test vectors usage inside and outside crate
 pub(crate) use didcomm;
 
-use didcomm::algorithms::AnonCryptAlg;
 use didcomm::{
-    did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver, Message,
-    PackEncryptedOptions, UnpackOptions,
+    algorithms::{AnonCryptAlg, AuthCryptAlg},
+    did::resolvers::ExampleDIDResolver,
+    protocols::routing::try_parse_forward,
+    secrets::resolvers::ExampleSecretsResolver,
+    Message, PackEncryptedOptions, UnpackOptions,
 };
 use serde_json::json;
-use test_vectors::{ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRETS};
+use test_vectors::{
+    ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, BOB_DID, BOB_DID_DOC, BOB_SECRETS, MEDIATOR1_DID_DOC,
+    MEDIATOR1_SECRETS,
+};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
@@ -29,10 +34,14 @@ async fn main() {
     .finalize();
 
     // --- Packing encrypted and authenticated message ---
-    let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+    let did_resolver = ExampleDIDResolver::new(vec![
+        ALICE_DID_DOC.clone(),
+        BOB_DID_DOC.clone(),
+        MEDIATOR1_DID_DOC.clone(),
+    ]);
+
     let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
 
-    //TODO: messaging_service is always None
     let (msg, metadata) = msg
         .pack_encrypted(
             "did:example:bob#key-p256-1",
@@ -41,12 +50,12 @@ async fn main() {
             &did_resolver,
             &secrets_resolver,
             &PackEncryptedOptions {
-                forward: false, // Forward wrapping is unsupported in current version
                 protect_sender: true,
-                enc_alg_anon: AnonCryptAlg::A256gcmEcdhEsA256kw,
+                forward: true,
                 forward_headers: Some(vec![("expires_time".to_string(), json!(99999))]),
                 messaging_service: Some("did:example:bob#didcomm-1".to_string()),
-                enc_alg_auth: Default::default(),
+                enc_alg_auth: AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+                enc_alg_anon: AnonCryptAlg::A256gcmEcdhEsA256kw,
             },
         )
         .await
@@ -54,24 +63,57 @@ async fn main() {
 
     println!("Encryption metadata is\n{:?}\n", metadata);
 
-    // --- Sending message ---
-    println!("Sending message \n{}\n", msg);
+    // --- Sending message by Alice ---
+    println!("Alice is sending message \n{}\n", msg);
 
-    // --- Unpacking message ---
-    let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+    // --- Unpacking message by Mediator1 ---
+    let did_resolver = ExampleDIDResolver::new(vec![
+        ALICE_DID_DOC.clone(),
+        BOB_DID_DOC.clone(),
+        MEDIATOR1_DID_DOC.clone(),
+    ]);
+
+    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+
+    let (msg, metadata) = Message::unpack(
+        &msg,
+        &did_resolver,
+        &secrets_resolver,
+        &UnpackOptions::default(),
+    )
+    .await
+    .expect("Unable unpack");
+
+    println!("Mediator1 received message is \n{:?}\n", msg);
+
+    println!(
+        "Mediator1 received message unpack metadata is \n{:?}\n",
+        metadata
+    );
+
+    // --- Forwarding message by Mediator1 ---
+    let msg = serde_json::to_string(&try_parse_forward(&msg).unwrap().forwarded_msg).unwrap();
+
+    println!("Mediator1 is forwarding message \n{}\n", msg);
+
+    // --- Unpacking message by Bob ---
+    let did_resolver = ExampleDIDResolver::new(vec![
+        ALICE_DID_DOC.clone(),
+        BOB_DID_DOC.clone(),
+        MEDIATOR1_DID_DOC.clone(),
+    ]);
+
     let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
         &did_resolver,
         &secrets_resolver,
-        &UnpackOptions {
-            ..UnpackOptions::default()
-        },
+        &UnpackOptions::default(),
     )
     .await
     .expect("Unable unpack");
 
-    println!("Received message is \n{:?}\n", msg);
-    println!("Received message unpack metadata is \n{:?}\n", metadata);
+    println!("Bob received message is \n{:?}\n", msg);
+    println!("Bob received message unpack metadata is \n{:?}\n", metadata);
 }
