@@ -23,7 +23,7 @@ name = 'rotate_did'
 
 [package]
 name = 'didcomm'
-version = '0.2.1'
+version = '0.3.0'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'DIDComm for Rust'
@@ -52,6 +52,10 @@ features = ['std']
 git = 'https://github.com/hyperledger/aries-askar'
 rev = '4f29d43d584c4a1f1f982c4511824421aeccd2db'
 
+[dependencies.uuid]
+version = "0.8"
+features = ["v4"]
+
 [dev-dependencies]
 lazy_static = '1.4.0'
 
@@ -69,3 +73,6 @@ features = ['js']
 [dev-dependencies.criterion]
 version = '0.3'
 features = ['async_futures']
+
+[features]
+uniffi = []

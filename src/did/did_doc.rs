@@ -20,11 +20,9 @@ pub struct DIDDoc {
     /// All local verification methods including embedded to
     /// key agreement and authentication sections.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    // TODO: Remove allow
     pub verification_methods: Vec<VerificationMethod>,
 
     /// All services (https://www.w3.org/TR/did-core/#services)
-    // TODO: Remove allow
     pub services: Vec<Service>,
 }
 
@@ -47,17 +45,32 @@ pub enum VerificationMethodType {
     EcdsaSecp256k1VerificationKey2019,
     X25519KeyAgreementKey2020,
     Ed25519VerificationKey2020,
-    Other(String),
+    Other,
 }
 
 /// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum VerificationMaterial {
-    JWK(Value),
-    Multibase(String),
-    Base58(String),
-    Hex(String),
-    Other(Value),
+    JWK {
+        #[serde(flatten)]
+        value: Value,
+    },
+    Multibase {
+        #[serde(flatten)]
+        value: String,
+    },
+    Base58 {
+        #[serde(flatten)]
+        value: String,
+    },
+    Hex {
+        #[serde(flatten)]
+        value: String,
+    },
+    Other {
+        #[serde(flatten)]
+        value: Value,
+    },
 }
 
 /// Represents service record in DID Document (https://www.w3.org/TR/did-core/#services).
@@ -70,8 +83,14 @@ pub struct Service {
 /// Represents additional service properties defined for specific Service type.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum ServiceKind {
-    DIDCommMessaging(DIDCommMessagingService),
-    Other(Value),
+    DIDCommMessaging {
+        #[serde(flatten)]
+        value: DIDCommMessagingService,
+    },
+    Other {
+        #[serde(flatten)]
+        value: Value,
+    },
 }
 
 /// Properties for DIDCommMessagingService
@@ -80,5 +99,5 @@ pub enum ServiceKind {
 pub struct DIDCommMessagingService {
     pub service_endpoint: String,
     pub accept: Vec<String>,
-    pub route_keys: Vec<String>,
+    pub routing_keys: Vec<String>,
 }

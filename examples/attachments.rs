@@ -24,11 +24,13 @@ async fn main() {
     )
     .to(BOB_DID.to_owned())
     .from(ALICE_DID.to_owned())
-    .attachement(Attachment {
-        data: AttachmentData::Json(JsonAttachmentData {
-            json: json!({"foo": "bar"}),
-            jws: None,
-        }),
+    .attachment(Attachment {
+        data: AttachmentData::Json {
+            value: JsonAttachmentData {
+                json: json!({"foo": "bar"}),
+                jws: None,
+            },
+        },
         id: Some("123".to_string()),
         description: Some("example attachment".to_string()),
         filename: None,

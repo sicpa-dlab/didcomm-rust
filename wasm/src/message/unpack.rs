@@ -140,7 +140,7 @@ type UnpackMetadata = {
     non_repudiation: boolean,
 
     /**
-     * Whether the sender ID was protected.
+     * Whether the sender ID was hidden or protected.
      */
     anonymous_sender: boolean,
 

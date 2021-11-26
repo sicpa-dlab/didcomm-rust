@@ -14,12 +14,13 @@ mod test_vectors;
 pub mod algorithms;
 pub mod did;
 pub mod error;
+pub mod protocols;
 pub mod secrets;
 
 pub use message::{
     Attachment, AttachmentBuilder, AttachmentData, Base64AttachmentData, FromPrior,
-    JsonAttachmentData, LinksAttachmentData, Message, MessageBuilder, PackEncryptedMetadata,
-    PackEncryptedOptions, PackSignedMetadata, UnpackMetadata, UnpackOptions,
+    JsonAttachmentData, LinksAttachmentData, Message, MessageBuilder, MessagingServiceMetadata,
+    PackEncryptedMetadata, PackEncryptedOptions, PackSignedMetadata, UnpackMetadata, UnpackOptions,
 };
 
 #[cfg(test)]

@@ -8,7 +8,7 @@ pub enum ErrorKind {
     #[error("DID not resolved")]
     DIDNotResolved,
 
-    #[error("DID not resolved")]
+    #[error("DID URL not found")]
     DIDUrlNotFound,
 
     #[error("Secret not found")]
@@ -86,6 +86,27 @@ where
             kind,
             source: anyhow::Error::new(e).context(msg),
         })
+    }
+}
+
+pub trait ResultExtNoContext<T, E> {
+    fn to_error_kind(self, kind: ErrorKind) -> std::result::Result<T, ErrorKind>;
+
+    fn kind_no_context<D>(self, kind: ErrorKind, msg: D) -> Result<T>
+    where
+        D: fmt::Display + fmt::Debug + Send + Sync + 'static;
+}
+
+impl<T, E> ResultExtNoContext<T, E> for std::result::Result<T, E> {
+    fn to_error_kind(self, kind: ErrorKind) -> std::result::Result<T, ErrorKind> {
+        self.map_err(|_| kind)
+    }
+
+    fn kind_no_context<D>(self, kind: ErrorKind, msg: D) -> Result<T>
+    where
+        D: fmt::Display + fmt::Debug + Send + Sync + 'static,
+    {
+        self.map_err(|_| Error::msg(kind, msg))
     }
 }
 
