@@ -5,7 +5,8 @@
   "scripts": {
     "test": "jest",
     "test-puppeteer": "jest --config=jest.config.puppeteer.js",
-    "check": "tslint -c tslint.json 'src/**/*.ts'"
+    "check": "tslint -c tslint.json 'src/**/*.ts'",
+    "format": "prettier --write ."
   },
   "author": "",
   "license": "Apache-2.0",

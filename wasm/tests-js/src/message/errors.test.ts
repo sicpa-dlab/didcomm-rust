@@ -9,7 +9,7 @@ import {
   MESSAGE_SIMPLE,
   MockDIDResolver,
   MockSecretsResolver,
-} from "./test-vectors";
+} from "../test-vectors";
 
 test.each([
   {
