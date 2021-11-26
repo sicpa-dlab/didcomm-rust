@@ -37,22 +37,22 @@ impl DIDComm {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_vectors::test_helper::{
+    use crate::test_helper::{
         create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult, UnpackResult,
     };
     use crate::DIDComm;
     use didcomm_core::error::ErrorKind;
     use didcomm_core::{PackEncryptedOptions, UnpackOptions};
 
-    use crate::test_vectors::{simple_message, ALICE_DID, BOB_DID};
+    use didcomm_core::test_vectors::{ALICE_DID, BOB_DID, MESSAGE_SIMPLE};
 
     #[tokio::test]
     async fn unpack_works_plaintext() {
-        let msg = simple_message();
+        let msg = MESSAGE_SIMPLE.clone();
         let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
 
         let (cb, receiver) = PackResult::new();
-        didcomm.pack_plaintext(&msg, cb);
+        didcomm.pack_plaintext(&MESSAGE_SIMPLE, cb);
         let res = get_ok(receiver).await;
 
         let (cb, receiver) = UnpackResult::new();
@@ -64,7 +64,7 @@ mod tests {
 
     #[tokio::test]
     async fn unpack_works_signed() {
-        let msg = simple_message();
+        let msg = MESSAGE_SIMPLE.clone();
         let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
 
         let (cb, receiver) = PackResult::new();
@@ -80,7 +80,7 @@ mod tests {
 
     #[tokio::test]
     async fn unpack_works_encrypted() {
-        let msg = simple_message();
+        let msg = MESSAGE_SIMPLE.clone();
         let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
 
         let (cb, receiver) = PackResult::new();

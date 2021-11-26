@@ -50,12 +50,12 @@ impl DIDComm {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_vectors::test_helper::{
+    use crate::test_helper::{
         create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult,
     };
-    use crate::test_vectors::{simple_message, ALICE_DID, BOB_DID};
     use crate::DIDComm;
     use didcomm_core::error::ErrorKind;
+    use didcomm_core::test_vectors::{ALICE_DID, BOB_DID, MESSAGE_SIMPLE};
     use didcomm_core::{Message, PackEncryptedOptions};
     use serde_json::json;
 
@@ -64,7 +64,7 @@ mod tests {
         let (cb, receiver) = PackResult::new();
 
         DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_encrypted(
-            &simple_message(),
+            &MESSAGE_SIMPLE,
             String::from(BOB_DID),
             Some(String::from(ALICE_DID)),
             Some(String::from(ALICE_DID)),
@@ -107,7 +107,7 @@ mod tests {
         let (cb, receiver) = PackResult::new();
 
         DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_encrypted(
-            &simple_message(),
+            &MESSAGE_SIMPLE,
             String::from(format!("{}#unknown-fragment", BOB_DID)),
             Some(String::from(ALICE_DID)),
             Some(String::from(ALICE_DID)),
@@ -124,7 +124,7 @@ mod tests {
         let (cb, receiver) = PackResult::new();
 
         DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_encrypted(
-            &simple_message(),
+            &MESSAGE_SIMPLE,
             String::from(BOB_DID),
             Some(String::from(format!(
                 "{}#key-x25519-not-in-secrets-1",
@@ -144,7 +144,7 @@ mod tests {
         let (cb, receiver) = PackResult::new();
 
         DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_encrypted(
-            &simple_message(),
+            &MESSAGE_SIMPLE,
             String::from("not-a-did"),
             Some(String::from(ALICE_DID)),
             Some(String::from(ALICE_DID)),

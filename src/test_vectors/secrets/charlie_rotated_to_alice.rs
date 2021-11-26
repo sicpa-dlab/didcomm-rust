@@ -12,7 +12,7 @@ use super::{
 };
 
 lazy_static! {
-    pub(crate) static ref CHARLIE_ROTATED_TO_ALICE_SECRETS: Vec<Secret> = vec![
+    pub static ref CHARLIE_ROTATED_TO_ALICE_SECRETS: Vec<Secret> = vec![
         CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519.clone(),
         CHARLIE_SECRET_AUTH_KEY_ED25519.clone(),
         ALICE_SECRET_AUTH_KEY_ED25519.clone(),

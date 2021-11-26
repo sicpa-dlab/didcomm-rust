@@ -4,7 +4,7 @@ use serde_json::json;
 use crate::didcomm::secrets::{Secret, SecretMaterial, SecretType};
 
 lazy_static! {
-    pub(crate) static ref ALICE_SECRET_AUTH_KEY_ED25519: Secret = Secret {
+    pub static ref ALICE_SECRET_AUTH_KEY_ED25519: Secret = Secret {
         id: "did:example:alice#key-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -16,7 +16,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref ALICE_SECRET_AUTH_KEY_P256: Secret = Secret {
+    pub static ref ALICE_SECRET_AUTH_KEY_P256: Secret = Secret {
         id: "did:example:alice#key-2".into(),
         type_: SecretType::JsonWebKey2020.into(),
         secret_material: SecretMaterial::JWK {
@@ -29,7 +29,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref ALICE_SECRET_AUTH_KEY_SECP256K1: Secret = Secret {
+    pub static ref ALICE_SECRET_AUTH_KEY_SECP256K1: Secret = Secret {
         id: "did:example:alice#key-3".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -42,7 +42,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref ALICE_SECRET_KEY_AGREEMENT_KEY_X25519: Secret = Secret {
+    pub static ref ALICE_SECRET_KEY_AGREEMENT_KEY_X25519: Secret = Secret {
         id: "did:example:alice#key-x25519-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -54,7 +54,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref ALICE_SECRET_KEY_AGREEMENT_KEY_P256: Secret = Secret {
+    pub static ref ALICE_SECRET_KEY_AGREEMENT_KEY_P256: Secret = Secret {
         id: "did:example:alice#key-p256-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -67,7 +67,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref ALICE_SECRET_KEY_AGREEMENT_KEY_P521: Secret = Secret {
+    pub static ref ALICE_SECRET_KEY_AGREEMENT_KEY_P521: Secret = Secret {
         id: "did:example:alice#key-p521-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -80,7 +80,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref ALICE_SECRETS: Vec<Secret> = vec![
+    pub static ref ALICE_SECRETS: Vec<Secret> = vec![
         ALICE_SECRET_AUTH_KEY_ED25519.clone(),
         ALICE_SECRET_AUTH_KEY_P256.clone(),
         ALICE_SECRET_AUTH_KEY_SECP256K1.clone(),

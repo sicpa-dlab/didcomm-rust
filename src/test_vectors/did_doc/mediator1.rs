@@ -6,7 +6,7 @@ use crate::didcomm::did::{
 };
 
 lazy_static! {
-    pub(crate) static ref MEDIATOR1_VERIFICATION_METHOD_KEY_AGREEM_X25519_1: VerificationMethod =
+    pub static ref MEDIATOR1_VERIFICATION_METHOD_KEY_AGREEM_X25519_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:mediator1#key-x25519-1".into(),
             controller: "did:example:mediator1#key-x25519-1".into(),
@@ -20,7 +20,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref MEDIATOR1_VERIFICATION_METHOD_KEY_AGREEM_P256_1: VerificationMethod =
+    pub static ref MEDIATOR1_VERIFICATION_METHOD_KEY_AGREEM_P256_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:mediator1#key-p256-1".into(),
             controller: "did:example:mediator1#key-p256-1".into(),
@@ -35,7 +35,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref MEDIATOR1_VERIFICATION_METHOD_KEY_AGREEM_P384_1: VerificationMethod =
+    pub static ref MEDIATOR1_VERIFICATION_METHOD_KEY_AGREEM_P384_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:mediator1#key-p384-1".into(),
             controller: "did:example:mediator1#key-p384-1".into(),
@@ -50,7 +50,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref MEDIATOR1_VERIFICATION_METHOD_KEY_AGREEM_P521_1: VerificationMethod =
+    pub static ref MEDIATOR1_VERIFICATION_METHOD_KEY_AGREEM_P521_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:mediator1#key-p521-1".into(),
             controller: "did:example:mediator1#key-p521-1".into(),
@@ -65,7 +65,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref MEDIATOR1_DID_DOC: DIDDoc = DIDDoc {
+    pub static ref MEDIATOR1_DID_DOC: DIDDoc = DIDDoc {
         did: "did:example:mediator1".into(),
         authentications: vec![],
         key_agreements: vec![
