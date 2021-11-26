@@ -45,9 +45,9 @@ async fn find_did_comm_service<'dr>(
                 })?;
 
             match service.kind {
-                ServiceKind::DIDCommMessaging { ref value: did_comm_service } => {
-                    if did_comm_service.accept.contains(&DIDCOMM_V2_PROFILE.into()) {
-                        Ok(Some((service.id.clone(), did_comm_service.clone())))
+                ServiceKind::DIDCommMessaging { ref value } => {
+                    if value.accept.contains(&DIDCOMM_V2_PROFILE.into()) {
+                        Ok(Some((service.id.clone(), value.clone())))
                     } else {
                         Err(err_msg(
                             ErrorKind::IllegalArgument,
@@ -66,10 +66,10 @@ async fn find_did_comm_service<'dr>(
             .services
             .iter()
             .find_map(|service| match service.kind {
-                ServiceKind::DIDCommMessaging { ref value: did_comm_service }
-                    if did_comm_service.accept.contains(&DIDCOMM_V2_PROFILE.into()) =>
+                ServiceKind::DIDCommMessaging { ref value }
+                    if value.accept.contains(&DIDCOMM_V2_PROFILE.into()) =>
                 {
-                    Some((service.id.clone(), did_comm_service.clone()))
+                    Some((service.id.clone(), value.clone()))
                 }
                 _ => None,
             })),
