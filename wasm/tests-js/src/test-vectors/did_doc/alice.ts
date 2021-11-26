@@ -2,14 +2,14 @@ import { DIDDoc, VerificationMethod } from "didcomm-js";
 
 export const ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET: VerificationMethod =
   {
-    id: "did:example:alice#key-not-in-secrets-1",
+    id: "did:example:alice#key-x25519-not-in-secrets-1",
     type: "JsonWebKey2020",
-    controller: "did:example:alice#key-not-in-secrets-1",
+    controller: "did:example:alice#key-x25519-not-in-secrets-1",
     verification_material: {
       JWK: {
-        crv: "Ed25519",
+        crv: "X25519",
         kty: "OKP",
-        x: "G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww",
+        x: "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
       },
     },
   };
@@ -110,6 +110,7 @@ export const ALICE_DID_DOC: DIDDoc = {
     "did:example:alice#key-3",
   ],
   verification_methods: [
+    ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET,
     ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
     ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
     ALICE_VERIFICATION_METHOD_KEY_AGREEM_P521,
