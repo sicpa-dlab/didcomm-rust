@@ -8,7 +8,8 @@ export class ExampleDIDResolver implements DIDResolver {
   }
 
   async resolve(did: string): Promise<DIDDoc | null> {
-    return this.knownDids.find((ddoc) => ddoc.did === did);
+    const res = this.knownDids.find((ddoc) => ddoc.did === did);
+    return res ? res : null;
   }
 }
 

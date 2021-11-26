@@ -13,6 +13,10 @@ jobs:
   release-ready:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'stable'
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - uses: actions/checkout@v2
 
@@ -29,13 +33,11 @@ jobs:
             | jq -r '.packages[] | select(.name == "${{ env.PKG_NAME }}") | .version')"
           echo "$version"
           echo "::set-output name=current_wasm_version::$version"
-        shell: bash
 
       - name: Check version format
         run: |
           # verify the version has "MAJOR.MINOR.PATCH" parts only
           echo "${{ steps.current_version.outputs.current_version }}" | grep -e '^[0-9]\+\.[0-9]\+\.[0-9]\+$'
-        shell: bash
 
       # TODO improve (DRY): copy-paste from release.yml
       - name: Get release info
@@ -45,7 +47,6 @@ jobs:
               | jq '.[] | select(.name == "v${{ steps.current_version.outputs.current_version }}")')"
           echo "::set-output name=release_info::$release_info"
           echo "$release_info"
-        shell: bash
 
       - name: check version bumped
         # TODO check if greater than latest tag / release (?)
@@ -62,7 +63,6 @@ jobs:
           # TODO verify that it's not more than crates.io limit (10 MB)
           ls -la target/package
           cargo package --list
-        shell: bash
 
       - name: check it can be packaged (npm)
         run: |
@@ -80,7 +80,6 @@ jobs:
           npm install .
           popd
           rm -rf pkg
-        shell: bash
 
   verify:
     strategy:
@@ -127,9 +126,11 @@ jobs:
       matrix:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
         node: [ 14, 16 ]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     defaults:
       run:
+        shell: bash
         working-directory: wasm
 
     steps:
@@ -163,7 +164,7 @@ jobs:
       - name: Cargo checks
         run: cargo check --all-targets
 
-      # TODO caching, makes sense to demo/test-js where lock files are presented
+      # TODO caching, makes sense for demo and tests-js where lock files are presented
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
@@ -172,26 +173,47 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
+      - name: Build pkg (bundler)
+        run: rm -rf pkg && wasm-pack build --target bundler
+
+      - name: Install tests-js (bundler)
+        run: cd tests-js && npm install
+
+      - name: Lint tests-js
+        run: cd tests-js && npm run check
+
+      - name: Test tests-js (bundler)
+        if: false  # TODO that check is not supported yet for bundler build
+        run: cd tests-js && npm test
+
+      - name: Test tests-js in browser (bundler)
+        if: false  # TODO that check is not supported yet for bundler build
+        run: cd tests-js && npm run test-puppeteer
+
+      - name: Install demo (bundler)
+        run: cd demo && npm install
+
+      - name: Lint demo
+        run: cd demo && npm run check
+
+      - name: Test demo (bundler)
+        if: false  # TODO that check is not supported yet for bundler build
+        run: cd demo && npm run start
+
       - name: Build pkg (nodejs)
         run: rm -rf pkg && wasm-pack build --target nodejs
 
-      - name: Lint test-js
-        run: |
-          cd test-js
-          npm install  
-          npm run check  
+      - name: Install tests-js (nodejs)
+        run: cd tests-js && rm -rf node_modules && npm install
 
-      - name: Test test-js (nodejs)
-        run: cd test-js && npm test
+      - name: Test tests-js (nodejs)
+        run: cd tests-js && npm test
 
-      - name: Test test-js in browser (nodejs)
-        run: cd test-js && npm run test-puppeter
+      - name: Test tests-js in browser (nodejs)
+        run: cd tests-js && npm run test-puppeteer
 
-      - name: Lint demo
-        run: |
-          cd demo
-          npm install  
-          npm run check  
+      - name: Install demo (nodejs)
+        run: cd demo && rm -rf node_modules && npm install
 
       - name: Test demo (nodejs)
         run: cd demo && npm run start
@@ -203,6 +225,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
+        shell: bash
         working-directory: uniffi
 
     steps:
