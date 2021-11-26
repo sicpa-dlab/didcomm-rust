@@ -178,7 +178,7 @@ jobs:
           wasm-pack build --target nodejs
         shell: bash
 
-      - name: Lint test-js (nodejs)
+      - name: Lint test-js
         run: |
           cd wasm/test-js
           npm install  
@@ -190,10 +190,10 @@ jobs:
         shell: bash
 
       - name: Test test-js in browser (nodejs)
-        run: cd wasm/demo && npm run test-puppeter
+        run: cd wasm/test-js && npm run test-puppeter
         shell: bash
 
-      - name: Lint demo (nodejs)
+      - name: Lint demo
         run: |
           cd wasm/demo
           npm install  
@@ -243,4 +243,4 @@ jobs:
         run: cd uniffi && cargo build --verbose
 
       - name: Test
-        run: cargo test --verbose
+        run: cd uniffi && cargo test --verbose
