@@ -6,15 +6,15 @@ use didcomm_core::error::{err_msg, Error, ErrorKind, Result};
 use didcomm_core::{FromPrior, Message, PackEncryptedMetadata, PackSignedMetadata, UnpackMetadata};
 use futures::channel::oneshot::{self, Receiver};
 
-use crate::test_vectors::{
-    ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS, BOB_DID_DOC, BOB_SECRETS, CHARLIE_DID_DOC,
-    CHARLIE_SECRETS, MEDIATOR1_DID_DOC, MEDIATOR1_SECRETS, MEDIATOR2_DID_DOC, MEDIATOR2_SECRETS,
-    MEDIATOR3_DID_DOC, MEDIATOR3_SECRETS,
-};
 use crate::{
     DIDResolver, ExampleDIDResolver, ExampleSecretsResolver, OnFromPriorPackResult,
     OnFromPriorUnpackResult, OnPackEncryptedResult, OnPackPlaintextResult, OnPackSignedResult,
     OnUnpackResult, OnWrapInForwardResult, SecretsResolver,
+};
+use didcomm_core::test_vectors::{
+    ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS, BOB_DID_DOC, BOB_SECRETS, CHARLIE_DID_DOC,
+    CHARLIE_SECRETS, MEDIATOR1_DID_DOC, MEDIATOR1_SECRETS, MEDIATOR2_DID_DOC, MEDIATOR2_SECRETS,
+    MEDIATOR3_DID_DOC, MEDIATOR3_SECRETS,
 };
 
 pub(crate) async fn get_ok<T>(receiver: Receiver<Result<T>>) -> T {

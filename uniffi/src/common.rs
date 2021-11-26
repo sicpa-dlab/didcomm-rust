@@ -1,7 +1,11 @@
-use std::{cell::RefCell, cmp, sync::Mutex};
+use std::{
+    cell::RefCell,
+    cmp,
+    sync::{Arc, Mutex},
+};
 
 use crate::UniffiCustomTypeWrapper;
-use didcomm_core::error::{err_msg, ErrorKind, Result, ResultExtNoContext, ToResult};
+use didcomm_core::error::{err_msg, ErrorKind, Result, ResultExt, ResultExtNoContext, ToResult};
 use futures::{channel::oneshot, executor::ThreadPool};
 use lazy_static::lazy_static;
 
@@ -30,22 +34,32 @@ impl UniffiCustomTypeWrapper for JsonValue {
     }
 
     fn unwrap(obj: Self) -> Self::Wrapped {
-        obj.to_string()
+        serde_json::to_string(&obj).expect("unable serialize json value")
     }
 }
 
-pub struct OnResult<T> {
-    sender: Mutex<RefCell<Option<oneshot::Sender<Result<T>>>>>,
+pub(crate) struct OnResultReceiver<T>(oneshot::Receiver<Result<T>>);
+
+impl<T> OnResultReceiver<T> {
+    pub(crate) async fn get(self) -> Result<T> {
+        self.0
+            .await
+            .kind(ErrorKind::InvalidState, "unable receive callback result")?
+    }
 }
 
+pub struct OnResult<T>(Mutex<RefCell<Option<oneshot::Sender<Result<T>>>>>);
+
 impl<T> OnResult<T> {
-    pub fn new(sender: Mutex<RefCell<Option<oneshot::Sender<Result<T>>>>>) -> Self {
-        OnResult { sender }
+    pub(crate) fn new() -> (Arc<Self>, OnResultReceiver<T>) {
+        let (sender, receiver) = oneshot::channel::<Result<T>>();
+        let on_result = Arc::new(OnResult(Mutex::new(RefCell::new(Some(sender)))));
+        (on_result, OnResultReceiver(receiver))
     }
 
     pub fn success(&self, result: T) -> std::result::Result<(), ErrorKind> {
         let sender = self
-            .sender
+            .0
             .lock()
             .to_error_kind(ErrorKind::InvalidState)?
             .replace(None);
@@ -60,7 +74,7 @@ impl<T> OnResult<T> {
 
     pub fn error(&self, err: ErrorKind, msg: String) -> std::result::Result<(), ErrorKind> {
         let sender = self
-            .sender
+            .0
             .lock()
             .to_error_kind(ErrorKind::InvalidState)?
             .replace(None);

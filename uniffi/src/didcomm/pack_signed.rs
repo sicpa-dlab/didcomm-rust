@@ -18,7 +18,6 @@ impl DIDComm {
         sign_by: String,
         cb: Box<dyn OnPackSignedResult>,
     ) -> ErrorCode {
-        // TODO; avoid cloning
         let msg = msg.clone();
         let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
         let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());
@@ -45,19 +44,19 @@ mod tests {
     use didcomm_core::Message;
     use serde_json::json;
 
-    use crate::test_vectors::test_helper::{
+    use crate::test_helper::{
         create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult,
     };
     use crate::DIDComm;
 
-    use crate::test_vectors::{simple_message, ALICE_DID};
+    use didcomm_core::test_vectors::{ALICE_DID, MESSAGE_SIMPLE};
 
     #[tokio::test]
     async fn pack_signed_works() {
         let (cb, receiver) = PackResult::new();
 
         DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_signed(
-            &simple_message(),
+            &MESSAGE_SIMPLE,
             String::from(ALICE_DID),
             cb,
         );
@@ -94,7 +93,7 @@ mod tests {
         let (cb, receiver) = PackResult::new();
 
         DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_signed(
-            &simple_message(),
+            &MESSAGE_SIMPLE,
             String::from(format!("{}#unknown-fragment", ALICE_DID)),
             cb,
         );
@@ -108,7 +107,7 @@ mod tests {
         let (cb, receiver) = PackResult::new();
 
         DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_signed(
-            &simple_message(),
+            &MESSAGE_SIMPLE,
             String::from(format!("{}#key-not-in-secrets-1", ALICE_DID)),
             cb,
         );
@@ -122,7 +121,7 @@ mod tests {
         let (cb, receiver) = PackResult::new();
 
         DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_signed(
-            &simple_message(),
+            &MESSAGE_SIMPLE,
             String::from("not-a-did"),
             cb,
         );

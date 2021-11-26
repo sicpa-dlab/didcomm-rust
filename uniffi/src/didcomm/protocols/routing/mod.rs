@@ -57,24 +57,24 @@ mod tests {
     use std::collections::HashMap;
     use std::iter::FromIterator;
 
-    use crate::test_vectors::test_helper::{
+    use crate::test_helper::{
         create_did_resolver, create_secrets_resolver, get_ok, PackResult, UnpackResult,
         WrapInForwardResult,
-    };
-    use crate::test_vectors::{
-        simple_message, ALICE_DID, BOB_DID, CHARLIE_DID,
-        MEDIATOR2_VERIFICATION_METHOD_KEY_AGREEM_X25519_1,
     };
     use crate::DIDComm;
     use didcomm_core::algorithms::AnonCryptAlg;
     use didcomm_core::protocols::routing::try_parse_forward;
+    use didcomm_core::test_vectors::{
+        ALICE_DID, BOB_DID, CHARLIE_DID, MEDIATOR2_VERIFICATION_METHOD_KEY_AGREEM_X25519_1,
+        MESSAGE_SIMPLE,
+    };
     use didcomm_core::{Message, PackEncryptedOptions, UnpackOptions};
     use serde_json::json;
 
     #[tokio::test]
     async fn pack_encrypted_works_single_mediator() {
         let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
-        let msg = simple_message();
+        let msg = MESSAGE_SIMPLE.clone();
 
         // ALICE
         let (cb, receiver) = PackResult::new();
@@ -194,7 +194,7 @@ mod tests {
     #[tokio::test]
     async fn wrap_in_forward_works_mediator_unknown_by_sender() {
         let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
-        let msg = simple_message();
+        let msg = MESSAGE_SIMPLE.clone();
 
         // ALICE
         let (cb, receiver) = PackResult::new();

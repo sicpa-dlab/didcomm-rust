@@ -8,29 +8,19 @@ mod plaintext;
 mod secrets;
 mod signed;
 
-// TODO: Remove allow
-#[allow(unused_imports)]
-pub(crate) use common::*;
+pub use common::*;
 
-// TODO: Remove allow
-#[allow(unused_imports)]
-pub(crate) use did_doc::*;
+pub use did_doc::*;
 
-pub(crate) use encrypted::*;
+pub use encrypted::*;
 
-// TODO: Remove allow
-#[allow(unused_imports)]
-pub(crate) use from_prior::*;
+pub use from_prior::*;
 
-// TODO: Remove allow
-#[allow(unused_imports)]
-pub(crate) use from_prior_jwt::*;
+pub use from_prior_jwt::*;
 
-pub(crate) use message::*;
-pub(crate) use plaintext::*;
+pub use message::*;
+pub use plaintext::*;
 
-// TODO: Remove allow
-#[allow(unused_imports)]
-pub(crate) use secrets::*;
+pub use secrets::*;
 
-pub(crate) use signed::*;
+pub use signed::*;

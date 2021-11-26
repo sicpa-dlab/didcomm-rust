@@ -4,7 +4,7 @@ use serde_json::json;
 use crate::didcomm::secrets::{Secret, SecretMaterial, SecretType};
 
 lazy_static! {
-    pub(crate) static ref MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_X25519_1: Secret = Secret {
+    pub static ref MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_X25519_1: Secret = Secret {
         id: "did:example:mediator2#key-x25519-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -17,7 +17,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_P256_1: Secret = Secret {
+    pub static ref MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_P256_1: Secret = Secret {
         id: "did:example:mediator2#key-p256-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -31,7 +31,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_P384_1: Secret = Secret {
+    pub static ref MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_P384_1: Secret = Secret {
         id: "did:example:mediator2#key-p384-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -45,7 +45,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_P521_1: Secret = Secret {
+    pub static ref MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_P521_1: Secret = Secret {
         id: "did:example:mediator2#key-p521-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -59,7 +59,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref MEDIATOR2_SECRETS: Vec<Secret> = vec![
+    pub static ref MEDIATOR2_SECRETS: Vec<Secret> = vec![
         MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_X25519_1.clone(),
         MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_P256_1.clone(),
         MEDIATOR2_SECRET_KEY_AGREEMENT_KEY_P384_1.clone(),

@@ -4,7 +4,7 @@ use serde_json::json;
 use crate::didcomm::secrets::{Secret, SecretMaterial, SecretType};
 
 lazy_static! {
-    pub(crate) static ref CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519: Secret = Secret {
+    pub static ref CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519: Secret = Secret {
         id: "did:example:charlie#key-x25519-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -16,7 +16,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref CHARLIE_SECRET_AUTH_KEY_ED25519: Secret = Secret {
+    pub static ref CHARLIE_SECRET_AUTH_KEY_ED25519: Secret = Secret {
         id: "did:example:charlie#key-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
@@ -28,7 +28,7 @@ lazy_static! {
             })
         },
     };
-    pub(crate) static ref CHARLIE_SECRETS: Vec<Secret> = vec![
+    pub static ref CHARLIE_SECRETS: Vec<Secret> = vec![
         CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519.clone(),
         CHARLIE_SECRET_AUTH_KEY_ED25519.clone(),
     ];

@@ -64,14 +64,12 @@ impl DIDComm {
 mod tests {
     use didcomm_core::FromPrior;
 
-    use crate::test_vectors::{
-        ALICE_DID, CHARLIE_DID, CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519,
-    };
     use crate::{
-        test_vectors::test_helper::{
-            create_did_resolver, get_ok, FromPriorPackResult, FromPriorUnpackResult,
-        },
+        test_helper::{create_did_resolver, get_ok, FromPriorPackResult, FromPriorUnpackResult},
         DIDComm, ExampleSecretsResolver,
+    };
+    use didcomm_core::test_vectors::{
+        ALICE_DID, CHARLIE_DID, CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519,
     };
 
     #[tokio::test]
@@ -106,7 +104,9 @@ mod tests {
             )),
         );
 
-        let from_prior = FromPrior::build(CHARLIE_DID.into(), ALICE_DID.into()).exp(1234).finalize();
+        let from_prior = FromPrior::build(CHARLIE_DID.into(), ALICE_DID.into())
+            .exp(1234)
+            .finalize();
         did_comm.pack_from_prior(
             &from_prior,
             Some(CHARLIE_SECRET_AUTH_KEY_ED25519.id.clone()),

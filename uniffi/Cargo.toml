@@ -17,6 +17,11 @@ path = '..'
 features = ['uniffi']
 package = "didcomm"
 
+[dev-dependencies.didcomm_core]
+path = '..'
+features = ['testvectors']
+package = "didcomm"
+
 [dependencies]
 uniffi_macros = "0.15.2"
 uniffi = { version = "0.15.2", features=["builtin-bindgen"] }

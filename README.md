@@ -1,10 +1,21 @@
-# DIDComm Rust
+# DIDComm Rust + JavaScript/TypeScript + Swift
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Unit Tests](https://github.com/sicpa-dlab/didcomm-rust/workflows/verify/badge.svg)](https://github.com/sicpa-dlab/didcomm-rust/actions/workflows/verify.yml)
 [![Rust Package](https://img.shields.io/crates/v/didcomm)](https://crates.io/crates/didcomm/)
 
-Basic [DIDComm v2](https://identity.foundation/didcomm-messaging/spec) support in Rust.
+The repository consists of the following main components:
+- Basic [DIDComm v2](https://identity.foundation/didcomm-messaging/spec) support in Rust.
+- [Wasm](https://webassembly.org/) - based DIDComm JavaScript/TypeScript, see [wasm](/wasm).
+- [uniffi-rs](https://github.com/mozilla/uniffi-rs) - based wrappers
+  - [uniffi](/uniffi) - callback-based Rust wrapper with uniffi-rs support
+  - [wrappers/swift](/wrappers/swift) - Swift wrapper generated via uniffi-rs  
+
+The docs below are provided for the main DIDComm Rust.
+
+See [wasm/README.md](/wasm/README.md) for DIDComm JavaScript/TypeScript docs.
+
+See [wrappers/swift/README.md](/wrappers/swift/README.md) for DIDComm Swift docs.
 
 ## Usage
 
@@ -12,7 +23,7 @@ To use `didcomm`, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-didcomm = "0.2"
+didcomm = "0.3"
 ```
 
 ## Run examples

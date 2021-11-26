@@ -7,7 +7,7 @@ use crate::didcomm::did::{
 };
 
 lazy_static! {
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_1: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-x25519-1".into(),
             controller: "did:example:bob#key-x25519-1".into(),
@@ -21,7 +21,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_2: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_2: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-x25519-2".into(),
             controller: "did:example:bob#key-x25519-2".into(),
@@ -35,7 +35,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_3: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_3: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-x25519-3".into(),
             controller: "did:example:bob#key-x25519-3".into(),
@@ -49,7 +49,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRETS_1: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRETS_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-x25519-not-secrets-1".into(),
             controller: "did:example:bob#key-x25519-not-secrets-1".into(),
@@ -63,7 +63,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P256_1: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P256_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-p256-1".into(),
             controller: "did:example:bob#key-p256-1".into(),
@@ -78,7 +78,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P256_2: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P256_2: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-p256-2".into(),
             controller: "did:example:bob#key-p256-2".into(),
@@ -93,7 +93,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P256_NOT_IN_SECRETS_1: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P256_NOT_IN_SECRETS_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-p256-not-secrets-1".into(),
             controller: "did:example:bob#key-p256-not-secrets-1".into(),
@@ -108,7 +108,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P384_1: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P384_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-p384-1".into(),
             controller: "did:example:bob#key-p384-1".into(),
@@ -123,7 +123,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P384_2: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P384_2: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-p384-2".into(),
             controller: "did:example:bob#key-p384-2".into(),
@@ -138,7 +138,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P384_NOT_IN_SECRETS_1: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P384_NOT_IN_SECRETS_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-p384-not-secrets-1".into(),
             controller: "did:example:bob#key-p384-not-secrets-1".into(),
@@ -153,7 +153,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_1: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-p521-1".into(),
             controller: "did:example:bob#key-p521-1".into(),
@@ -168,7 +168,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_2: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_2: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-p521-2".into(),
             controller: "did:example:bob#key-p521-2".into(),
@@ -183,7 +183,7 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_NOT_IN_SECRETS_1: VerificationMethod =
+    pub static ref BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_NOT_IN_SECRETS_1: VerificationMethod =
         VerificationMethod {
             id: "did:example:bob#key-p521-not-secrets-1".into(),
             controller: "did:example:bob#key-p521-not-secrets-1".into(),
@@ -198,19 +198,19 @@ lazy_static! {
                 })
             },
         };
-    pub(crate) static ref BOB_DID_COMM_MESSAGING_SERVICE: DIDCommMessagingService =
+    pub static ref BOB_DID_COMM_MESSAGING_SERVICE: DIDCommMessagingService =
         DIDCommMessagingService {
             service_endpoint: "http://example.com/path".into(),
             accept: vec!["didcomm/v2".into(), "didcomm/aip2;env=rfc587".into()],
             routing_keys: vec!["did:example:mediator1#key-x25519-1".into()],
         };
-    pub(crate) static ref BOB_SERVICE: Service = Service {
+    pub static ref BOB_SERVICE: Service = Service {
         id: "did:example:bob#didcomm-1".into(),
         kind: ServiceKind::DIDCommMessaging {
             value: BOB_DID_COMM_MESSAGING_SERVICE.clone()
         },
     };
-    pub(crate) static ref BOB_DID_DOC: DIDDoc = DIDDoc {
+    pub static ref BOB_DID_DOC: DIDDoc = DIDDoc {
         did: "did:example:bob".into(),
         authentications: vec![],
         key_agreements: vec![
@@ -237,7 +237,7 @@ lazy_static! {
             BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_2.clone(),
         ],
     };
-    pub(crate) static ref BOB_DID_DOC_NO_SECRETS: DIDDoc = DIDDoc {
+    pub static ref BOB_DID_DOC_NO_SECRETS: DIDDoc = DIDDoc {
         did: "did:example:bob".into(),
         authentications: vec![],
         key_agreements: vec![
