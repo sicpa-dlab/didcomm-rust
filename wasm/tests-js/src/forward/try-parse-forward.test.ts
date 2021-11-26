@@ -5,14 +5,13 @@ import {
   
   test.each([
     {
-      case: "Simple",
+      case: "Not Forward",
       message: MESSAGE_SIMPLE,
     }
   ])(
     "Message.try-parse-forward handles $case",
     async ({ message }) => {
-      const res = Message.try_parse_forward(message);
-      //expect(typeof res).toStrictEqual("string");
-      //expect(res).toContain("ciphertext");
+      const res = message.try_parse_forward();
+      expect(res).toBeNull();
     }
   );

@@ -59,13 +59,9 @@ impl Message {
 
     #[wasm_bindgen(skip_typescript)]
     pub fn try_parse_forward(
-        msg: JsValue
+        &self
      ) -> Result<JsValue, JsValue> {
-        let msg: didcomm::Message = msg
-            .into_serde()
-            .kind(ErrorKind::Malformed, "msg param is malformed")
-            .as_js()?;
-
+        let msg = self.0.clone();
         let parsed_message = try_parse_forward(&msg);
         Ok(
             JsValue::from_serde(&parsed_message)
@@ -92,9 +88,7 @@ export namespace Message {
 
 #[wasm_bindgen(typescript_custom_section)]
 const MESSAGE_TRY_PARSE_FORWARD_TS: &'static str = r#"
-export namespace Message {
-    function try_parse_forward(
-        msg: Message
-    ): ParsedForward;
+interface Message {
+    try_parse_forward(): ParsedForward;
 }
 "#;
