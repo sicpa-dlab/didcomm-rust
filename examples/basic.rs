@@ -475,7 +475,7 @@ async fn repudiable_non_authenticated_encryption() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+    let secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
     let (msg, metadata) = msg
         .pack_encrypted(
@@ -573,7 +573,7 @@ async fn signed_unencrypted() {
 
     // --- Unpacking message ---
     let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-    let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+    let secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -600,7 +600,7 @@ async fn plaintext_unencrypted() {
     .finalize();
 
     // --- Packing plaintext message ---
-    let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+    let did_resolver = ExampleDIDResolver::new(vec![]);
 
     let msg = msg
         .pack_plaintext(&did_resolver)
@@ -611,8 +611,8 @@ async fn plaintext_unencrypted() {
     println!("Sending message \n{}\n", msg);
 
     // --- Unpacking message ---
-    let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-    let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+    let did_resolver = ExampleDIDResolver::new(vec![]);
+    let secrets_resolver = ExampleSecretsResolver::new(vec![]);
 
     let (msg, metadata) = Message::unpack(
         &msg,
