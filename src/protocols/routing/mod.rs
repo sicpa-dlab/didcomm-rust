@@ -16,6 +16,8 @@ pub use self::forward::ParsedForward;
 
 pub(crate) const FORWARD_MSG_TYPE: &str = "https://didcomm.org/routing/2.0/forward";
 
+pub(crate) const DIDCOMM_V2_PROFILE: &str = "didcomm/v2";
+
 async fn find_did_comm_service<'dr>(
     did: &str,
     service_id: Option<&str>,
@@ -40,23 +42,35 @@ async fn find_did_comm_service<'dr>(
                     )
                 })?;
 
-            if let ServiceKind::DIDCommMessaging(ref did_comm_service) = service.kind {
-                Ok(Some((service.id.clone(), did_comm_service.clone())))
-            } else {
-                Err(err_msg(
+            match service.kind {
+                ServiceKind::DIDCommMessaging(ref did_comm_service) => {
+                    if did_comm_service.accept.contains(&DIDCOMM_V2_PROFILE.into()) {
+                        Ok(Some((service.id.clone(), did_comm_service.clone())))
+                    } else {
+                        Err(err_msg(
+                            ErrorKind::IllegalArgument,
+                            "Service with the specified ID does not accept didcomm/v2 profile",
+                        ))
+                    }
+                }
+                _ => Err(err_msg(
                     ErrorKind::IllegalArgument,
                     "Service with the specified ID is not of DIDCommMessaging type",
-                ))
+                )),
             }
         }
 
-        None => Ok(did_doc.services.iter().find_map(|service| {
-            if let ServiceKind::DIDCommMessaging(ref did_comm_service) = service.kind {
-                Some((service.id.clone(), did_comm_service.clone()))
-            } else {
-                None
-            }
-        })),
+        None => Ok(did_doc
+            .services
+            .iter()
+            .find_map(|service| match service.kind {
+                ServiceKind::DIDCommMessaging(ref did_comm_service)
+                    if did_comm_service.accept.contains(&DIDCOMM_V2_PROFILE.into()) =>
+                {
+                    Some((service.id.clone(), did_comm_service.clone()))
+                }
+                _ => None,
+            })),
     }
 }
 
