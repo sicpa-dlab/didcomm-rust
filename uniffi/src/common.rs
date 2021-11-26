@@ -38,7 +38,15 @@ impl UniffiCustomTypeWrapper for JsonValue {
     }
 }
 
-pub(crate) type OnResultReceiver<T> = oneshot::Receiver<Result<T>>;
+pub(crate) struct OnResultReceiver<T>(oneshot::Receiver<Result<T>>);
+
+impl<T> OnResultReceiver<T> {
+    pub(crate) async fn get(self) -> Result<T> {
+        self.0
+            .await
+            .kind(ErrorKind::InvalidState, "unable receive callback result")?
+    }
+}
 
 pub struct OnResult<T>(Mutex<RefCell<Option<oneshot::Sender<Result<T>>>>>);
 
@@ -46,13 +54,7 @@ impl<T> OnResult<T> {
     pub(crate) fn new() -> (Arc<Self>, OnResultReceiver<T>) {
         let (sender, receiver) = oneshot::channel::<Result<T>>();
         let on_result = Arc::new(OnResult(Mutex::new(RefCell::new(Some(sender)))));
-        (on_result, receiver)
-    }
-
-    pub(crate) async fn get_result(receiver: OnResultReceiver<T>) -> Result<T> {
-        receiver
-            .await
-            .kind(ErrorKind::InvalidState, "unable receive callback result")?
+        (on_result, OnResultReceiver(receiver))
     }
 
     pub fn success(&self, result: T) -> std::result::Result<(), ErrorKind> {

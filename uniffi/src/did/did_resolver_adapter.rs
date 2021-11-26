@@ -26,7 +26,8 @@ impl _DIDResolver for DIDResolverAdapter {
 
         self.did_resolver.resolve(String::from(did), cb);
 
-        let res = OnDIDResolverResult::get_result(receiver)
+        let res = receiver
+            .get()
             .await
             .kind(ErrorKind::InvalidState, "can not resolve DID Doc")?;
         Ok(res)

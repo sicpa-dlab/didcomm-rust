@@ -26,7 +26,8 @@ impl _SecretsResolver for SecretsResolverAdapter {
         self.secrets_resolver
             .get_secret(String::from(secret_id), cb);
 
-        let res = OnGetSecretResult::get_result(receiver)
+        let res = receiver
+            .get()
             .await
             .kind(ErrorKind::InvalidState, "can not get secret")?;
         Ok(res)
@@ -38,7 +39,8 @@ impl _SecretsResolver for SecretsResolverAdapter {
         self.secrets_resolver
             .find_secrets(secret_ids.iter().map(|&s| String::from(s)).collect(), cb);
 
-        let res = OnFindSecretsResult::get_result(receiver)
+        let res = receiver
+            .get()
             .await
             .kind(ErrorKind::InvalidState, "can not get secret")?;
 
