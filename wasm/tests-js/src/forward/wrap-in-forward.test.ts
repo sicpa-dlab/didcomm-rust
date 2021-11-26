@@ -7,6 +7,7 @@ import {
     ALICE_DID,
   } from "../test-vectors";
   
+  // TODO: more tests
   test.each([
     {
       case: "Simple",
