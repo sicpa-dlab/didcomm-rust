@@ -14,7 +14,7 @@ import {
     Secret,
     SecretsResolver,
 } from "didcomm-js";
-import {CHARLIE_DID, CHARLIE_DID_DOC} from "../../tests-js/src/test-vectors";
+import {CHARLIE_DID, CHARLIE_DID_DOC, CHARLIE_SECRETS} from "../../tests-js/src/test-vectors";
 
 class ExampleDIDResolver implements DIDResolver {
     knownDids: DIDDoc[];
@@ -47,16 +47,20 @@ class ExampleSecretsResolver implements SecretsResolver {
 }
 
 async function main() {
+    console.log("=================== NON REPUDIABLE ENCRYPTION ===================\n")
     await nonRepudiableEncryption();
+    console.log("\n=================== MULTI RECIPIENT ===================\n")
     await multiRecipient();
+    console.log("\n=================== REPUDIABLE AUTHENTICATED ENCRYPTION ===================\n")
     await repudiableAuthentcatedEncryption();
+    console.log("\n=================== REPUDIABLE NON AUTHENTICATED ENCRYPTION ===================\n")
     await repudiableNonAuthentcatedEncryption();
+    console.log("\n=================== SIGNED UNENCRYPTED ===================")
     await signedUnencrypteed();
 }
 
 async function nonRepudiableEncryption() {
-    // --- Build message from ALICE to BOB ---
-
+    // --- Building message from ALICE to BOB ---
     const msg = new Message({
         id: "1234567890",
         typ: "application/didcomm-plain+json",
@@ -85,12 +89,10 @@ async function nonRepudiableEncryption() {
 
     console.log("Encryption metadata is\n", encryptMetadata);
 
-    // --- Send message ---
-
+    // --- Sending message ---
     console.log("Sending message\n", encryptedMsg);
 
     // --- Unpacking message ---
-
     didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
     secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
 
@@ -101,13 +103,12 @@ async function nonRepudiableEncryption() {
         {}
     );
 
-    console.log("Receved message is\n", unpackedMsg.as_value());
-    console.log("Receved message unpack metadata is\n", unpackMetadata);
+    console.log("Reveived message is\n", unpackedMsg.as_value());
+    console.log("Reveived message unpack metadata is\n", unpackMetadata);
 }
 
 async function multiRecipient() {
-    // --- Build message from ALICE to BOB and Charlie ---
-
+    // --- Building message from ALICE to BOB and Charlie ---
     const msg = new Message({
         id: "1234567890",
         typ: "application/didcomm-plain+json",
@@ -123,7 +124,6 @@ async function multiRecipient() {
     let secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
 
     // --- Packing encrypted and authenticated message for Bob ---
-
     const [encryptedMsgBob, encryptMetadataBob] = await msg.pack_encrypted(
         BOB_DID,
         ALICE_DID,
@@ -137,14 +137,10 @@ async function multiRecipient() {
 
     console.log("Encryption metadata for Bob is\n", encryptMetadataBob);
 
-    // --- Send message ---
-
+    // --- Sending message ---
     console.log("Sending message to Bob\n", encryptedMsgBob);
 
-    // --- Unpacking message ---
-
-    // --- Packing encrypted and authenticated message for Bob ---
-
+    // --- Packing encrypted and authenticated message for Charlie ---
     const [encryptedMsgCharlie, encryptMetadataCharlie] = await msg.pack_encrypted(
         CHARLIE_DID,
         ALICE_DID,
@@ -158,12 +154,10 @@ async function multiRecipient() {
 
     console.log("Encryption metadata for Charle is\n", encryptMetadataCharlie);
 
-    // --- Send message ---
-
+    // --- Sending message ---
     console.log("Sending message to Charle\n", encryptedMsgCharlie);
 
     // --- Unpacking message for Bob ---
-
     didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
     secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
 
@@ -174,28 +168,26 @@ async function multiRecipient() {
         {}
     );
 
-    console.log("Receved message for Bob is\n", unpackedMsgBob.as_value());
-    console.log("Receved message unpack metadata for Bob is\n", unpackMetadataBob);
+    console.log("Reveived message for Bob is\n", unpackedMsgBob.as_value());
+    console.log("Reveived message unpack metadata for Bob is\n", unpackMetadataBob);
 
     // --- Unpacking message for Charlie ---
-
     didResolver = new ExampleDIDResolver([ALICE_DID_DOC, CHARLIE_DID_DOC]);
-    secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+    secretsResolver = new ExampleSecretsResolver(CHARLIE_SECRETS);
 
     const [unpackedMsgCharlie, unpackMetadataCharlie] = await Message.unpack(
-        encryptedMsgBob,
+        encryptedMsgCharlie,
         didResolver,
         secretsResolver,
         {}
     );
 
-    console.log("Receved message for Charlie is\n", unpackedMsgCharlie.as_value());
-    console.log("Receved message unpack metadata for Charlie is\n", unpackMetadataCharlie);
+    console.log("Reveived message for Charlie is\n", unpackedMsgCharlie.as_value());
+    console.log("Reveived message unpack metadata for Charlie is\n", unpackMetadataCharlie);
 }
 
 async function repudiableAuthentcatedEncryption() {
-    // --- Build message from ALICE to BOB ---
-
+    // --- Building message from ALICE to BOB ---
     const msg = new Message({
         id: "1234567890",
         typ: "application/didcomm-plain+json",
@@ -224,12 +216,10 @@ async function repudiableAuthentcatedEncryption() {
 
     console.log("Encryption metadata is\n", encryptMetadata);
 
-    // --- Send message ---
-
+    // --- Sending message ---
     console.log("Sending message\n", encryptedMsg);
 
     // --- Unpacking message ---
-
     didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
     secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
 
@@ -240,13 +230,12 @@ async function repudiableAuthentcatedEncryption() {
         {}
     );
 
-    console.log("Receved message is\n", unpackedMsg.as_value());
-    console.log("Receved message unpack metadata is\n", unpackMetadata);
+    console.log("Reveived message is\n", unpackedMsg.as_value());
+    console.log("Reveived message unpack metadata is\n", unpackMetadata);
 }
 
 async function repudiableNonAuthentcatedEncryption() {
-    // --- Build message from ALICE to BOB ---
-
+    // --- Building message from ALICE to BOB ---
     const msg = new Message({
         id: "1234567890",
         typ: "application/didcomm-plain+json",
@@ -275,12 +264,10 @@ async function repudiableNonAuthentcatedEncryption() {
 
     console.log("Encryption metadata is\n", encryptMetadata);
 
-    // --- Send message ---
-
+    // --- Sending message ---
     console.log("Sending message\n", encryptedMsg);
 
     // --- Unpacking message ---
-
     didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
     secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
 
@@ -291,13 +278,12 @@ async function repudiableNonAuthentcatedEncryption() {
         {}
     );
 
-    console.log("Receved message is\n", unpackedMsg.as_value());
-    console.log("Receved message unpack metadata is\n", unpackMetadata);
+    console.log("Reveived message is\n", unpackedMsg.as_value());
+    console.log("Reveived message unpack metadata is\n", unpackMetadata);
 }
 
 async function signedUnencrypteed() {
-    // --- Build message from ALICE to BOB ---
-
+    // --- Building message from ALICE to BOB ---
     const msg = new Message({
         id: "1234567890",
         typ: "application/didcomm-plain+json",
@@ -313,35 +299,30 @@ async function signedUnencrypteed() {
     let didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
     let secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
 
-    const [encryptedMsg, encryptMetadata] = await msg.pack_signed(
+    const [signedMsg, signMetadata] = await msg.pack_signed(
         ALICE_DID,
         didResolver,
-        secretsResolver,
-        {
-            forward: false,
-        }
+        secretsResolver
     );
 
-    console.log("Encryption metadata is\n", encryptMetadata);
+    console.log("Encryption metadata is\n", signMetadata);
 
-    // --- Send message ---
-
-    console.log("Sending message\n", encryptedMsg);
+    // --- Sending message ---
+    console.log("Sending message\n", signedMsg);
 
     // --- Unpacking message ---
-
     didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
     secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
 
     const [unpackedMsg, unpackMetadata] = await Message.unpack(
-        encryptedMsg,
+        signedMsg,
         didResolver,
         secretsResolver,
         {}
     );
 
-    console.log("Receved message is\n", unpackedMsg.as_value());
-    console.log("Receved message unpack metadata is\n", unpackMetadata);
+    console.log("Reveived message is\n", unpackedMsg.as_value());
+    console.log("Reveived message unpack metadata is\n", unpackMetadata);
 }
 
 main().catch((e) => console.log(e));
