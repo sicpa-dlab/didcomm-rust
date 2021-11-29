@@ -18,11 +18,13 @@ pub use self::forward::ParsedForward;
 
 pub(crate) const FORWARD_MSG_TYPE: &str = "https://didcomm.org/routing/2.0/forward";
 
+pub(crate) const DIDCOMM_V2_PROFILE: &str = "didcomm/v2";
+
 async fn find_did_comm_service<'dr>(
     did: &str,
     service_id: Option<&str>,
     did_resolver: &'dr (dyn DIDResolver + 'dr),
-) -> Result<Option<Service>> {
+) -> Result<Option<(String, DIDCommMessagingService)>> {
     let did_doc = did_resolver
         .resolve(did)
         .await
@@ -37,38 +39,40 @@ async fn find_did_comm_service<'dr>(
                 .find(|&service| service.id == service_id)
                 .ok_or_else(|| {
                     err_msg(
-                        ErrorKind::InvalidState,
+                        ErrorKind::IllegalArgument,
                         "Service with the specified ID not found",
                     )
                 })?;
 
-            if let ServiceKind::DIDCommMessaging { value: _ } = service.kind {
-                Ok(Some(service.clone()))
-            } else {
-                Err(err_msg(
-                    ErrorKind::InvalidState,
+            match service.kind {
+                ServiceKind::DIDCommMessaging { ref value } => {
+                    if value.accept.contains(&DIDCOMM_V2_PROFILE.into()) {
+                        Ok(Some((service.id.clone(), value.clone())))
+                    } else {
+                        Err(err_msg(
+                            ErrorKind::IllegalArgument,
+                            "Service with the specified ID does not accept didcomm/v2 profile",
+                        ))
+                    }
+                }
+                _ => Err(err_msg(
+                    ErrorKind::IllegalArgument,
                     "Service with the specified ID is not of DIDCommMessaging type",
-                ))
+                )),
             }
         }
 
-        None => Ok(did_doc.services.iter().find_map(|service| {
-            if let ServiceKind::DIDCommMessaging { value: _ } = service.kind {
-                Some(service.clone())
-            } else {
-                None
-            }
-        })),
-    }
-}
-
-fn unwrap_did_comm_service(service: &Service) -> Result<&DIDCommMessagingService> {
-    match service.kind {
-        ServiceKind::DIDCommMessaging { ref value } => Ok(value),
-        ServiceKind::Other { value: _ } => Err(err_msg(
-            ErrorKind::InvalidState,
-            "Service is not of DIDCommMessaging type",
-        )),
+        None => Ok(did_doc
+            .services
+            .iter()
+            .find_map(|service| match service.kind {
+                ServiceKind::DIDCommMessaging { ref value }
+                    if value.accept.contains(&DIDCOMM_V2_PROFILE.into()) =>
+                {
+                    Some((service.id.clone(), value.clone()))
+                }
+                _ => None,
+            })),
     }
 }
 
@@ -76,7 +80,7 @@ async fn resolve_did_comm_services_chain<'dr>(
     to: &str,
     service_id: Option<&str>,
     did_resolver: &'dr (dyn DIDResolver + 'dr),
-) -> Result<Vec<Service>> {
+) -> Result<Vec<(String, DIDCommMessagingService)>> {
     let (to_did, _) = did_or_url(to);
 
     let service = find_did_comm_service(to_did, service_id, did_resolver).await?;
@@ -88,7 +92,7 @@ async fn resolve_did_comm_services_chain<'dr>(
     let mut service = service.unwrap();
 
     let mut services = vec![service.clone()];
-    let mut service_endpoint = &unwrap_did_comm_service(&service)?.service_endpoint;
+    let mut service_endpoint = &service.1.service_endpoint;
 
     while is_did(service_endpoint) {
         // Now alternative endpoints recursion is not supported
@@ -104,12 +108,14 @@ async fn resolve_did_comm_services_chain<'dr>(
             .await?
             .ok_or_else(|| {
                 err_msg(
+                    // TODO: Think on introducing a more appropriate error kind
                     ErrorKind::InvalidState,
                     "Referenced mediator does not provide any DIDCommMessaging services",
                 )
             })?;
+
         services.insert(0, service.clone());
-        service_endpoint = &unwrap_did_comm_service(&service)?.service_endpoint;
+        service_endpoint = &service.1.service_endpoint;
     }
 
     Ok(services)
@@ -126,7 +132,14 @@ fn build_forward_message(
 ) -> Result<String> {
     let body = json!({ "next": next });
 
-    let attachment = Attachment::json(serde_json::from_str(forwarded_msg)?).finalize();
+    // TODO: Think how to avoid extra deserialization of forwarded_msg here.
+    // (This deserializtion is a double work because the whole Forward message with the attachments
+    // will then be serialized.)
+    let attachment = Attachment::json(
+        serde_json::from_str(forwarded_msg)
+            .kind(ErrorKind::Malformed, "Unable deserialize forwarded message")?,
+    )
+    .finalize();
 
     let mut msg_builder = Message::build(generate_message_id(), FORWARD_MSG_TYPE.to_owned(), body);
 
@@ -180,7 +193,7 @@ pub fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
     let forwarded_msg = &json_attachment_data.unwrap().json;
 
     Some(ParsedForward {
-        msg: msg.clone(),
+        msg,
         next: next.clone(),
         forwarded_msg: forwarded_msg.clone(),
     })
@@ -235,17 +248,10 @@ pub(crate) async fn wrap_in_forward_if_needed<'dr>(
 
     let mut routing_keys = services_chain[1..]
         .iter()
-        .map(|service| unwrap_did_comm_service(service))
-        .collect::<Result<Vec<_>>>()?
-        .iter()
-        .map(|did_comm_service| did_comm_service.service_endpoint.clone())
+        .map(|service| service.1.service_endpoint.clone())
         .collect::<Vec<_>>();
 
-    routing_keys.append(
-        &mut unwrap_did_comm_service(services_chain.last().unwrap())?
-            .routing_keys
-            .clone(),
-    );
+    routing_keys.append(&mut services_chain.last().unwrap().1.routing_keys.clone());
 
     if routing_keys.is_empty() {
         return Ok(None);
@@ -262,10 +268,8 @@ pub(crate) async fn wrap_in_forward_if_needed<'dr>(
     .await?;
 
     let messaging_service = MessagingServiceMetadata {
-        id: services_chain.last().unwrap().id.clone(),
-        service_endpoint: unwrap_did_comm_service(services_chain.first().unwrap())?
-            .service_endpoint
-            .clone(),
+        id: services_chain.last().unwrap().0.clone(),
+        service_endpoint: services_chain.first().unwrap().1.service_endpoint.clone(),
     };
 
     Ok(Some((forward_msg, messaging_service)))
