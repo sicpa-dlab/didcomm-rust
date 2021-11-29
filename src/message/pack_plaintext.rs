@@ -19,7 +19,11 @@ impl Message {
     /// - a DIDComm plaintext message s JSON string
     ///
     /// # Errors
-    /// - InvalidState
+    /// - `Malformed` Signed `from_prior` JWT is malformed.
+    /// - `DIDNotResolved` `from_prior` issuer DID not found.
+    /// - `DIDUrlNotFound` `from_prior` issuer authentication verification method is not found.
+    /// - `Unsupported` Crypto or method used for signing `from_prior` is unsupported.
+    /// - `InvalidState` Indicates a library error.
     pub async fn pack_plaintext<'dr, 'sr>(
         &self,
         did_resolver: &'dr (dyn DIDResolver + 'dr),

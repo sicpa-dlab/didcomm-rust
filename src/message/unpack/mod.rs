@@ -43,7 +43,7 @@ impl Message {
     ///
     /// # Errors
     /// - `DIDNotResolved` Sender or recipient DID not found.
-    /// - `DIDUrlNotResolved` DID doesn't contain mentioned DID Urls (for ex., key id)
+    /// - `DIDUrlNotFound` DID doesn't contain mentioned DID Urls (for ex., key id)
     /// - `MessageMalformed` message doesn't correspond to DID Comm or has invalid encryption or signatures.
     /// - `Unsupported` Used crypto or method is unsupported.
     /// - `SecretNotFound` No recipient secrets found.

@@ -8,6 +8,21 @@ use crate::{
 use askar_crypto::alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair};
 
 impl FromPrior {
+    /// Unpacks a plaintext value from a signed `from_prior` JWT.
+    /// https://identity.foundation/didcomm-messaging/spec/#did-rotation
+    ///
+    /// # Parameters
+    /// - `from_prior_jwt` signed `from_prior` JWT.
+    /// - `did_resolver` instance of `DIDResolver` to resolve DIDs.
+    ///
+    /// # Returns
+    /// Tuple (plaintext `from_prior` value, identifier of the issuer key used to sign `from_prior`)
+    ///
+    /// # Errors
+    /// - `Malformed` Signed `from_prior` JWT is malformed.
+    /// - `DIDNotResolved` Issuer DID not found.
+    /// - `DIDUrlNotFound` Issuer authentication verification method is not found.
+    /// - `Unsupported` Used crypto or method is unsupported.
     pub async fn unpack<'dr>(
         from_prior_jwt: &str,
         did_resolver: &'dr (dyn DIDResolver + 'dr),
