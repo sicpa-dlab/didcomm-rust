@@ -36,7 +36,7 @@ impl Message {
     ///
     /// # Errors
     /// - `DIDNotResolved` Sender or recipient DID not found.
-    /// - `DIDUrlNotResolved` DID doesn't contain mentioned DID Urls (for ex., key id)
+    /// - `DIDUrlNotFound` DID doesn't contain mentioned DID Urls (for ex., key id)
     /// - `SecretNotFound` Sender secret is not found.
     /// - `Unsupported` Used crypto or method is unsupported.
     /// - `InvalidState` Indicates library error.

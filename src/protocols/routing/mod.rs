@@ -156,6 +156,14 @@ fn build_forward_message(
     serde_json::to_string(&msg).kind(ErrorKind::InvalidState, "Unable serialize forward message")
 }
 
+/// Tries to parse plaintext message into `ParsedForward` structure if the message is Forward.
+/// (https://identity.foundation/didcomm-messaging/spec/#messages)
+///
+/// # Parameters
+/// - `msg` plaintext message to try to parse into `ParsedForward` structure
+///
+/// # Returns
+/// `Some` with `ParsedForward` structure if `msg` is Forward message, otherwise `None`.
 pub fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
     if msg.type_ != FORWARD_MSG_TYPE {
         return None;
@@ -199,6 +207,28 @@ pub fn try_parse_forward(msg: &Message) -> Option<ParsedForward> {
     })
 }
 
+/// Wraps an anoncrypt or authcrypt message into a Forward onion (nested Forward messages).
+/// https://identity.foundation/didcomm-messaging/spec/#messages
+///
+/// # Parameters
+/// - `msg` Anoncrypt or authcrypt message to wrap into Forward onion.
+/// - `headers` (optional) Additional headers to each Forward message of the onion.
+/// - `to` Recipient (a key identifier or DID) of the message being wrapped into Forward onion.
+/// - `routing_keys` Routing keys (each one is a key identifier or DID) to use for encryption of
+/// Forward messages in the onion. The keys must be ordered along the route (so in the opposite
+/// direction to the wrapping steps).
+/// - `enc_alg_anon` Algorithm to use for wrapping into each Forward message of the onion.
+/// - `did_resolver` instance of `DIDResolver` to resolve DIDs.
+///
+/// # Returns
+/// `Result` with the message wrapped into Forward onion or `Error`.
+///
+/// # Errors
+/// - `Malformed` The message to wrap is malformed.
+/// - `DIDNotResolved` Issuer DID not found.
+/// - `DIDUrlNotFound` Issuer authentication verification method is not found.
+/// - `Unsupported` Used crypto or method is unsupported.
+/// - `InvalidState` Indicates a library error.
 pub async fn wrap_in_forward<'dr>(
     msg: &str,
     headers: Option<&HashMap<String, Value>>,

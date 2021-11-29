@@ -12,6 +12,24 @@ use crate::{
 };
 
 impl FromPrior {
+    /// Packs a plaintext `from_prior` value into a signed JWT.
+    /// https://identity.foundation/didcomm-messaging/spec/#did-rotation
+    ///
+    /// # Parameters
+    /// - `issuer_kid` (optional) identifier of the issuer key being used to sign `from_prior` JWT value.
+    /// - `did_resolver` instance of `DIDResolver` to resolve DIDs.
+    /// - `secrets_resolver` instance of `SecretsResolver` to resolve issuer DID keys secrets.
+    ///
+    /// # Returns
+    /// Tuple (signed `from_prior` JWT, identifier of the issuer key actually used to sign `from_prior`)
+    ///
+    /// # Errors
+    /// - `Malformed` `from_prior` plaintext value or `issuer_kid` has invalid format or their values are inconsistent.
+    /// - `DIDNotResolved` Issuer DID not found.
+    /// - `DIDUrlNotFound` Issuer authentication verification method is not found.
+    /// - `SecretNotFound` Issuer secret is not found.
+    /// - `Unsupported` Used crypto or method is unsupported.
+    /// - `InvalidState` Indicates a library error.
     pub async fn pack<'dr, 'sr>(
         &self,
         issuer_kid: Option<&str>,
@@ -35,16 +53,16 @@ impl FromPrior {
             })?;
 
         let authentication_kids: Vec<&str> = if let Some(issuer_kid) = issuer_kid {
-            let (did, kid_opt) = did_or_url(issuer_kid);
+            let (did, kid) = did_or_url(issuer_kid);
 
-            let kid = kid_opt.ok_or_else(|| {
+            let kid = kid.ok_or_else(|| {
                 err_msg(ErrorKind::Malformed, "issuer_kid content is not DID URL")
             })?;
 
             if did != &self.iss {
                 Err(err_msg(
                     ErrorKind::Malformed,
-                    "Provided issuer_kid does not belong to from_prior.iss DID",
+                    "from_prior issuer kid does not belong to from_prior `iss`",
                 ))?
             }
 
@@ -140,10 +158,18 @@ impl FromPrior {
         }
 
         if let Some(issuer_kid) = issuer_kid {
-            let (issuer_did, _) = did_or_url(issuer_kid);
-            if issuer_did != &self.iss {
+            let (did, kid) = did_or_url(issuer_kid);
+
+            if kid.is_none() {
                 Err(err_msg(
-                    ErrorKind::InvalidState,
+                    ErrorKind::Malformed,
+                    "issuer_kid content is not DID URL",
+                ))?;
+            };
+
+            if did != &self.iss {
+                Err(err_msg(
+                    ErrorKind::Malformed,
                     "from_prior issuer kid does not belong to from_prior `iss`",
                 ))?;
             }
@@ -160,7 +186,7 @@ mod tests {
         error::ErrorKind,
         secrets::resolvers::ExampleSecretsResolver,
         test_vectors::{
-            ALICE_DID_DOC, ALICE_SECRETS, ALICE_SECRET_AUTH_KEY_ED25519, CHARLIE_DID,
+            ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, ALICE_SECRET_AUTH_KEY_ED25519, CHARLIE_DID,
             CHARLIE_DID_DOC, CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519,
             FROM_PRIOR_FULL, FROM_PRIOR_INVALID_EQUAL_ISS_AND_SUB, FROM_PRIOR_INVALID_ISS,
             FROM_PRIOR_INVALID_ISS_DID_URL, FROM_PRIOR_INVALID_SUB, FROM_PRIOR_INVALID_SUB_DID_URL,
@@ -238,29 +264,47 @@ mod tests {
 
     #[tokio::test]
     async fn from_prior_pack_works_wrong_issuer_kid() {
-        _from_prior_pack_works_wrong_issuer_kid(&FROM_PRIOR_MINIMAL).await;
-        _from_prior_pack_works_wrong_issuer_kid(&FROM_PRIOR_FULL).await;
+        _from_prior_pack_works_wrong_issuer_kid(
+            &FROM_PRIOR_FULL,
+            &ALICE_SECRET_AUTH_KEY_ED25519.id,
+            ErrorKind::Malformed,
+            "Malformed: from_prior issuer kid does not belong to from_prior `iss`",
+        )
+        .await;
 
-        async fn _from_prior_pack_works_wrong_issuer_kid(from_prior: &FromPrior) {
+        _from_prior_pack_works_wrong_issuer_kid(
+            &FROM_PRIOR_FULL,
+            ALICE_DID,
+            ErrorKind::Malformed,
+            "Malformed: issuer_kid content is not DID URL",
+        )
+        .await;
+
+        _from_prior_pack_works_wrong_issuer_kid(
+            &FROM_PRIOR_FULL,
+            "invalid",
+            ErrorKind::Malformed,
+            "Malformed: issuer_kid content is not DID URL",
+        )
+        .await;
+
+        async fn _from_prior_pack_works_wrong_issuer_kid(
+            from_prior: &FromPrior,
+            issuer_kid: &str,
+            err_kind: ErrorKind,
+            err_mgs: &str,
+        ) {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), CHARLIE_DID_DOC.clone()]);
             let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
 
             let err = from_prior
-                .pack(
-                    Some(&ALICE_SECRET_AUTH_KEY_ED25519.id),
-                    &did_resolver,
-                    &alice_secrets_resolver,
-                )
+                .pack(Some(issuer_kid), &did_resolver, &alice_secrets_resolver)
                 .await
                 .expect_err("res is ok");
 
-            assert_eq!(err.kind(), ErrorKind::InvalidState);
-
-            assert_eq!(
-                format!("{}", err),
-                "Invalid state: from_prior issuer kid does not belong to from_prior `iss`"
-            );
+            assert_eq!(err.kind(), err_kind);
+            assert_eq!(format!("{}", err), err_mgs);
         }
     }
 
