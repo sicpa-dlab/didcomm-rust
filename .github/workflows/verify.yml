@@ -6,6 +6,8 @@ on:
 
 env:
   PKG_NAME: didcomm
+  PKG_NAME_JS_TMP: didcomm-js
+  PKG_NAME_NODEJS: didcomm-node
 
 
 jobs:
@@ -30,7 +32,7 @@ jobs:
 
           cd wasm
           version="$(cargo -q metadata --no-deps \
-            | jq -r '.packages[] | select(.name == "${{ env.PKG_NAME }}") | .version')"
+            | jq -r '.packages[] | select(.name == "${{ env.PKG_NAME_JS_TMP }}") | .version')"
           echo "$version"
           echo "::set-output name=current_wasm_version::$version"
 
