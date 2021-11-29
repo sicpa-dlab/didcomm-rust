@@ -1,19 +1,22 @@
 use std::{collections::HashMap, rc::Rc};
 
-use crate::{DIDResolver, did::JsDIDResolver, error::JsResult};
-use didcomm::{algorithms::AnonCryptAlg, error::{ErrorKind, ResultExt}, protocols::routing::{try_parse_forward, wrap_in_forward}};
-use js_sys::{Promise};
+use crate::{did::JsDIDResolver, error::JsResult, DIDResolver};
+use crate::{utils::set_panic_hook, Message};
+use didcomm::{
+    algorithms::AnonCryptAlg,
+    error::{ErrorKind, ResultExt},
+    protocols::routing::{try_parse_forward, wrap_in_forward},
+};
+use js_sys::Promise;
 use serde_json::Value;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
-use crate::{Message, utils::set_panic_hook};
 
 #[wasm_bindgen]
 pub struct ParsedForward(pub(crate) Rc<didcomm::protocols::routing::ParsedForward<'static>>);
 
 #[wasm_bindgen]
 impl ParsedForward {
-
     #[wasm_bindgen(skip_typescript)]
     pub fn as_value(&self) -> Result<JsValue, JsValue> {
         let msg = JsValue::from_serde(&*self.0)
@@ -26,7 +29,6 @@ impl ParsedForward {
 
 #[wasm_bindgen]
 impl Message {
-
     #[wasm_bindgen(skip_typescript)]
     pub fn wrap_in_forward(
         msg: String,
@@ -38,7 +40,6 @@ impl Message {
     ) -> Promise {
         // TODO: Better place?
         set_panic_hook();
-
 
         let did_resolver = JsDIDResolver(did_resolver);
         future_to_promise(async move {
@@ -58,31 +59,31 @@ impl Message {
                 .as_js()?;
 
             let res = wrap_in_forward(
-                &msg, 
+                &msg,
                 Some(&headers),
                 &to,
                 &routing_keys,
                 &enc_alg_anon,
-                &did_resolver
-            ).await.as_js()?;
+                &did_resolver,
+            )
+            .await
+            .as_js()?;
 
             Ok(res.into())
         })
     }
 
     #[wasm_bindgen(skip_typescript)]
-    pub fn try_parse_forward(
-        &self
-     ) -> Result<JsValue, JsValue> {
+    pub fn try_parse_forward(&self) -> Result<JsValue, JsValue> {
         let msg = self.0.clone();
         let parsed_message = try_parse_forward(&msg);
-        Ok(
-            JsValue::from_serde(&parsed_message)
-            .kind(ErrorKind::Malformed, "Unable serialize parsed forward message")
-            .as_js()?
-        )
+        Ok(JsValue::from_serde(&parsed_message)
+            .kind(
+                ErrorKind::Malformed,
+                "Unable serialize parsed forward message",
+            )
+            .as_js()?)
     }
-
 }
 
 #[wasm_bindgen(typescript_custom_section)]
