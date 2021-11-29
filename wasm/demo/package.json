@@ -10,9 +10,11 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "didcomm-js": "file:../pkg"
+    "didcomm": "file:../pkg",
+    "typescript": "^4.5.2"
   },
   "devDependencies": {
+    "@types/node": "^16.11.10",
     "ts-node": "^10.4.0",
     "tslint": "^6.1.3"
   }

@@ -27,7 +27,7 @@ import {
   ExampleSecretsResolver,
   MESSAGE_SIMPLE,
 } from "../test-vectors";
-import { Message } from "didcomm-js";
+import { Message } from "didcomm";
 
 test.each([
   {

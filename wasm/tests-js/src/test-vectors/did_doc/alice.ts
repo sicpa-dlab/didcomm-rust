@@ -1,4 +1,4 @@
-import { DIDDoc, VerificationMethod } from "didcomm-js";
+import { DIDDoc, VerificationMethod } from "didcomm";
 
 export const ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET: VerificationMethod =
   {

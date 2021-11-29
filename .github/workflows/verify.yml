@@ -13,6 +13,10 @@ jobs:
   release-ready:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'stable'
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - uses: actions/checkout@v2
 
@@ -23,13 +27,17 @@ jobs:
             | jq -r '.packages[] | select(.name == "${{ env.PKG_NAME }}") | .version')"
           echo "$version"
           echo "::set-output name=current_version::$version"
-        shell: bash
+
+          cd wasm
+          version="$(cargo -q metadata --no-deps \
+            | jq -r '.packages[] | select(.name == "${{ env.PKG_NAME }}") | .version')"
+          echo "$version"
+          echo "::set-output name=current_wasm_version::$version"
 
       - name: Check version format
         run: |
           # verify the version has "MAJOR.MINOR.PATCH" parts only
           echo "${{ steps.current_version.outputs.current_version }}" | grep -e '^[0-9]\+\.[0-9]\+\.[0-9]\+$'
-        shell: bash
 
       # TODO improve (DRY): copy-paste from release.yml
       - name: Get release info
@@ -39,20 +47,39 @@ jobs:
               | jq '.[] | select(.name == "v${{ steps.current_version.outputs.current_version }}")')"
           echo "::set-output name=release_info::$release_info"
           echo "$release_info"
-        shell: bash
 
       - name: check version bumped
         # TODO check if greater than latest tag / release (?)
         if: steps.release_info.outputs.release_info
         run: exit 1
 
-      - name: check it can be packaged
+      - name: check rust and wasm versions are the same
+        if: steps.current_version.outputs.current_version != steps.current_version.outputs.current_wasm_version
+        run: exit 1
+
+      - name: check it can be packaged (crate)
         run: |
           cargo package
           # TODO verify that it's not more than crates.io limit (10 MB)
           ls -la target/package
           cargo package --list
-        shell: bash
+
+      - name: check it can be packaged (npm)
+        run: |
+          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+          cd wasm
+
+          wasm-pack build --target bundler
+          pushd pkg
+          npm install .
+          popd
+          rm -rf pkg
+
+          wasm-pack build --target nodejs
+          pushd pkg
+          npm install .
+          popd
+          rm -rf pkg
 
   verify:
     strategy:
@@ -68,7 +95,6 @@ jobs:
         run: |
           rustup set profile minimal
           rustup toolchain install stable
-        shell: bash
 
       - name: Get timestamp for cache
         id: date
@@ -95,11 +121,17 @@ jobs:
       - name: Test
         run: cargo test --verbose
 
-  verify-uniffi:
+  verify-wasm:
     strategy:
       matrix:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
+        node: [ 14, 16 ]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: wasm
 
     steps:
       - name: Checkout
@@ -109,7 +141,6 @@ jobs:
         run: |
           rustup set profile minimal
           rustup toolchain install stable
-        shell: bash
 
       - name: Get timestamp for cache
         id: date
@@ -128,10 +159,105 @@ jobs:
         # TODO enable that once https://github.com/rust-lang/rustfmt/issues/4477
         #      is resolved
         if: runner.os != 'Windows'
-        run: cd uniffi && cargo fmt --all -- --check
+        run: cargo fmt --all -- --check
+
+      - name: Cargo checks
+        run: cargo check --all-targets
+
+      # TODO caching, makes sense for demo and tests-js where lock files are presented
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build pkg (bundler)
+        run: rm -rf pkg && wasm-pack build --target bundler
+
+      - name: Install tests-js (bundler)
+        run: cd tests-js && npm install
+
+      - name: Lint tests-js
+        run: cd tests-js && npm run check
+
+      - name: Test tests-js (bundler)
+        if: false  # TODO that check is not supported yet for bundler build
+        run: cd tests-js && npm test
+
+      - name: Test tests-js in browser (bundler)
+        if: false  # TODO that check is not supported yet for bundler build
+        run: cd tests-js && npm run test-puppeteer
+
+      - name: Install demo (bundler)
+        run: cd demo && npm install
+
+      - name: Lint demo
+        run: cd demo && npm run check
+
+      - name: Test demo (bundler)
+        if: false  # TODO that check is not supported yet for bundler build
+        run: cd demo && npm run start
+
+      - name: Build pkg (nodejs)
+        run: rm -rf pkg && wasm-pack build --target nodejs
+
+      - name: Install tests-js (nodejs)
+        run: cd tests-js && rm -rf node_modules && npm install
+
+      - name: Test tests-js (nodejs)
+        run: cd tests-js && npm test
+
+      - name: Test tests-js in browser (nodejs)
+        run: cd tests-js && npm run test-puppeteer
+
+      - name: Install demo (nodejs)
+        run: cd demo && rm -rf node_modules && npm install
+
+      - name: Test demo (nodejs)
+        run: cd demo && npm run start
+
+  verify-uniffi:
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: uniffi
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set rustup profile & toolchain
+        run: |
+          rustup set profile minimal
+          rustup toolchain install stable
+
+      - name: Get timestamp for cache
+        id: date
+        run: echo ::set-output name=yearmo::$(date +%Y%m)
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{steps.date.outputs.yearmo}}
+
+      - name: Cargo fmt
+        # TODO enable that once https://github.com/rust-lang/rustfmt/issues/4477
+        #      is resolved
+        if: runner.os != 'Windows'
+        run: cargo fmt --all -- --check
 
       - name: Debug build
-        run: cd uniffi && cargo build --verbose
+        run: cargo build --verbose
 
       - name: Test
-        run: cd uniffi && cargo test --verbose
+        run: cargo test --verbose

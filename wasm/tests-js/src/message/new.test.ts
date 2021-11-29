@@ -1,4 +1,4 @@
-import { Message, IMessage } from "didcomm-js";
+import { Message, IMessage } from "didcomm";
 
 test("Message.new works", () => {
   const val: IMessage = {

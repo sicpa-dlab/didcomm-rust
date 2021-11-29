@@ -1,4 +1,4 @@
-import { Secret } from "didcomm-js";
+import { Secret } from "didcomm";
 
 export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
   {
