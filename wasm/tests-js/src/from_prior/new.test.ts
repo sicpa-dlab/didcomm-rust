@@ -1,4 +1,4 @@
-import { FromPrior } from "didcomm-js";
+import { FromPrior } from "didcomm";
 import { IFROM_PRIOR_FULL, IFROM_PRIOR_MINIMAL } from "../test-vectors";
 
 test.each([

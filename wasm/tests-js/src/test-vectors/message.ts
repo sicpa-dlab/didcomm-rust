@@ -1,4 +1,4 @@
-import { Message } from "didcomm-js";
+import { Message } from "didcomm";
 
 export const IMESSAGE_SIMPLE = {
   id: "1234567890",

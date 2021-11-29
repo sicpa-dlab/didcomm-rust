@@ -1,4 +1,4 @@
-import { Secret, SecretsResolver } from "didcomm-js";
+import { Secret, SecretsResolver } from "didcomm";
 
 export class ExampleSecretsResolver implements SecretsResolver {
   knownSecrets: Secret[];
@@ -8,7 +8,8 @@ export class ExampleSecretsResolver implements SecretsResolver {
   }
 
   async get_secret(secretId: string): Promise<Secret | null> {
-    return this.knownSecrets.find((secret) => secret.id === secretId);
+    const res = this.knownSecrets.find((secret) => secret.id === secretId);
+    return res ? res : null;
   }
 
   async find_secrets(secretIds: string[]): Promise<string[]> {

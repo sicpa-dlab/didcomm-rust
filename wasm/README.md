@@ -13,7 +13,7 @@ Also [wasmp-pack](https://github.com/rustwasm/wasm-pack) helps in packaging and 
 
 ## Usage
 
-To use `didcomm-js` install it with npm
+To use `didcomm` install it with npm
 
 ```sh
 npm install didcomm --save # If you plan use webpack or other bundler

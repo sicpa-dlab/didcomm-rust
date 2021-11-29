@@ -1,4 +1,4 @@
-import { Secret } from "didcomm-js";
+import { Secret } from "didcomm";
 
 export const ALICE_SECRETS: Secret[] = [
   {

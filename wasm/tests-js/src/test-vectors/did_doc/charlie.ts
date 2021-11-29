@@ -1,4 +1,4 @@
-import { DIDDoc } from "didcomm-js";
+import { DIDDoc } from "didcomm";
 
 export const CHARLIE_DID_DOC: DIDDoc = {
   did: "did:example:charlie",

@@ -1,11 +1,12 @@
 [package]
-name = 'didcomm-js'
+name = 'didcomm'
 version = '0.2.0'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'WASM based javascript wrapper for DIDComm'
 license = 'Apache-2.0'
 repository = 'https://github.com/sicpa-dlab/didcomm-rust'
+readme = 'README.md'
 
 [lib]
 crate-type = [

@@ -1,4 +1,4 @@
-import { DIDDoc, VerificationMethod } from "didcomm-js";
+import { DIDDoc, VerificationMethod } from "didcomm";
 
 export const BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_1: VerificationMethod = {
   id: "did:example:bob#key-x25519-1",

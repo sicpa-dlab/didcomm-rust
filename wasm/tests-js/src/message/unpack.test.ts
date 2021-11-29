@@ -1,4 +1,4 @@
-import { Message } from "didcomm-js";
+import { Message } from "didcomm";
 import {
   ALICE_DID_DOC,
   BOB_DID_DOC,
