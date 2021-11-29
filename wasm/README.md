@@ -22,12 +22,10 @@ npm install didcomm-node --save # If you plan use it without bundlers in NodeJS
 
 ```
 
-**TODO: Exact package name will be defined after first release**
-
 ## Run demo
 
 ```sh
-wasm-pack build --target nodejs # builds NodeJS package in pkg directiry
+WASM_TARGET=nodejs make # builds NodeJS package in pkg directory
 cd ./demo
 npm install
 npm run start
@@ -206,9 +204,17 @@ They are therefore not normally transported across security boundaries.
 let plaintext = msg.pack_plaintext(didResolver).expect("Unable pack_plaintext");
 ```
 
-## How to build with `wasm-pack build`
+## How to build
 
 Install `wasm-pack` from https://rustwasm.github.io/wasm-pack/installer/ and then
+
+```bash
+make # Will output modules best-suited to be bundled with webpack
+WASM_TARGET=nodejs make # Will output modules that can be directly consumed by NodeJS
+WASM_TARGET=web make # Will output modules that can be directly consumed in browser without bundler usage
+```
+
+### How to build with `wasm-pack build`
 
 ```bash
 wasm-pack build # Will output modules best-suited to be bundled with webpack
@@ -219,7 +225,7 @@ wasm-pack build --target=web # Will output modules that can be directly consumed
 ## How to test in NodeJS
 
 ```bash
-wasm-pack build --target nodejs
+WASM_TARGET=nodejs make
 cd ./tests-js
 npm install
 npm test
@@ -228,7 +234,7 @@ npm test
 ## How to test in Browser
 
 ```bash
-wasm-pack build --target nodejs
+WASM_TARGET=nodejs make
 cd ./tests-js
 npm install
 npm run test-puppeteer
@@ -241,8 +247,6 @@ _Note tests will be executed with jest+puppeteer in Chromium installed inside no
 ```
 wasm-pack publish
 ```
-
-**TODO: Define package names and provide exact commands**
 
 ## 🔋 Batteries Included
 

@@ -67,19 +67,11 @@ jobs:
       - name: check it can be packaged (npm)
         run: |
           curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-          cd wasm
 
-          wasm-pack build --target bundler
-          pushd pkg
-          npm install .
-          popd
-          rm -rf pkg
-
-          wasm-pack build --target nodejs
-          pushd pkg
-          npm install .
-          popd
-          rm -rf pkg
+          # verify bundler target
+          make -C wasm build install
+          # verify nodejs target
+          WASM_TARGET=nodejs PKG_NAME=${{ env.PKG_NAME_NODEJS }} make -C wasm build install
 
   verify:
     strategy:
@@ -174,7 +166,7 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build pkg (bundler)
-        run: rm -rf pkg && wasm-pack build --target bundler
+        run: make
 
       - name: Install tests-js (bundler)
         run: cd tests-js && npm install
@@ -201,7 +193,7 @@ jobs:
         run: cd demo && npm run start
 
       - name: Build pkg (nodejs)
-        run: rm -rf pkg && wasm-pack build --target nodejs
+        run: WASM_TARGET=nodejs make
 
       - name: Install tests-js (nodejs)
         run: cd tests-js && rm -rf node_modules && npm install
