@@ -36,7 +36,7 @@ async function main() {
     didResolver,
     secretsResolver,
     {
-      forward: false,
+      forward: false, // TODO: should be true by default
       protect_sender: true,
       enc_alg_anon: "A256cbcHs512EcdhEsA256kw",
       messaging_service: "did:example:bob#didcomm-1",
