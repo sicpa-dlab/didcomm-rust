@@ -166,19 +166,9 @@ jobs:
         id: build_assets_npm_bundler
         if: ${{ !needs.checks.outputs.asset_npm_pkg_bundler_url }}
         run: |
-          cd wasm
-          rm -rf pkg
-
-          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME }}\1~}" ./Cargo.toml
-          wasm-pack build --target bundler
-
-          # verify
-          pushd pkg
-          npm install .
-          popd
-
-          wasm-pack pack 
-          asset_name="$(find pkg -name '*.tgz' -printf '%f')"
+          # build, install (verify) and pack
+          make -C wasm build install pack
+          asset_name="$(find wasm/pkg -name '*.tgz' -printf '%f')"
           echo "::set-output name=asset_name::$asset_name"
         shell: bash
 
@@ -197,19 +187,9 @@ jobs:
         id: build_assets_npm_nodejs
         if: ${{ !needs.checks.outputs.asset_npm_pkg_nodejs_url }}
         run: |
-          cd wasm
-          rm -rf pkg
-
-          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME_NODEJS }}\1~}" ./Cargo.toml
-          wasm-pack build --target bundler
-
-          # verify
-          pushd pkg
-          npm install .
-          popd
-
-          wasm-pack pack 
-          asset_name="$(find pkg -name '*.tgz' -printf '%f')"
+          # build, install (verify) and pack
+          WASM_TARGET=nodejs PKG_NAME=${{ env.PKG_NAME_NODEJS }} make -C wasm build install pack
+          asset_name="$(find wasm/pkg -name '*.tgz' -printf '%f')"
           echo "::set-output name=asset_name::$asset_name"
         shell: bash
 
@@ -239,12 +219,8 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
         run: |
-          cd wasm
-          rm -rf pkg
-          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME }}\1~}" ./Cargo.toml
-          wasm-pack build --target nodejs
-          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >pkg/.npmrc
-          wasm-pack publish
+          # build and publish
+          make -C wasm build publish
         shell: bash
 
       - name: publish to npm (nodejs)
@@ -252,12 +228,8 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
         run: |
-          cd wasm
-          rm -rf pkg
-          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME_NODEJS }}\1~}" ./Cargo.toml
-          wasm-pack build --target nodejs
-          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >pkg/.npmrc
-          wasm-pack publish
+          # build and publish
+          WASM_TARGET=nodejs PKG_NAME=${{ env.PKG_NAME_NODEJS }} make -C wasm build publish
         shell: bash
 
 
@@ -286,62 +258,24 @@ jobs:
           grep version ./wasm/Cargo.toml
         shell: bash
 
-      - name: verify the package (crate)
+      - name: build, verify and publish (crates.io)
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           cargo package --allow-dirty
           ls -la target/package
           cargo package --allow-dirty --list
+          cargo publish --allow-dirty
         shell: bash
 
-      - name: publish to crates.io
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: cargo publish --allow-dirty
-        shell: bash
-
-      - name: verify the package (npm bundler)
-        run: |
-          cd wasm
-          rm -rf pkg
-
-          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME }}\1~}" ./Cargo.toml
-          wasm-pack build --target bundler
-
-          # verify
-          pushd pkg
-          npm install .
-          popd
-        shell: bash
-
-      - name: publish to npm (bundler)
-        if: false
+      - name: build, verify and publish (npm bundler)
         env:
           NPM_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-        run: |
-          cd wasm
-          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >pkg/.npmrc
-          wasm-pack publish --tag dev
+        run: WASM_OPTS_PUBLISH="--tag dev" make -C wasm build install publish
         shell: bash
 
-      - name: verify the package (npm nodejs)
-        run: |
-          cd wasm
-          rm -rf pkg
-
-          sed -i -r "0,/name/{s~^name = (['\"]).+['\"]~name = \1${{ env.PKG_NAME_NODEJS }}\1~}" ./Cargo.toml
-          wasm-pack build --target nodejs
-
-          # verify
-          pushd pkg
-          npm install .
-          popd
-        shell: bash
-
-      - name: publish to npm (nodejs)
+      - name: build, verify and publish (npm nodejs)
         env:
           NPM_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-        run: |
-          cd wasm
-          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >pkg/.npmrc
-          wasm-pack publish --tag dev
+        run: WASM_TARGET=nodejs PKG_NAME=${{ env.PKG_NAME_NODEJS }} WASM_OPTS_PUBLISH="--tag dev" make -C wasm build install publish
         shell: bash

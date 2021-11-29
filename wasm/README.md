@@ -1,4 +1,4 @@
-# DIDComm JS
+# DIDComm
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Unit Tests](https://github.com/sicpa-dlab/didcomm-rust/workflows/verify/badge.svg)](https://github.com/sicpa-dlab/didcomm-rust/actions/workflows/verify.yml)
@@ -18,16 +18,14 @@ To use `didcomm` install it with npm
 ```sh
 npm install didcomm --save # If you plan use webpack or other bundler
 
-npm install didcomm-node --save # If you plan use it without bandlers in NodeJS
+npm install didcomm-node --save # If you plan use it without bundlers in NodeJS
 
 ```
-
-**TODO: Exact package name will be defined after first release**
 
 ## Run demo
 
 ```sh
-wasm-pack build --target nodejs # builds NodeJS package in pkg directiry
+WASM_TARGET=nodejs make # builds NodeJS package in pkg directory
 cd ./demo
 npm install
 npm run start
@@ -39,10 +37,13 @@ npm run start
 - In order to use the library, `SecretsResolver` and `DIDResolver` interfaces must be implemented on the application level.
   Demo application provides 2 simple implementations `ExampleDIDResolver`
   and `ExampleSecretsResolver` that allows resolve locally known DID docs and secrets for tests/demo purposes.
-- Verification materials are expected in JWK.
-- Key IDs (kids) used in `SecretsResolver` must match the corresponding key IDs from DID Doc verification methods.
-- Key IDs (kids) in DID Doc verification methods and secrets must be a full [DID Fragment](https://www.w3.org/TR/did-core/#fragment), that is `did#key-id`.
-- Verification methods referencing another DID Document are not supported (see [Referring to Verification Methods](https://www.w3.org/TR/did-core/#referring-to-verification-methods)).
+  - Verification materials are expected in JWK, Base58 and Multibase (internally Base58 only) formats.
+      - In Base58 and Multibase formats, keys using only X25519 and Ed25519 curves are supported.
+      - For private keys in Base58 and Multibase formats, the verification material value contains both private and public parts (concatenated bytes).
+      - In Multibase format, bytes of the verification material value is prefixed with the corresponding Multicodec code.
+  - Key IDs (kids) used in `SecretsResolver` must match the corresponding key IDs from DID Doc verification methods.
+  - Key IDs (kids) in DID Doc verification methods and secrets must be a full [DID Fragment](https://www.w3.org/TR/did-core/#fragment), that is `did#key-id`.
+  - Verification methods referencing another DID Document are not supported (see [Referring to Verification Methods](https://www.w3.org/TR/did-core/#referring-to-verification-methods)).
 - The following curves and algorithms are supported:
   - Encryption:
     - Curves: X25519, P-256
@@ -54,12 +55,9 @@ npm run start
   - Signing:
     - Curves: Ed25519, Secp256k1, P-256
     - Algorithms: EdDSA (with crv=Ed25519), ES256, ES256K
+- Forward protocol is implemented and used by default.
+- DID rotation (`fromPrior` field) is supported.
 - DIDComm has been implemented under the following [Assumptions](https://hackmd.io/i3gLqgHQR2ihVFV5euyhqg)
-
-### **Features that will be supported in next versions**
-
-- _Base58 and Multibase (internally Base58 only) formats for secrets and verification methods._
-- _Forward protocol._
 
 ## Examples
 
@@ -206,9 +204,17 @@ They are therefore not normally transported across security boundaries.
 let plaintext = msg.pack_plaintext(didResolver).expect("Unable pack_plaintext");
 ```
 
-## How to build with `wasm-pack build`
+## How to build
 
 Install `wasm-pack` from https://rustwasm.github.io/wasm-pack/installer/ and then
+
+```bash
+make # Will output modules best-suited to be bundled with webpack
+WASM_TARGET=nodejs make # Will output modules that can be directly consumed by NodeJS
+WASM_TARGET=web make # Will output modules that can be directly consumed in browser without bundler usage
+```
+
+### How to build with `wasm-pack build`
 
 ```bash
 wasm-pack build # Will output modules best-suited to be bundled with webpack
@@ -219,7 +225,7 @@ wasm-pack build --target=web # Will output modules that can be directly consumed
 ## How to test in NodeJS
 
 ```bash
-wasm-pack build --target nodejs
+WASM_TARGET=nodejs make
 cd ./tests-js
 npm install
 npm test
@@ -228,7 +234,7 @@ npm test
 ## How to test in Browser
 
 ```bash
-wasm-pack build --target nodejs
+WASM_TARGET=nodejs make
 cd ./tests-js
 npm install
 npm run test-puppeteer
@@ -241,8 +247,6 @@ _Note tests will be executed with jest+puppeteer in Chromium installed inside no
 ```
 wasm-pack publish
 ```
-
-**TODO: Define package names and provide exact commands**
 
 ## 🔋 Batteries Included
 
