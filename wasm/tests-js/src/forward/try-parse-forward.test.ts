@@ -1,4 +1,4 @@
-import { Message, ParsedForward } from "didcomm-js";
+import { Message, ParsedForward } from "didcomm";
 import {
     MESSAGE_SIMPLE,
     FORWARD_MESSAGE,

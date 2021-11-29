@@ -1,4 +1,4 @@
-import { Message } from "didcomm-js";
+import { Message } from "didcomm";
 import {
     IMESSAGE_SIMPLE,
     ExampleDIDResolver,
