@@ -34,6 +34,21 @@ impl FromPrior {
 #[wasm_bindgen(typescript_custom_section)]
 const FROM_PRIOR_UNPACK_TS: &'static str = r#"
 export namespace FromPrior {
+    /**
+     * Unpacks a plaintext value from a signed `from_prior` JWT.
+     * https://identity.foundation/didcomm-messaging/spec/#did-rotation
+     * 
+     * @param from_prior_jwt signed `from_prior` JWT
+     * @param did_resolver instance of `DIDResolver` to resolve DIDs
+     * 
+     * @returns promise resolving to a tuple of the plaintext `from_prior` value and the identifier
+     * of the issuer key used to sign `from_prior`
+     * 
+     * @throws DIDCommMalformed Signed `from_prior` JWT is malformed.
+     * @throws DIDCommDIDNotResolved Issuer DID not found.
+     * @throws DIDCommDIDUrlNotFound Issuer authentication verification method is not found.
+     * @throws DIDCommUnsupported Used crypto or method is unsupported.
+     */
     function unpack(
         from_prior: string,
         did_resolver: DIDResolver,

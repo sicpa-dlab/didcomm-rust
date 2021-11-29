@@ -40,6 +40,25 @@ impl FromPrior {
 #[wasm_bindgen(typescript_custom_section)]
 const FROM_PRIOR_PACK_TS: &'static str = r#"
 interface FromPrior {
+    /**
+     * Packs a plaintext `from_prior` value into a signed JWT.
+     * https://identity.foundation/didcomm-messaging/spec/#did-rotation
+     * 
+     * @param issuer_kid (optional) identifier of the issuer key being used to sign `from_prior` JWT value
+     * @param did_resolver instance of `DIDResolver` to resolve DIDs
+     * @param secrets_resolver instance of `SecretsResolver` to resolve issuer DID keys secrets
+     * 
+     * @returns promise resolving to a tuple of the signed `from_prior` JWT and the identifier of the issuer key
+     * actually used to sign `from_prior`
+     * 
+     * @throws DIDCommMalformed `from_prior` plaintext value has invalid format.
+     * @throws DIDCommIllegalArgument `issuer_kid` is invalid or does not consist with `from_prior` plaintext value.
+     * @throws DIDCommDIDNotResolved Issuer DID not found.
+     * @throws DIDCommDIDUrlNotFound Issuer authentication verification method is not found.
+     * @throws DIDCommSecretNotFound Issuer secret is not found.
+     * @throws DIDCommUnsupported Used crypto or method is unsupported.
+     * @throws DIDCommInvalidState Indicates a library error.
+      */
     pack(
         issuer_kid: string | null,
         did_resolver: DIDResolver,
