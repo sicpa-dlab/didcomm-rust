@@ -110,6 +110,26 @@ type IParsedForward = {
 #[wasm_bindgen(typescript_custom_section)]
 const MESSAGE_WRAP_IN_FORWARD_TS: &'static str = r#"
 export namespace Message {
+    /**
+     * Resolves recipient DID DOC Service and Builds Forward envelops if needed.
+     * 
+     * Wraps the given packed DIDComm message in Forward messages for every routing key.
+     * 
+     * @param msg the message to be wrapped in Forward messages
+     * @param headers optional headers for Forward message
+     * @param to recipient's DID (DID URL)
+     * @param routing_keys list of routing keys
+     * @param enc_alg_anon The encryption algorithm to be used for anonymous encryption (anon_crypt)
+     * @param did_resolver instance of `DIDResolver` to resolve DIDs.
+     * 
+     * @returns a top-level packed Forward message as JSON string
+     * 
+     * @throws DIDCommDIDNotResolved
+     * @throws DIDCommDIDUrlNotFound
+     * @throws DIDCommIoError
+     * @throws DIDCommInvalidState
+     * @throws DIDCommIllegalArgument
+     */
     function wrap_in_forward(
         msg: string,
         headers: Record<string, string>,
@@ -124,6 +144,11 @@ export namespace Message {
 #[wasm_bindgen(typescript_custom_section)]
 const MESSAGE_TRY_PARSE_FORWARD_TS: &'static str = r#"
 interface Message {
+    /**
+     * Tries to parse the Message to a Forward message
+     * 
+     * @returns a parsed message or null
+     */
     try_parse_forward(): ParsedForward;
 }
 "#;
