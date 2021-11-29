@@ -20,7 +20,7 @@ use crate::{
     UnpackMetadata, UnpackOptions,
 };
 
-pub(crate) async fn _try_unpack_anoncrypt<'dr, 'sr>(
+pub(crate) async fn _try_unpack_anoncrypt<'sr>(
     msg: &str,
     secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
     opts: &UnpackOptions,

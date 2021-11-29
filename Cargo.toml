@@ -16,10 +16,10 @@ name = 'advanced_params'
 name = 'basic'
 
 [[example]]
-name = 'plaintext'
+name = 'rotate_did'
 
 [[example]]
-name = 'rotate_did'
+name = 'routing'
 
 [package]
 name = 'didcomm'

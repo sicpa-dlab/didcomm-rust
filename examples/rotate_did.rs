@@ -7,13 +7,14 @@ mod test_vectors;
 pub(crate) use didcomm;
 
 use didcomm::{
-    did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver, FromPrior,
-    Message, PackEncryptedOptions, UnpackOptions,
+    did::resolvers::ExampleDIDResolver, protocols::routing::try_parse_forward,
+    secrets::resolvers::ExampleSecretsResolver, FromPrior, Message, PackEncryptedOptions,
+    UnpackOptions,
 };
 use serde_json::json;
 use test_vectors::{
     ALICE_DID, ALICE_DID_DOC, BOB_DID, BOB_DID_DOC, BOB_SECRETS, CHARLIE_DID, CHARLIE_DID_DOC,
-    CHARLIE_ROTATED_TO_ALICE_SECRETS,
+    CHARLIE_ROTATED_TO_ALICE_SECRETS, MEDIATOR1_DID_DOC, MEDIATOR1_SECRETS,
 };
 
 #[tokio::main(flavor = "current_thread")]
@@ -22,6 +23,7 @@ async fn main() {
         ALICE_DID_DOC.clone(),
         BOB_DID_DOC.clone(),
         CHARLIE_DID_DOC.clone(),
+        MEDIATOR1_DID_DOC.clone(),
     ]);
 
     let secrets_resolver = ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
@@ -68,24 +70,53 @@ async fn main() {
             None,
             &did_resolver,
             &secrets_resolver,
-            &PackEncryptedOptions {
-                forward: false, // Forward wrapping is unsupported in current version
-                ..PackEncryptedOptions::default()
-            },
+            &PackEncryptedOptions::default(),
         )
         .await
         .expect("Unable pack_encrypted");
 
     println!("Encryption metadata is\n{:?}\n", metadata);
 
-    // --- Sending message ---
-    println!("Sending packed message\n{}\n", msg);
+    // --- Sending message by Alice ---
+    println!("Alice is sending message \n{}\n", msg);
 
-    // --- Unpacking message ---
+    // --- Unpacking message by Mediator1 ---
     let did_resolver = ExampleDIDResolver::new(vec![
         ALICE_DID_DOC.clone(),
         BOB_DID_DOC.clone(),
         CHARLIE_DID_DOC.clone(),
+        MEDIATOR1_DID_DOC.clone(),
+    ]);
+
+    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+
+    let (msg, metadata) = Message::unpack(
+        &msg,
+        &did_resolver,
+        &secrets_resolver,
+        &UnpackOptions::default(),
+    )
+    .await
+    .expect("Unable unpack");
+
+    println!("Mediator1 received message is \n{:?}\n", msg);
+
+    println!(
+        "Mediator1 received message unpack metadata is \n{:?}\n",
+        metadata
+    );
+
+    // --- Forwarding message by Mediator1 ---
+    let msg = serde_json::to_string(&try_parse_forward(&msg).unwrap().forwarded_msg).unwrap();
+
+    println!("Mediator1 is forwarding message \n{}\n", msg);
+
+    // --- Unpacking message by Bob ---
+    let did_resolver = ExampleDIDResolver::new(vec![
+        ALICE_DID_DOC.clone(),
+        BOB_DID_DOC.clone(),
+        CHARLIE_DID_DOC.clone(),
+        MEDIATOR1_DID_DOC.clone(),
     ]);
 
     let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
@@ -94,13 +125,11 @@ async fn main() {
         &msg,
         &did_resolver,
         &secrets_resolver,
-        &UnpackOptions {
-            ..UnpackOptions::default()
-        },
+        &UnpackOptions::default(),
     )
     .await
     .expect("Unable unpack");
 
-    println!("Unpacked received message is\n{:?}\n", msg);
-    println!("Unpack metadata is\n{:?}\n", metadata);
+    println!("Bob received message is \n{:?}\n", msg);
+    println!("Bob received message unpack metadata is \n{:?}\n", metadata);
 }

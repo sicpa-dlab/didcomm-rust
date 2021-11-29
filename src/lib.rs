@@ -67,9 +67,7 @@ mod tests {
                 None,
                 &sender_did_resolver,
                 &sender_secrets_resolver,
-                &PackEncryptedOptions {
-                    ..PackEncryptedOptions::default()
-                },
+                &PackEncryptedOptions::default(),
             )
             .await
             .expect("pack is ok.");
@@ -92,9 +90,7 @@ mod tests {
             &packed_msg,
             &recipient_did_resolver,
             &recipient_secrets_resolver,
-            &UnpackOptions {
-                ..UnpackOptions::default()
-            },
+            &UnpackOptions::default(),
         )
         .await
         .expect("unpack is ok.");

@@ -112,10 +112,7 @@ let (msg, metadata) = msg
         None,
         &did_resolver,
         &secrets_resolver,
-        &PackEncryptedOptions {
-            forward: false, // Forward wrapping is unsupported in current version
-            ..PackEncryptedOptions::default()
-        },
+        &PackEncryptedOptions::default(),
     )
     .await
     .expect("Unable pack_encrypted");
@@ -133,9 +130,7 @@ let (msg, metadata) = Message::unpack(
     &msg,
     &did_resolver,
     &secrets_resolver,
-    &UnpackOptions {
-        ..UnpackOptions::default()
-    },
+    &UnpackOptions::default(),
 )
 .await
 .expect("Unable unpack");
@@ -154,10 +149,7 @@ let (msg, metadata) = msg
         None,
         &did_resolver,
         &secrets_resolver,
-        &PackEncryptedOptions {
-            forward: false, // Forward wrapping is unsupported in current version
-            ..PackEncryptedOptions::default()
-        },
+        &PackEncryptedOptions::default(),
     )
     .await
     .expect("Unable pack_encrypted");
@@ -170,14 +162,10 @@ let (msg, metadata) = msg
     .pack_encrypted(
         BOB_DID,
         Some(ALICE_DID),
-        None,
+        Some(ALICE_DID), // Provide information about signer here
         &did_resolver,
         &secrets_resolver,
-        &PackEncryptedOptions {
-            sign_by: Some(ALICE_DID), // Provide information about signer here
-            forward: false, // Forward wrapping is unsupported in current version
-            ..PackEncryptedOptions::default()
-        },
+        &PackEncryptedOptions::default(),
     )
     .await
     .expect("Unable pack_encrypted");
@@ -207,7 +195,7 @@ let msg = Message::build(
 .finalize();
 
 let (msg, metadata) = msg
-    .pack_signed(ALICE_DID, did_resolver, secrets_resolver)
+    .pack_signed(ALICE_DID, &did_resolver, &secrets_resolver)
     .await
     .expect("Unable pack_signed");
 
@@ -216,9 +204,7 @@ let (msg, metadata) = Message::unpack(
     &msg,
     &did_resolver,
     &secrets_resolver,
-    &UnpackOptions {
-        ..UnpackOptions::default()
-    },
+    &UnpackOptions::default(),
 )
 .await
 .expect("Unable unpack");
@@ -245,7 +231,7 @@ let msg = Message::build(
 .finalize();
 
 let msg = msg
-    .pack_plaintext()
+    .pack_plaintext(&did_resolver)
     .expect("Unable pack_plaintext");
 
 // BOB
@@ -253,9 +239,7 @@ let (msg, metadata) = Message::unpack(
     &msg,
     &did_resolver,
     &secrets_resolver,
-    &UnpackOptions {
-        ..UnpackOptions::default()
-    },
+    &UnpackOptions::default(),
 )
 .await
 .expect("Unable unpack");

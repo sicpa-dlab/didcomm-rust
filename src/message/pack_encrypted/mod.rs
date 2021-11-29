@@ -87,6 +87,13 @@ impl Message {
         // TODO: Think how to avoid resolving of did multiple times
         // and perform async operations in parallel
 
+        // TODO:
+        // 1. Extract JWE-related steps to a separate method, so that pack_encrypted uses
+        // the extarcted method for JWE steps and wrap_in_forward_if_needed for Routing steps.
+        // 2. Make anoncrypt/authcrypt separate non-public modules (not sub-modules), so that
+        // both pack_encrypted and Routing implementation use them (to avoid cross dependencies
+        // between message::pack_encrypted and protocols::routing modules).
+
         let (msg, sign_by_kid) = if let Some(sign_by) = sign_by {
             let (msg, PackSignedMetadata { sign_by_kid }) = self
                 .pack_signed(sign_by, did_resolver, secrets_resolver)
@@ -1622,7 +1629,7 @@ mod tests {
             let forward =
                 try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
 
-            assert_eq!(&forward.msg, &unpacked_msg_mediator1);
+            assert_eq!(forward.msg, &unpacked_msg_mediator1);
             assert_eq!(&forward.next, to);
 
             assert!(unpack_metadata_mediator1.encrypted);
@@ -1813,7 +1820,7 @@ mod tests {
             let forward_at_mediator3 =
                 try_parse_forward(&unpacked_msg_mediator3).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator3.msg, &unpacked_msg_mediator3);
+            assert_eq!(forward_at_mediator3.msg, &unpacked_msg_mediator3);
 
             assert_eq!(
                 &forward_at_mediator3.msg.extra_headers,
@@ -1850,7 +1857,7 @@ mod tests {
             let forward_at_mediator2 =
                 try_parse_forward(&unpacked_msg_mediator2).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator2.msg, &unpacked_msg_mediator2);
+            assert_eq!(forward_at_mediator2.msg, &unpacked_msg_mediator2);
 
             assert_eq!(
                 &forward_at_mediator2.msg.extra_headers,
@@ -1887,7 +1894,7 @@ mod tests {
             let forward_at_mediator1 =
                 try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator1.msg, &unpacked_msg_mediator1);
+            assert_eq!(forward_at_mediator1.msg, &unpacked_msg_mediator1);
 
             assert_eq!(
                 &forward_at_mediator1.msg.extra_headers,
@@ -1932,49 +1939,49 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn wrap_in_forward_works_mediator_unknown_by_sender() {
-        _wrap_in_forward_works_mediator_unknown_by_sender(BOB_DID, None, None).await;
+    async fn wrap_in_forward_works_mediator_unknown_to_sender() {
+        _wrap_in_forward_works_mediator_unknown_to_sender(BOB_DID, None, None).await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(BOB_DID, None, Some(ALICE_DID)).await;
+        _wrap_in_forward_works_mediator_unknown_to_sender(BOB_DID, None, Some(ALICE_DID)).await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(BOB_DID, Some(ALICE_DID), None).await;
+        _wrap_in_forward_works_mediator_unknown_to_sender(BOB_DID, Some(ALICE_DID), None).await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(
+        _wrap_in_forward_works_mediator_unknown_to_sender(
             BOB_DID,
             Some(ALICE_DID),
             Some(ALICE_DID),
         )
         .await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(
+        _wrap_in_forward_works_mediator_unknown_to_sender(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             None,
             None,
         )
         .await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(
+        _wrap_in_forward_works_mediator_unknown_to_sender(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             None,
             Some(ALICE_DID),
         )
         .await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(
+        _wrap_in_forward_works_mediator_unknown_to_sender(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             Some(ALICE_DID),
             None,
         )
         .await;
 
-        _wrap_in_forward_works_mediator_unknown_by_sender(
+        _wrap_in_forward_works_mediator_unknown_to_sender(
             &BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2.id,
             Some(ALICE_DID),
             Some(ALICE_DID),
         )
         .await;
 
-        async fn _wrap_in_forward_works_mediator_unknown_by_sender(
+        async fn _wrap_in_forward_works_mediator_unknown_to_sender(
             to: &str,
             from: Option<&str>,
             sign_by: Option<&str>,
@@ -2029,7 +2036,7 @@ mod tests {
             let forward_at_mediator1 =
                 try_parse_forward(&unpacked_msg_mediator1).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator1.msg, &unpacked_msg_mediator1);
+            assert_eq!(forward_at_mediator1.msg, &unpacked_msg_mediator1);
             assert_eq!(&forward_at_mediator1.next, to);
 
             assert!(unpack_metadata_mediator1.encrypted);
@@ -2065,7 +2072,7 @@ mod tests {
             let forward_at_mediator2 =
                 try_parse_forward(&unpacked_msg_mediator2).expect("Message is not Forward");
 
-            assert_eq!(&forward_at_mediator2.msg, &unpacked_msg_mediator2);
+            assert_eq!(forward_at_mediator2.msg, &unpacked_msg_mediator2);
             assert_eq!(&forward_at_mediator2.next, to);
 
             assert!(unpack_metadata_mediator2.encrypted);
@@ -2099,6 +2106,8 @@ mod tests {
             assert!(!unpack_metadata.re_wrapped_in_forward);
         }
     }
+
+    // TODO: Add negative tests for Routing protocol
 
     #[tokio::test]
     async fn pack_encrypted_works_from_not_did_or_did_url() {
