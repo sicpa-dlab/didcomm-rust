@@ -1,0 +1,356 @@
+[Wrapped]
+typedef string JsonValue;
+
+// 1. MAIN DIDCOMM INTERFACE 
+
+interface DIDComm {
+  constructor(DIDResolver did_resolver, SecretsResolver secret_resolver);
+
+  ErrorCode pack_plaintext([ByRef] Message msg, OnPackPlaintextResult cb);
+  ErrorCode pack_signed([ByRef] Message msg, string sign_by, OnPackSignedResult cb);
+  ErrorCode pack_encrypted([ByRef] Message msg, string to, string? from, string? sign_by, [ByRef] PackEncryptedOptions options, OnPackEncryptedResult cb);
+  ErrorCode unpack(string msg, [ByRef] UnpackOptions options, OnUnpackResult cb);
+
+  ErrorCode pack_from_prior([ByRef] FromPrior msg, string? issuer_kid, OnFromPriorPackResult cb);
+  ErrorCode unpack_from_prior(string from_prior_jwt, OnFromPriorUnpackResult cb);
+
+  ErrorCode wrap_in_forward(string msg, [ByRef] record<DOMString, JsonValue> headers, string to, [ByRef] sequence<string> routing_keys, [ByRef] AnonCryptAlg enc_alg_anon, OnWrapInForwardResult cb);
+
+};
+
+// 2. MESSAGE
+
+dictionary Message {
+  string id;
+  string typ;
+  string type_;
+  JsonValue body;
+  string? from;
+  sequence<string>? to;
+  string? thid;
+  string? pthid;
+  record<DOMString, JsonValue> extra_headers;
+  u64? created_time;
+  u64? expires_time;
+  string? from_prior;
+  sequence<Attachment>? attachments;
+};
+
+dictionary Attachment {
+  AttachmentData data;
+  string? id;
+  string? description;
+  string? filename;
+  string? media_type;
+  string? format;
+  u64? lastmod_time;
+  u64? byte_count;
+};
+
+[Enum]
+interface AttachmentData {
+  Base64(Base64AttachmentData value);
+  Json(JsonAttachmentData value);
+  Links(LinksAttachmentData value);
+};
+
+
+dictionary Base64AttachmentData {
+  string base64;
+  string? jws;
+};
+
+dictionary JsonAttachmentData {
+  JsonValue json;
+  string? jws;
+};
+
+dictionary LinksAttachmentData {
+  sequence<string> links;
+  string hash;
+  string? jws;
+};
+
+
+
+// 3. ERRORS
+
+[Error]
+enum ErrorKind {
+  "DIDNotResolved",
+  "DIDUrlNotFound",
+  "SecretNotFound",
+  "Malformed",
+  "IoError",
+  "InvalidState",
+  "NoCompatibleCrypto",
+  "Unsupported",
+  "IllegalArgument",
+};
+
+enum ErrorCode {
+    "Success",
+    "Error",
+};
+
+
+
+// 4. DID RESOLVER
+
+callback interface DIDResolver {
+  ErrorCode resolve(string did, OnDIDResolverResult cb);
+};
+
+interface OnDIDResolverResult {
+  [Throws=ErrorKind]
+  void success(DIDDoc? result);
+
+  [Throws=ErrorKind]
+  void error(ErrorKind err, string msg);
+};
+
+dictionary DIDDoc {
+  string did;
+  sequence<string> key_agreements;
+  sequence<string> authentications;
+  sequence<VerificationMethod> verification_methods;
+  sequence<Service> services;
+};
+
+dictionary VerificationMethod {
+  string id;
+  VerificationMethodType type_;
+  string controller;
+  VerificationMaterial verification_material;
+};
+
+[Enum]
+interface VerificationMaterial {
+  JWK(JsonValue value);
+  Multibase(string value);
+  Base58(string value);
+  Hex(string value);
+  Other(JsonValue value);
+};
+
+enum VerificationMethodType {
+    "JsonWebKey2020",
+    "X25519KeyAgreementKey2019",
+    "Ed25519VerificationKey2018",
+    "EcdsaSecp256k1VerificationKey2019",
+    "X25519KeyAgreementKey2020",
+    "Ed25519VerificationKey2020",
+    "Other",
+};
+
+dictionary Service {
+  string id;
+  ServiceKind kind;
+};
+
+[Enum]
+interface ServiceKind {
+  DIDCommMessaging(DIDCommMessagingService value);
+  Other(JsonValue value);
+};
+
+dictionary DIDCommMessagingService {
+  string service_endpoint;
+  sequence<string> accept;
+  sequence<string> routing_keys;
+};
+
+interface ExampleDIDResolver {
+  constructor(sequence<DIDDoc> known_dids);
+  ErrorCode resolve(string did, OnDIDResolverResult cb);
+};
+
+
+
+
+// 5. SECRETS RESOLVER
+
+callback interface SecretsResolver {
+  ErrorCode get_secret(string secretid, OnGetSecretResult cb); // should be in camel case
+  ErrorCode find_secrets(sequence<string> secretids, OnFindSecretsResult cb); // should be in camel case
+};
+
+interface OnGetSecretResult {
+  [Throws=ErrorKind]
+  void success(Secret? result);
+
+  [Throws=ErrorKind]
+  void error(ErrorKind err, string msg);
+};
+
+interface OnFindSecretsResult {
+  [Throws=ErrorKind]  
+  void success(sequence<string> result);
+
+  [Throws=ErrorKind]  
+  void error(ErrorKind err, string msg);
+};
+
+dictionary Secret {
+  string id;
+  SecretType type_;
+  SecretMaterial secret_material;
+};
+
+[Enum]
+interface SecretMaterial {
+  JWK(JsonValue value);
+  Multibase(string value);
+  Base58(string value);
+  Hex(string value);
+  Other(JsonValue value);
+};
+
+enum SecretType {
+    "JsonWebKey2020",
+    "X25519KeyAgreementKey2019",
+    "Ed25519VerificationKey2018",
+    "EcdsaSecp256k1VerificationKey2019",
+    "X25519KeyAgreementKey2020",
+    "Ed25519VerificationKey2020",
+    "Other",
+};
+
+interface ExampleSecretsResolver {
+  constructor(sequence<Secret> known_secrets);
+  ErrorCode get_secret(string secret_id, OnGetSecretResult cb);
+  ErrorCode find_secrets(sequence<string> secret_ids, OnFindSecretsResult cb);
+};
+
+
+
+
+// 6. PACK SIGNED
+
+callback interface OnPackSignedResult {
+  void success(string result, PackSignedMetadata metadata);
+  void error(ErrorKind err, string msg);
+};
+
+dictionary PackSignedMetadata {
+  string sign_by_kid;
+};
+
+
+
+// 7. PACK ENCRYPTED
+
+callback interface OnPackEncryptedResult {
+  void success(string result, PackEncryptedMetadata metadata);
+  void error(ErrorKind err, string msg);
+};
+
+dictionary PackEncryptedMetadata {
+  MessagingServiceMetadata? messaging_service;
+  string? from_kid;
+  string? sign_by_kid;
+  sequence<string> to_kids;
+};
+
+dictionary MessagingServiceMetadata {
+  string id;
+  string service_endpoint;
+};
+
+enum AuthCryptAlg {
+    "A256cbcHs512Ecdh1puA256kw",
+};
+
+enum AnonCryptAlg {
+    "A256cbcHs512EcdhEsA256kw",
+    "Xc20pEcdhEsA256kw",
+    "A256gcmEcdhEsA256kw",
+};
+
+dictionary PackEncryptedOptions {
+  boolean protect_sender;
+  boolean forward;
+  record<DOMString, JsonValue>? forward_headers;
+  string? messaging_service;
+  AuthCryptAlg enc_alg_auth;
+  AnonCryptAlg enc_alg_anon;
+};
+
+
+
+// 8. PACK PLAINTEXT
+
+callback interface OnPackPlaintextResult {
+  void success(string result);
+  void error(ErrorKind err, string msg);
+};
+
+
+
+// 9. UNPACK
+
+callback interface OnUnpackResult {
+  void success(Message result, UnpackMetadata metadata);
+  void error(ErrorKind err, string msg);
+};
+
+dictionary UnpackMetadata {
+  boolean encrypted;
+  boolean authenticated;
+  boolean non_repudiation;
+  boolean anonymous_sender;
+  boolean re_wrapped_in_forward;
+  string? encrypted_from_kid;
+  sequence<string>? encrypted_to_kids;
+  string? sign_from;
+  string? from_prior_issuer_kid;
+  AuthCryptAlg? enc_alg_auth;
+  AnonCryptAlg? enc_alg_anon;
+  SignAlg? sign_alg;
+  string? signed_message;
+  FromPrior? from_prior;
+};
+
+dictionary UnpackOptions {
+  boolean expect_decrypt_by_all_keys;
+  boolean unwrap_re_wrapping_forward;
+};
+
+enum SignAlg {
+    "EdDSA",
+    "ES256",
+    "ES256K",
+};
+
+// 10. FROM PRIOR
+dictionary FromPrior {
+  string iss;
+  string sub;
+  string? aud;
+  u64? exp;
+  u64? nbf;
+  u64? iat;
+  string? jti;
+};
+
+callback interface OnFromPriorPackResult {
+  void success(string frompriorjwt, string kid); // should be in camel case
+  void error(ErrorKind err, string msg);
+};
+
+callback interface OnFromPriorUnpackResult {
+  void success(FromPrior fromprior, string kid); // should be in camel case
+  void error(ErrorKind err, string msg);
+};
+
+
+// 11. FORWARD
+
+callback interface OnWrapInForwardResult {
+  void success(string result); 
+  void error(ErrorKind err, string msg);
+};
+
+
+
+namespace didcomm {};

@@ -25,3 +25,5 @@ Cargo.lock
 
 # vim
 *.swp
+
+.idea

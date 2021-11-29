@@ -1,0 +1,21 @@
+{
+  "name": "didcomm-demo",
+  "version": "0.2.0",
+  "description": "JS demo for didcomm",
+  "scripts": {
+    "start": "ts-node src/main.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check": "tslint -c tslint.json 'src/**/*.ts'"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "didcomm": "file:../pkg",
+    "typescript": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.10",
+    "ts-node": "^10.4.0",
+    "tslint": "^6.1.3"
+  }
+}

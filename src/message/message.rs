@@ -3,14 +3,15 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use super::Attachment;
+use crate::error::{err_msg, ErrorKind, Result, ToResult};
 
-///  Wrapper for plain message. Provides helpers for message building and packing/unpacking.
+/// Wrapper for plain message. Provides helpers for message building and packing/unpacking.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct Message {
     /// Message id. Must be unique to the sender.
     pub id: String,
 
-    /// Must be
+    /// Must be "application/didcomm-plain+json"
     pub typ: String,
 
     /// Message type attribute value MUST be a valid Message Type URI,
@@ -63,14 +64,34 @@ pub struct Message {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_time: Option<u64>,
 
+    /// from_prior is a compactly serialized signed JWT containing FromPrior value
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from_prior: Option<String>,
+
     /// Message attachments
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attachments: Option<Vec<Attachment>>,
 }
 
+const PLAINTEXT_TYP: &str = "application/didcomm-plain+json";
+
 impl Message {
     pub fn build(id: String, type_: String, body: Value) -> MessageBuilder {
         MessageBuilder::new(id, type_, body)
+    }
+
+    pub(crate) fn from_str(s: &str) -> Result<Message> {
+        serde_json::from_str(s).to_didcomm("Unable deserialize jwm")
+    }
+
+    pub(crate) fn validate(self) -> Result<Self> {
+        if self.typ != PLAINTEXT_TYP {
+            Err(err_msg(
+                ErrorKind::Malformed,
+                format!("`typ` must be \"{}\"", PLAINTEXT_TYP),
+            ))?;
+        }
+        Ok(self)
     }
 }
 
@@ -85,6 +106,7 @@ pub struct MessageBuilder {
     extra_headers: HashMap<String, Value>,
     created_time: Option<u64>,
     expires_time: Option<u64>,
+    from_prior: Option<String>,
     attachments: Option<Vec<Attachment>>,
 }
 
@@ -101,6 +123,7 @@ impl MessageBuilder {
             extra_headers: HashMap::new(),
             created_time: None,
             expires_time: None,
+            from_prior: None,
             attachments: None,
         }
     }
@@ -156,23 +179,28 @@ impl MessageBuilder {
         self
     }
 
-    pub fn attachement(mut self, attachement: Attachment) -> Self {
+    pub fn from_prior(mut self, from_prior: String) -> Self {
+        self.from_prior = Some(from_prior);
+        self
+    }
+
+    pub fn attachment(mut self, attachment: Attachment) -> Self {
         if let Some(ref mut attachments) = self.attachments {
-            attachments.push(attachement);
+            attachments.push(attachment);
             self
         } else {
-            self.attachments = Some(vec![attachement]);
+            self.attachments = Some(vec![attachment]);
             self
         }
     }
 
-    pub fn attachements(mut self, attachements: Vec<Attachment>) -> Self {
+    pub fn attachments(mut self, attachments: Vec<Attachment>) -> Self {
         if let Some(ref mut sattachments) = self.attachments {
-            let mut attachements = attachements;
-            sattachments.append(&mut attachements);
+            let mut attachments = attachments;
+            sattachments.append(&mut attachments);
             self
         } else {
-            self.attachments = Some(attachements);
+            self.attachments = Some(attachments);
             self
         }
     }
@@ -180,7 +208,7 @@ impl MessageBuilder {
     pub fn finalize(self) -> Message {
         Message {
             id: self.id,
-            typ: "application/didcomm-plain+json".to_owned(),
+            typ: PLAINTEXT_TYP.to_owned(),
             type_: self.type_,
             body: self.body,
             to: self.to,
@@ -190,6 +218,7 @@ impl MessageBuilder {
             extra_headers: self.extra_headers,
             created_time: self.created_time,
             expires_time: self.expires_time,
+            from_prior: self.from_prior,
             attachments: self.attachments,
         }
     }
@@ -217,12 +246,12 @@ mod tests {
         .header("example-header-2".into(), json!("example-header-2-value"))
         .created_time(10000)
         .expires_time(20000)
-        .attachement(
+        .attachment(
             Attachment::base64("ZXhhbXBsZQ==".into())
                 .id("attachment1".into())
                 .finalize(),
         )
-        .attachements(vec![
+        .attachments(vec![
             Attachment::json(json!("example"))
                 .id("attachment2".into())
                 .finalize(),

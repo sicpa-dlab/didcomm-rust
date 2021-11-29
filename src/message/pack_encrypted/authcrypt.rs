@@ -37,8 +37,8 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
     let to_ddoc = did_resolver
         .resolve(to_did)
         .await
-        .context("Unable resolve recepient did")?
-        .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Recepient did not found"))?;
+        .context("Unable resolve recipient did")?
+        .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Recipient did not found"))?;
 
     let (from_did, from_kid) = did_or_url(from);
 
@@ -110,7 +110,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
     if to_kids.is_empty() {
         Err(err_msg(
             ErrorKind::DIDUrlNotFound,
-            "No recepient key agreements found",
+            "No recipient key agreements found",
         ))?
     }
 
@@ -127,7 +127,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     err_msg(
                         ErrorKind::Malformed,
                         format!(
-                            "No verification material found for recepient key agreement {}",
+                            "No verification material found for recipient key agreement {}",
                             kid
                         ),
                     )
@@ -150,7 +150,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         .ok_or_else(|| {
             err_msg(
                 ErrorKind::NoCompatibleCrypto,
-                "No common keys between sender and recepient found",
+                "No common keys between sender and recipient found",
             )
         })?;
 
@@ -318,7 +318,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         }
         _ => Err(err_msg(
             ErrorKind::Unsupported,
-            "Unsupported recepient key agreement method",
+            "Unsupported recipient key agreement method",
         ))?,
     };
 
