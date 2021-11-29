@@ -2,6 +2,7 @@ mod from_prior;
 mod pack_encrypted;
 mod pack_plaintext;
 mod pack_signed;
+mod protocols;
 mod unpack;
 
 use didcomm::error::{ErrorKind, ResultExt};

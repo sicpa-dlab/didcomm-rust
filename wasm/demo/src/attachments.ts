@@ -46,7 +46,7 @@ async function main() {
     didResolver,
     secretsResolver,
     {
-      forward: false,
+      forward: false, // TODO: should be true by default
     }
   );
 

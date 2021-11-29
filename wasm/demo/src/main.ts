@@ -7,13 +7,7 @@ import {
   BOB_SECRETS,
 } from "./test-vectors";
 
-import {
-  Message,
-  DIDDoc,
-  DIDResolver,
-  Secret,
-  SecretsResolver,
-} from "didcomm";
+import { Message, DIDDoc, DIDResolver, Secret, SecretsResolver } from "didcomm";
 import {
   CHARLIE_DID,
   CHARLIE_DID_DOC,
@@ -95,7 +89,7 @@ async function nonRepudiableEncryption() {
     didResolver,
     secretsResolver,
     {
-      forward: false,
+      forward: false, // TODO: should be true by default
     }
   );
 
@@ -147,7 +141,7 @@ async function multiRecipient() {
     didResolver,
     secretsResolver,
     {
-      forward: false,
+      forward: false, // TODO: should be true by default
     }
   );
 
@@ -165,7 +159,7 @@ async function multiRecipient() {
       didResolver,
       secretsResolver,
       {
-        forward: false,
+        forward: false, // TODO: should be true by default
       }
     );
 
@@ -236,7 +230,7 @@ async function repudiableAuthentcatedEncryption() {
     didResolver,
     secretsResolver,
     {
-      forward: false,
+      forward: false, // TODO: should be true by default
     }
   );
 
@@ -284,7 +278,7 @@ async function repudiableNonAuthentcatedEncryption() {
     didResolver,
     secretsResolver,
     {
-      forward: false,
+      forward: false, // TODO: should be true by default
     }
   );
 
@@ -388,3 +382,5 @@ async function plaintext() {
 }
 
 main().catch((e) => console.log(e));
+
+// TODO: add examples for Forward (routing) and Mediators
