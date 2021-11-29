@@ -9,7 +9,7 @@ use wasm_bindgen_futures::future_to_promise;
 use crate::{Message, utils::set_panic_hook};
 
 #[wasm_bindgen]
-pub struct ParsedForward(pub(crate) Rc<didcomm::protocols::routing::ParsedForward>);
+pub struct ParsedForward(pub(crate) Rc<didcomm::protocols::routing::ParsedForward<'static>>);
 
 #[wasm_bindgen]
 impl ParsedForward {
