@@ -314,7 +314,6 @@ jobs:
         shell: bash
 
       - name: publish to npm (bundler)
-        if: false
         env:
           NPM_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
         run: |
