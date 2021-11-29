@@ -7,13 +7,7 @@ import {
   BOB_SECRETS,
 } from "./test-vectors";
 
-import {
-  Message,
-  DIDDoc,
-  DIDResolver,
-  Secret,
-  SecretsResolver,
-} from "didcomm";
+import { Message, DIDDoc, DIDResolver, Secret, SecretsResolver } from "didcomm";
 import {
   CHARLIE_DID,
   CHARLIE_DID_DOC,
@@ -389,4 +383,4 @@ async function plaintext() {
 
 main().catch((e) => console.log(e));
 
-//TODO: add examples for Forward (routing) and Mediators
+// TODO: add examples for Forward (routing) and Mediators
