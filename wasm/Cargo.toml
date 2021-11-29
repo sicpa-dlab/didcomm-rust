@@ -5,7 +5,8 @@ authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'WASM based javascript wrapper for DIDComm'
 license = 'Apache-2.0'
-repository = 'https://github.com/sicpa-dlab/didcomm-rust'
+repository = 'https://github.com/sicpa-dlab/didcomm-rust/tree/main/wasm'
+homepage = 'https://github.com/sicpa-dlab/didcomm-rust/tree/main/wasm#readme'
 readme = 'README.md'
 
 [lib]
