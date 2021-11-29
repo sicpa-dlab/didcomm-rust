@@ -24,7 +24,8 @@ impl FromPrior {
     /// Tuple (signed `from_prior` JWT, identifier of the issuer key actually used to sign `from_prior`)
     ///
     /// # Errors
-    /// - `Malformed` `from_prior` plaintext value or `issuer_kid` has invalid format or their values are inconsistent.
+    /// - `Malformed` `from_prior` plaintext value has invalid format.
+    /// - `IllegalArgument` `issuer_kid` is invalid or does not consist with `from_prior` plaintext value.
     /// - `DIDNotResolved` Issuer DID not found.
     /// - `DIDUrlNotFound` Issuer authentication verification method is not found.
     /// - `SecretNotFound` Issuer secret is not found.
@@ -56,12 +57,15 @@ impl FromPrior {
             let (did, kid) = did_or_url(issuer_kid);
 
             let kid = kid.ok_or_else(|| {
-                err_msg(ErrorKind::Malformed, "issuer_kid content is not DID URL")
+                err_msg(
+                    ErrorKind::IllegalArgument,
+                    "issuer_kid content is not DID URL",
+                )
             })?;
 
             if did != &self.iss {
                 Err(err_msg(
-                    ErrorKind::Malformed,
+                    ErrorKind::IllegalArgument,
                     "from_prior issuer kid does not belong to from_prior `iss`",
                 ))?
             }
@@ -162,14 +166,14 @@ impl FromPrior {
 
             if kid.is_none() {
                 Err(err_msg(
-                    ErrorKind::Malformed,
+                    ErrorKind::IllegalArgument,
                     "issuer_kid content is not DID URL",
                 ))?;
             };
 
             if did != &self.iss {
                 Err(err_msg(
-                    ErrorKind::Malformed,
+                    ErrorKind::IllegalArgument,
                     "from_prior issuer kid does not belong to from_prior `iss`",
                 ))?;
             }
@@ -267,24 +271,24 @@ mod tests {
         _from_prior_pack_works_wrong_issuer_kid(
             &FROM_PRIOR_FULL,
             &ALICE_SECRET_AUTH_KEY_ED25519.id,
-            ErrorKind::Malformed,
-            "Malformed: from_prior issuer kid does not belong to from_prior `iss`",
+            ErrorKind::IllegalArgument,
+            "Illegal argument: from_prior issuer kid does not belong to from_prior `iss`",
         )
         .await;
 
         _from_prior_pack_works_wrong_issuer_kid(
             &FROM_PRIOR_FULL,
             ALICE_DID,
-            ErrorKind::Malformed,
-            "Malformed: issuer_kid content is not DID URL",
+            ErrorKind::IllegalArgument,
+            "Illegal argument: issuer_kid content is not DID URL",
         )
         .await;
 
         _from_prior_pack_works_wrong_issuer_kid(
             &FROM_PRIOR_FULL,
             "invalid",
-            ErrorKind::Malformed,
-            "Malformed: issuer_kid content is not DID URL",
+            ErrorKind::IllegalArgument,
+            "Illegal argument: issuer_kid content is not DID URL",
         )
         .await;
 
