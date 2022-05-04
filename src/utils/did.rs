@@ -473,8 +473,8 @@ mod tests {
         let actual_key = Secret {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: SecretType::X25519KeyAgreementKey2019,
-            secret_material: (SecretMaterial::Base58{
-                value:"2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqFyjLPWt7rv5kL3UPeG3e4B9Sy4H2Q2zAuWcP2RNtgJ4t".to_string()
+            secret_material: (SecretMaterial::Base58 {
+                value: "2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqFyjLPWt7rv5kL3UPeG3e4B9Sy4H2Q2zAuWcP2RNtgJ4t".to_string()
             }),
         }.as_key_pair().unwrap();
 
@@ -494,7 +494,7 @@ mod tests {
         let actual_key = Secret {
             id: "did:example:eve#key-ed25519-1".to_string(),
             type_: SecretType::Ed25519VerificationKey2018,
-            secret_material: (SecretMaterial::Base58{
+            secret_material: (SecretMaterial::Base58 {
                 value: "2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqATnLmZDx7Seu6NqTuFKkxuHNT27GcoxVZQCkWJhNvaUQ".to_string()
             }),
         }.as_key_pair().unwrap();
@@ -515,7 +515,7 @@ mod tests {
         let actual_key = Secret {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: SecretType::X25519KeyAgreementKey2020,
-            secret_material: (SecretMaterial::Multibase{
+            secret_material: (SecretMaterial::Multibase {
                 value: "zshCmpUZKtFrAfudMf7NzD3oR6yhWe6i2434FDktk9CYZfkndn7suDrqnRWvrVDHk95Z7vBRJChFxTgBF9qzq7D3xPe".to_string()
             }),
         }.as_key_pair().unwrap();
@@ -536,7 +536,7 @@ mod tests {
         let actual_key = Secret {
             id: "did:example:eve#key-ed25519-1".to_string(),
             type_: SecretType::Ed25519VerificationKey2020,
-            secret_material: (SecretMaterial::Multibase{
+            secret_material: (SecretMaterial::Multibase {
                 value: "zrv2DyJwnoQWzS74nPkHHdM7NYH27BRNFBG9To7Fca9YzWhfBVa9Mek52H9bJexjdNqxML1F3TGCpjLNkCwwgQDvd5J".to_string()
             }),
         }.as_key_pair().unwrap();
@@ -666,5 +666,28 @@ mod tests {
         assert_eq!(is_did("did::"), true); //TODO is this ok?
         assert_eq!(is_did("example:example:alice"), false);
         assert_eq!(is_did("example:alice"), false);
+    }
+
+    #[test]
+    fn deserialization_for_base58_key_representation_works() {
+        let expected_serialzied = r#"{"id":"did:example:eve#key-x25519-1","secret_material":{"format":"Base58","value":"2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqFyjLPWt7rv5kL3UPeG3e4B9Sy4H2Q2zAuWcP2RNtgJ4t"},"type":"X25519KeyAgreementKey2019"}"#;
+        let base58key = "2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqFyjLPWt7rv5kL3UPeG3e4B9Sy4H2Q2zAuWcP2RNtgJ4t";
+        let actual_key = Secret {
+            id: "did:example:eve#key-x25519-1".to_string(),
+            type_: SecretType::X25519KeyAgreementKey2019,
+            secret_material: SecretMaterial::Base58 {
+                value: base58key.to_string(),
+            },
+        };
+
+        let serialized = json!(actual_key).to_string();
+        assert_eq!(expected_serialzied, serialized);
+
+        let deserialized: Secret = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(format!("{:?}", deserialized), format!("{:?}", actual_key));
+        match deserialized.secret_material {
+            SecretMaterial::Base58 { value } => assert_eq!(value, base58key),
+            _ => assert!(false),
+        }
     }
 }
