@@ -4,7 +4,8 @@ export const BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1: Secret = {
   id: "did:example:bob#key-x25519-1",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "X25519",
       d: "b9NnuOCB0hm7YGNvaE9DMhwH_wjZA1-gWD6dA0JWdL0",
       kty: "OKP",
@@ -16,7 +17,8 @@ export const BOB_SECRET_KEY_AGREEMENT_KEY_X25519_2: Secret = {
   id: "did:example:bob#key-x25519-2",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "X25519",
       d: "p-vteoF1gopny1HXywt76xz_uC83UUmrgszsI-ThBKk",
       kty: "OKP",
@@ -28,7 +30,8 @@ export const BOB_SECRET_KEY_AGREEMENT_KEY_X25519_3: Secret = {
   id: "did:example:bob#key-x25519-3",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "X25519",
       d: "f9WJeuQXEItkGM8shN4dqFr5fLQLBasHnWZ-8dPaSo0",
       kty: "OKP",
@@ -40,7 +43,8 @@ export const BOB_SECRET_KEY_AGREEMENT_KEY_P256_1: Secret = {
   id: "did:example:bob#key-p256-1",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "P-256",
       d: "PgwHnlXxt8pwR6OCTUwwWx-P51BiLkFZyqHzquKddXQ",
       kty: "EC",
@@ -53,7 +57,8 @@ export const BOB_SECRET_KEY_AGREEMENT_KEY_P256_2: Secret = {
   id: "did:example:bob#key-p256-2",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "P-256",
       d: "agKz7HS8mIwqO40Q2dwm_Zi70IdYFtonN5sZecQoxYU",
       kty: "EC",
@@ -66,7 +71,8 @@ export const BOB_SECRET_KEY_AGREEMENT_KEY_P384_1: Secret = {
   id: "did:example:bob#key-p384-1",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "P-384",
       d: "ajqcWbYA0UDBKfAhkSkeiVjMMt8l-5rcknvEv9t_Os6M8s-HisdywvNCX4CGd_xY",
       kty: "EC",
@@ -79,7 +85,8 @@ export const BOB_SECRET_KEY_AGREEMENT_KEY_P384_2: Secret = {
   id: "did:example:bob#key-p384-2",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "P-384",
       d: "OiwhRotK188BtbQy0XBO8PljSKYI6CCD-nE_ZUzK7o81tk3imDOuQ-jrSWaIkI-T",
       kty: "EC",
@@ -92,7 +99,8 @@ export const BOB_SECRET_KEY_AGREEMENT_KEY_P521_1: Secret = {
   id: "did:example:bob#key-p521-1",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "P-521",
       d: "AV5ocjvy7PkPgNrSuvCxtG70NMj6iTabvvjSLbsdd8OdI9HlXYlFR7RdBbgLUTruvaIRhjEAE9gNTH6rWUIdfuj6",
       kty: "EC",
@@ -105,7 +113,8 @@ export const BOB_SECRET_KEY_AGREEMENT_KEY_P521_2: Secret = {
   id: "did:example:bob#key-p521-2",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "P-521",
       d: "ABixMEZHsyT7SRw-lY5HxdNOofTZLlwBHwPEJ3spEMC2sWN1RZQylZuvoyOBGJnPxg4-H_iVhNWf_OtgYODrYhCk",
       kty: "EC",

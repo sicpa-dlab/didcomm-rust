@@ -5,7 +5,8 @@ export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
     id: "did:example:charlie#key-x25519-1",
     type: "JsonWebKey2020",
     secret_material: {
-      JWK: {
+      format: "JWK",
+      value: {
         crv: "X25519",
         d: "Z-BsgFe-eCvhuZlCBX5BV2XiDE2M92gkaORCe68YdZI",
         kty: "OKP",
@@ -17,7 +18,8 @@ export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
     id: "did:example:charlie#key-1",
     type: "JsonWebKey2020",
     secret_material: {
-      JWK: {
+      format: "JWK",
+      value: {
         crv: "Ed25519",
         d: "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg",
         kty: "OKP",
@@ -29,7 +31,8 @@ export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
     id: "did:example:alice#key-1",
     type: "JsonWebKey2020",
     secret_material: {
-      JWK: {
+      format: "JWK",
+      value: {
         crv: "Ed25519",
         d: "pFRUKkyzx4kHdJtFSnlPA9WzqkDT1HWV0xZ5OYZd2SY",
         kty: "OKP",
@@ -41,7 +44,8 @@ export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
     id: "did:example:alice#key-2",
     type: "JsonWebKey2020",
     secret_material: {
-      JWK: {
+      format: "JWK",
+      value: {
         crv: "P-256",
         d: "7TCIdt1rhThFtWcEiLnk_COEjh1ZfQhM4bW2wz-dp4A",
         kty: "EC",
@@ -54,7 +58,8 @@ export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
     id: "did:example:alice#key-3",
     type: "JsonWebKey2020",
     secret_material: {
-      JWK: {
+      format: "JWK",
+      value: {
         crv: "secp256k1",
         d: "N3Hm1LXA210YVGGsXw_GklMwcLu_bMgnzDese6YQIyA",
         kty: "EC",
@@ -67,7 +72,8 @@ export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
     id: "did:example:alice#key-x25519-1",
     type: "JsonWebKey2020",
     secret_material: {
-      JWK: {
+      format: "JWK",
+      value: {
         crv: "X25519",
         d: "r-jK2cO3taR8LQnJB1_ikLBTAnOtShJOsHXRUWT-aZA",
         kty: "OKP",
@@ -79,7 +85,8 @@ export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
     id: "did:example:alice#key-p256-1",
     type: "JsonWebKey2020",
     secret_material: {
-      JWK: {
+      format: "JWK",
+      value: {
         crv: "P-256",
         d: "sB0bYtpaXyp-h17dDpMx91N3Du1AdN4z1FUq02GbmLw",
         kty: "EC",
@@ -92,7 +99,8 @@ export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
     id: "did:example:alice#key-p521-1",
     type: "JsonWebKey2020",
     secret_material: {
-      JWK: {
+      format: "JWK",
+      value: {
         crv: "P-521",
         d: "AQCQKE7rZpxPnX9RgjXxeywrAMp1fJsyFe4cir1gWj-8t8xWaM_E2qBkTTzyjbRBu-JPXHe_auT850iYmE34SkWi",
         kty: "EC",

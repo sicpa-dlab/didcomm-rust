@@ -34,19 +34,20 @@ type SecretType =
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
+const SECRET_MATERIAL_FORMAT_TS: &'static str = r#"
+/**
+ * The representation format of secret material
+ */
+type SecretMaterialFormat = "JWK" | "Multibase" | "Base58" | "Hex" | "Other" | string
+"#;
+
+#[wasm_bindgen(typescript_custom_section)]
 const SECRET_MATERIAL_TS: &'static str = r#"
 /**
  * Represents secret crypto material.
  */
 type SecretMaterial = {
-    "JWK": any,
-} | {
-    "Multibase": string,
-} | {
-    "Base58": string,
-} | {
-    "Hex": string,
-} | {
-    "Other": any,
+    format: SecretMaterialFormat,
+    value: any,
 }
 "#;

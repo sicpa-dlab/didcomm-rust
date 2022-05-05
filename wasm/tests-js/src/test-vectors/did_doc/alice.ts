@@ -6,7 +6,8 @@ export const ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET: Verifica
     type: "JsonWebKey2020",
     controller: "did:example:alice#key-x25519-not-in-secrets-1",
     verification_material: {
-      JWK: {
+      format: "JWK",
+      value: {
         crv: "X25519",
         kty: "OKP",
         x: "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
@@ -19,7 +20,8 @@ export const ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519: VerificationMethod = {
   type: "JsonWebKey2020",
   controller: "did:example:alice#key-x25519-1",
   verification_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "X25519",
       kty: "OKP",
       x: "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
@@ -32,7 +34,8 @@ export const ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256: VerificationMethod = {
   type: "JsonWebKey2020",
   controller: "did:example:alice#key-p256-1",
   verification_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "P-256",
       kty: "EC",
       x: "L0crjMN1g0Ih4sYAJ_nGoHUck2cloltUpUVQDhF2nHE",
@@ -46,7 +49,8 @@ export const ALICE_VERIFICATION_METHOD_KEY_AGREEM_P521: VerificationMethod = {
   type: "JsonWebKey2020",
   controller: "did:example:alice#key-p521-1",
   verification_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "P-521",
       kty: "EC",
       x: "AHBEVPRhAv-WHDEvxVM9S0px9WxxwHL641Pemgk9sDdxvli9VpKCBdra5gg_4kupBDhz__AlaBgKOC_15J2Byptz",
@@ -60,7 +64,8 @@ export const ALICE_AUTH_METHOD_25519: VerificationMethod = {
   type: "JsonWebKey2020",
   controller: "did:example:alice#key-1",
   verification_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "Ed25519",
       kty: "OKP",
       x: "G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww",
@@ -73,7 +78,8 @@ export const ALICE_AUTH_METHOD_P256: VerificationMethod = {
   type: "JsonWebKey2020",
   controller: "did:example:alice#key-2",
   verification_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "P-256",
       kty: "EC",
       x: "2syLh57B-dGpa0F8p1JrO6JU7UUSF6j7qL-vfk1eOoY",
@@ -87,7 +93,8 @@ export const ALICE_AUTH_METHOD_SECP256K1: VerificationMethod = {
   type: "JsonWebKey2020",
   controller: "did:example:alice#key-3",
   verification_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "secp256k1",
       kty: "EC",
       x: "aToW5EaTq5mlAf8C5ECYDSkqsJycrW-e1SQ6_GJcAOk",
