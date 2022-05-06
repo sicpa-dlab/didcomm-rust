@@ -1,7 +1,8 @@
 use askar_crypto::alg::{
     ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair, x25519::X25519KeyPair,
 };
-use serde_json::json;
+use askar_crypto::repr::{KeyPublicBytes, KeySecretBytes};
+use serde_json::{json, Value};
 use std::io::Cursor;
 use varint::{VarintRead, VarintWrite};
 
@@ -298,16 +299,22 @@ impl AsKnownKeyPair for Secret {
                     .into_vec()
                     .to_didcomm("Wrong base58 value in secret material")?;
 
-                let curve25519_point_size = 32;
-                let (d_value, x_value) = decoded_value.split_at(curve25519_point_size);
-                let base64_url_d_value = base64::encode_config(&d_value, base64::URL_SAFE_NO_PAD);
-                let base64_url_x_value = base64::encode_config(&x_value, base64::URL_SAFE_NO_PAD);
+                let key_pair = X25519KeyPair::from_secret_bytes(&decoded_value)
+                    .kind(ErrorKind::Malformed, "Unable parse x25519 secret material")?;
 
-                let jwk = json!({
+                let mut jwk = json!({
                     "kty": "OKP",
                     "crv": "X25519",
-                    "x": base64_url_x_value,
-                    "d": base64_url_d_value
+                });
+
+                key_pair.with_public_bytes(|buf| {
+                    jwk["x"] = Value::String(base64::encode_config(buf, base64::URL_SAFE_NO_PAD))
+                });
+
+                key_pair.with_secret_bytes(|buf| {
+                    if let Some(sk) = buf {
+                        jwk["d"] = Value::String(base64::encode_config(sk, base64::URL_SAFE_NO_PAD))
+                    }
                 });
 
                 X25519KeyPair::from_jwk_value(&jwk)
@@ -355,16 +362,22 @@ impl AsKnownKeyPair for Secret {
                     ))?
                 }
 
-                let curve25519_point_size = 32;
-                let (d_value, x_value) = decoded_value.split_at(curve25519_point_size);
-                let base64_url_d_value = base64::encode_config(&d_value, base64::URL_SAFE_NO_PAD);
-                let base64_url_x_value = base64::encode_config(&x_value, base64::URL_SAFE_NO_PAD);
+                let key_pair = X25519KeyPair::from_secret_bytes(&decoded_value)
+                    .kind(ErrorKind::Malformed, "Unable parse x25519 secret material")?;
 
-                let jwk = json!({
+                let mut jwk = json!({
                     "kty": "OKP",
                     "crv": "X25519",
-                    "x": base64_url_x_value,
-                    "d": base64_url_d_value
+                });
+
+                key_pair.with_public_bytes(|buf| {
+                    jwk["x"] = Value::String(base64::encode_config(buf, base64::URL_SAFE_NO_PAD))
+                });
+
+                key_pair.with_secret_bytes(|buf| {
+                    if let Some(sk) = buf {
+                        jwk["d"] = Value::String(base64::encode_config(sk, base64::URL_SAFE_NO_PAD))
+                    }
                 });
 
                 X25519KeyPair::from_jwk_value(&jwk)
@@ -474,15 +487,17 @@ mod tests {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: SecretType::X25519KeyAgreementKey2019,
             secret_material: (SecretMaterial::Base58 {
-                value: "2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqFyjLPWt7rv5kL3UPeG3e4B9Sy4H2Q2zAuWcP2RNtgJ4t".to_string()
+                value: "CMhHdN419VCSfbGxt6PEAEy72tJxYHTGHuCSH6BW9oi3".to_string(),
             }),
-        }.as_key_pair().unwrap();
+        }
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = X25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
             "crv": "X25519",
-            "x": "piw5XSMkceDeklaHQZXPBLQySyAwF8eZ-vddihdURS0",
-            "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg"
+            "x": "tGskN_ae61DP4DLY31_fjkbvnKqf-ze7kA6Cj2vyQxU",
+            "d": "qL25gw-HkNJC9m4EsRzCoUx1KntjwHPzxo6a2xUcyFQ"
         }))
         .map(KnownKeyPair::X25519)
         .unwrap();
@@ -497,7 +512,9 @@ mod tests {
             secret_material: (SecretMaterial::Base58 {
                 value: "2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqATnLmZDx7Seu6NqTuFKkxuHNT27GcoxVZQCkWJhNvaUQ".to_string()
             }),
-        }.as_key_pair().unwrap();
+        }
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = Ed25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
@@ -516,15 +533,17 @@ mod tests {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: SecretType::X25519KeyAgreementKey2020,
             secret_material: (SecretMaterial::Multibase {
-                value: "zshCmpUZKtFrAfudMf7NzD3oR6yhWe6i2434FDktk9CYZfkndn7suDrqnRWvrVDHk95Z7vBRJChFxTgBF9qzq7D3xPe".to_string()
+                value: "z3wei8fqKMwJsyTpqDQDWZ9ytPC716YyNDZL6kewQ9qtKrTD".to_string(),
             }),
-        }.as_key_pair().unwrap();
+        }
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = X25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
             "crv": "X25519",
-            "x": "piw5XSMkceDeklaHQZXPBLQySyAwF8eZ-vddihdURS0",
-            "d": "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg"
+            "x": "tGskN_ae61DP4DLY31_fjkbvnKqf-ze7kA6Cj2vyQxU",
+            "d": "qL25gw-HkNJC9m4EsRzCoUx1KntjwHPzxo6a2xUcyFQ"
         }))
         .map(KnownKeyPair::X25519)
         .unwrap();
@@ -539,7 +558,9 @@ mod tests {
             secret_material: (SecretMaterial::Multibase {
                 value: "zrv2DyJwnoQWzS74nPkHHdM7NYH27BRNFBG9To7Fca9YzWhfBVa9Mek52H9bJexjdNqxML1F3TGCpjLNkCwwgQDvd5J".to_string()
             }),
-        }.as_key_pair().unwrap();
+        }
+        .as_key_pair()
+        .unwrap();
 
         let expected_key = Ed25519KeyPair::from_jwk_value(&json!({
             "kty": "OKP",
