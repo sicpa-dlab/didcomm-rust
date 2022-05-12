@@ -4,7 +4,8 @@ export const CHARLIE_SECRET_KEY_AGREEMENT_KEY_X25519: Secret = {
   id: "did:example:charlie#key-x25519-1",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "X25519",
       d: "Z-BsgFe-eCvhuZlCBX5BV2XiDE2M92gkaORCe68YdZI",
       kty: "OKP",
@@ -17,7 +18,8 @@ export const CHARLIE_SECRET_AUTH_KEY_ED25519: Secret = {
   id: "did:example:charlie#key-1",
   type: "JsonWebKey2020",
   secret_material: {
-    JWK: {
+    format: "JWK",
+    value: {
       crv: "Ed25519",
       d: "T2azVap7CYD_kB8ilbnFYqwwYb5N-GcD6yjGEvquZXg",
       kty: "OKP",

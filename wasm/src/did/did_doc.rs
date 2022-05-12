@@ -58,20 +58,21 @@ type VerificationMethodType = "JsonWebKey2020" | "X25519KeyAgreementKey2019"
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
+const VERIFICATION_MATERIAL_FORMAT_TS: &'static str = r#"
+/**
+ * The representation format of secret material
+ */
+type VerificationMaterialFormat = "JWK" | "Multibase" | "Base58" | "Hex" | "Other" | string
+"#;
+
+#[wasm_bindgen(typescript_custom_section)]
 const VERIFICATION_MATERIAL_TYPE_TS: &'static str = r#"
 /**
  * Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
  */
 type VerificationMaterial = {
-    "JWK": any,
-} | {
-    "Multibase": string,
-} | {
-    "Base58": string,
-} | {
-    "Hex": string,
-} | {
-    "Other": any,
+    format: string,
+    value: any,
 }
 "#;
 

@@ -94,25 +94,11 @@ pub enum SecretType {
 
 /// Represents secret crypto material.
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "format")]
 pub enum SecretMaterial {
-    JWK {
-        #[serde(flatten)]
-        value: Value,
-    },
-    Multibase {
-        #[serde(flatten)]
-        value: String,
-    },
-    Base58 {
-        #[serde(flatten)]
-        value: String,
-    },
-    Hex {
-        #[serde(flatten)]
-        value: String,
-    },
-    Other {
-        #[serde(flatten)]
-        value: Value,
-    },
+    JWK { value: Value },
+    Multibase { value: String },
+    Base58 { value: String },
+    Hex { value: String },
+    Other { value: Value },
 }

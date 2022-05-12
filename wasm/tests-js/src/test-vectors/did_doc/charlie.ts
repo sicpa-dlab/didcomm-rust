@@ -10,7 +10,8 @@ export const CHARLIE_DID_DOC: DIDDoc = {
       type: "JsonWebKey2020",
       controller: "did:example:charlie#key-x25519-1",
       verification_material: {
-        JWK: {
+        format: "JWK",
+        value: {
           crv: "X25519",
           kty: "OKP",
           x: "nTiVFj7DChMsETDdxd5dIzLAJbSQ4j4UG6ZU1ogLNlw",
@@ -22,7 +23,8 @@ export const CHARLIE_DID_DOC: DIDDoc = {
       type: "JsonWebKey2020",
       controller: "did:example:charlie#key-1",
       verification_material: {
-        JWK: {
+        format: "JWK",
+        value: {
           crv: "Ed25519",
           kty: "OKP",
           x: "VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE",
