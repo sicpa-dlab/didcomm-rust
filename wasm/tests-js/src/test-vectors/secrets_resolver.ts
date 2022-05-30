@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 import { Secret, SecretsResolver } from "didcomm";
 
 export class ExampleSecretsResolver implements SecretsResolver {
@@ -22,7 +23,6 @@ export class ExampleSecretsResolver implements SecretsResolver {
 type MockGet = (secretId: string) => Secret | null;
 type MockFind = (secretIds: string[]) => string[];
 
-/* tslint:disable:max-classes-per-file */
 export class MockSecretsResolver implements SecretsResolver {
   getHandlers: MockGet[];
   findHandlers: MockFind[];

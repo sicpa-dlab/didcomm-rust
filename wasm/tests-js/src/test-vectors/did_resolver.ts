@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 import { DIDResolver, DIDDoc } from "didcomm";
 
 export class ExampleDIDResolver implements DIDResolver {
@@ -15,7 +16,6 @@ export class ExampleDIDResolver implements DIDResolver {
 
 type MockResolve = (did: string) => DIDDoc | null;
 
-/* tslint:disable:max-classes-per-file */
 export class MockDIDResolver implements DIDResolver {
   handlers: MockResolve[];
   fallback: DIDResolver;
