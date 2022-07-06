@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_didcomm_f20e_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_didcomm_1928_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_didcomm_f20e_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_didcomm_1928_rustbuffer_free(self, $0) }
     }
 }
 
@@ -573,11 +573,11 @@ extension ErrorCode: Equatable, Hashable {}
 
 public enum VerificationMaterial {
     
-    case jwk(value: String )
-    case multibase(value: String )
-    case base58(value: String )
-    case hex(value: String )
-    case other(value: String )
+    case jwk(format: String, value: String )
+    case multibase(format: String, value: String )
+    case base58(format: String, value: String )
+    case hex(format: String, value: String )
+    case other(format: String, value: String )
 }
 
 extension VerificationMaterial: ViaFfiUsingByteBuffer, ViaFfi {
@@ -586,18 +586,23 @@ extension VerificationMaterial: ViaFfiUsingByteBuffer, ViaFfi {
         switch variant {
         
         case 1: return .jwk(
+            format: try String.read(from: buf),
             value: try String.read(from: buf)
             )
         case 2: return .multibase(
+            format: try String.read(from: buf),
             value: try String.read(from: buf)
             )
         case 3: return .base58(
+            format: try String.read(from: buf),
             value: try String.read(from: buf)
             )
         case 4: return .hex(
+            format: try String.read(from: buf),
             value: try String.read(from: buf)
             )
         case 5: return .other(
+            format: try String.read(from: buf),
             value: try String.read(from: buf)
             )
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -608,32 +613,37 @@ extension VerificationMaterial: ViaFfiUsingByteBuffer, ViaFfi {
         switch self {
         
         
-        case let .jwk(value):
+        case let .jwk(format,value):
             buf.writeInt(Int32(1))
+            format.write(into: buf)
             value.write(into: buf)
             
         
         
-        case let .multibase(value):
+        case let .multibase(format,value):
             buf.writeInt(Int32(2))
+            format.write(into: buf)
             value.write(into: buf)
             
         
         
-        case let .base58(value):
+        case let .base58(format,value):
             buf.writeInt(Int32(3))
+            format.write(into: buf)
             value.write(into: buf)
             
         
         
-        case let .hex(value):
+        case let .hex(format,value):
             buf.writeInt(Int32(4))
+            format.write(into: buf)
             value.write(into: buf)
             
         
         
-        case let .other(value):
+        case let .other(format,value):
             buf.writeInt(Int32(5))
+            format.write(into: buf)
             value.write(into: buf)
             
         
@@ -766,11 +776,11 @@ extension ServiceKind: Equatable, Hashable {}
 
 public enum SecretMaterial {
     
-    case jwk(value: String )
-    case multibase(value: String )
-    case base58(value: String )
-    case hex(value: String )
-    case other(value: String )
+    case jwk(format: String, value: String )
+    case multibase(format: String, value: String )
+    case base58(format: String, value: String )
+    case hex(format: String, value: String )
+    case other(format: String, value: String )
 }
 
 extension SecretMaterial: ViaFfiUsingByteBuffer, ViaFfi {
@@ -779,18 +789,23 @@ extension SecretMaterial: ViaFfiUsingByteBuffer, ViaFfi {
         switch variant {
         
         case 1: return .jwk(
+            format: try String.read(from: buf),
             value: try String.read(from: buf)
             )
         case 2: return .multibase(
+            format: try String.read(from: buf),
             value: try String.read(from: buf)
             )
         case 3: return .base58(
+            format: try String.read(from: buf),
             value: try String.read(from: buf)
             )
         case 4: return .hex(
+            format: try String.read(from: buf),
             value: try String.read(from: buf)
             )
         case 5: return .other(
+            format: try String.read(from: buf),
             value: try String.read(from: buf)
             )
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -801,32 +816,37 @@ extension SecretMaterial: ViaFfiUsingByteBuffer, ViaFfi {
         switch self {
         
         
-        case let .jwk(value):
+        case let .jwk(format,value):
             buf.writeInt(Int32(1))
+            format.write(into: buf)
             value.write(into: buf)
             
         
         
-        case let .multibase(value):
+        case let .multibase(format,value):
             buf.writeInt(Int32(2))
+            format.write(into: buf)
             value.write(into: buf)
             
         
         
-        case let .base58(value):
+        case let .base58(format,value):
             buf.writeInt(Int32(3))
+            format.write(into: buf)
             value.write(into: buf)
             
         
         
-        case let .hex(value):
+        case let .hex(format,value):
             buf.writeInt(Int32(4))
+            format.write(into: buf)
             value.write(into: buf)
             
         
         
-        case let .other(value):
+        case let .other(format,value):
             buf.writeInt(Int32(5))
+            format.write(into: buf)
             value.write(into: buf)
             
         
@@ -1057,12 +1077,12 @@ public class DidComm: DIDCommProtocol {
     
     rustCall() {
     
-    didcomm_f20e_DIDComm_new(ffiConverterCallbackInterfaceDidResolver.lower(didResolver), ffiConverterCallbackInterfaceSecretsResolver.lower(secretResolver) , $0)
+    didcomm_1928_DIDComm_new(ffiConverterCallbackInterfaceDidResolver.lower(didResolver), ffiConverterCallbackInterfaceSecretsResolver.lower(secretResolver) , $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_DIDComm_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_1928_DIDComm_object_free(pointer, $0) }
     }
 
     
@@ -1072,7 +1092,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_pack_plaintext(self.pointer, msg.lower(), ffiConverterCallbackInterfaceOnPackPlaintextResult.lower(cb) , $0
+    didcomm_1928_DIDComm_pack_plaintext(self.pointer, msg.lower(), ffiConverterCallbackInterfaceOnPackPlaintextResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1081,7 +1101,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_pack_signed(self.pointer, msg.lower(), signBy.lower(), ffiConverterCallbackInterfaceOnPackSignedResult.lower(cb) , $0
+    didcomm_1928_DIDComm_pack_signed(self.pointer, msg.lower(), signBy.lower(), ffiConverterCallbackInterfaceOnPackSignedResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1090,7 +1110,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_pack_encrypted(self.pointer, msg.lower(), to.lower(), FfiConverterOptionString.lower(from), FfiConverterOptionString.lower(signBy), options.lower(), ffiConverterCallbackInterfaceOnPackEncryptedResult.lower(cb) , $0
+    didcomm_1928_DIDComm_pack_encrypted(self.pointer, msg.lower(), to.lower(), FfiConverterOptionString.lower(from), FfiConverterOptionString.lower(signBy), options.lower(), ffiConverterCallbackInterfaceOnPackEncryptedResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1099,7 +1119,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_unpack(self.pointer, msg.lower(), options.lower(), ffiConverterCallbackInterfaceOnUnpackResult.lower(cb) , $0
+    didcomm_1928_DIDComm_unpack(self.pointer, msg.lower(), options.lower(), ffiConverterCallbackInterfaceOnUnpackResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1108,7 +1128,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_pack_from_prior(self.pointer, msg.lower(), FfiConverterOptionString.lower(issuerKid), ffiConverterCallbackInterfaceOnFromPriorPackResult.lower(cb) , $0
+    didcomm_1928_DIDComm_pack_from_prior(self.pointer, msg.lower(), FfiConverterOptionString.lower(issuerKid), ffiConverterCallbackInterfaceOnFromPriorPackResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1117,7 +1137,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_unpack_from_prior(self.pointer, fromPriorJwt.lower(), ffiConverterCallbackInterfaceOnFromPriorUnpackResult.lower(cb) , $0
+    didcomm_1928_DIDComm_unpack_from_prior(self.pointer, fromPriorJwt.lower(), ffiConverterCallbackInterfaceOnFromPriorUnpackResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1126,7 +1146,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_wrap_in_forward(self.pointer, msg.lower(), FfiConverterDictionaryJsonValue.lower(headers), to.lower(), FfiConverterSequenceString.lower(routingKeys), encAlgAnon.lower(), ffiConverterCallbackInterfaceOnWrapInForwardResult.lower(cb) , $0
+    didcomm_1928_DIDComm_wrap_in_forward(self.pointer, msg.lower(), FfiConverterDictionaryJsonValue.lower(headers), to.lower(), FfiConverterSequenceString.lower(routingKeys), encAlgAnon.lower(), ffiConverterCallbackInterfaceOnWrapInForwardResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1188,7 +1208,7 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_OnDIDResolverResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_1928_OnDIDResolverResult_object_free(pointer, $0) }
     }
 
     
@@ -1198,7 +1218,7 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnDIDResolverResult_success(self.pointer, FfiConverterOptionRecordDidDoc.lower(result) , $0
+    didcomm_1928_OnDIDResolverResult_success(self.pointer, FfiConverterOptionRecordDidDoc.lower(result) , $0
     )
 }
     }
@@ -1206,7 +1226,7 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnDIDResolverResult_error(self.pointer, err.lower(), msg.lower() , $0
+    didcomm_1928_OnDIDResolverResult_error(self.pointer, err.lower(), msg.lower() , $0
     )
 }
     }
@@ -1270,12 +1290,12 @@ public class ExampleDidResolver: ExampleDIDResolverProtocol {
     
     rustCall() {
     
-    didcomm_f20e_ExampleDIDResolver_new(FfiConverterSequenceRecordDidDoc.lower(knownDids) , $0)
+    didcomm_1928_ExampleDIDResolver_new(FfiConverterSequenceRecordDidDoc.lower(knownDids) , $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_ExampleDIDResolver_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_1928_ExampleDIDResolver_object_free(pointer, $0) }
     }
 
     
@@ -1285,7 +1305,7 @@ public class ExampleDidResolver: ExampleDIDResolverProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_ExampleDIDResolver_resolve(self.pointer, did.lower(), cb.lower() , $0
+    didcomm_1928_ExampleDIDResolver_resolve(self.pointer, did.lower(), cb.lower() , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1347,7 +1367,7 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_OnGetSecretResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_1928_OnGetSecretResult_object_free(pointer, $0) }
     }
 
     
@@ -1357,7 +1377,7 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnGetSecretResult_success(self.pointer, FfiConverterOptionRecordSecret.lower(result) , $0
+    didcomm_1928_OnGetSecretResult_success(self.pointer, FfiConverterOptionRecordSecret.lower(result) , $0
     )
 }
     }
@@ -1365,7 +1385,7 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnGetSecretResult_error(self.pointer, err.lower(), msg.lower() , $0
+    didcomm_1928_OnGetSecretResult_error(self.pointer, err.lower(), msg.lower() , $0
     )
 }
     }
@@ -1426,7 +1446,7 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_OnFindSecretsResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_1928_OnFindSecretsResult_object_free(pointer, $0) }
     }
 
     
@@ -1436,7 +1456,7 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnFindSecretsResult_success(self.pointer, FfiConverterSequenceString.lower(result) , $0
+    didcomm_1928_OnFindSecretsResult_success(self.pointer, FfiConverterSequenceString.lower(result) , $0
     )
 }
     }
@@ -1444,7 +1464,7 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnFindSecretsResult_error(self.pointer, err.lower(), msg.lower() , $0
+    didcomm_1928_OnFindSecretsResult_error(self.pointer, err.lower(), msg.lower() , $0
     )
 }
     }
@@ -1509,12 +1529,12 @@ public class ExampleSecretsResolver: ExampleSecretsResolverProtocol {
     
     rustCall() {
     
-    didcomm_f20e_ExampleSecretsResolver_new(FfiConverterSequenceRecordSecret.lower(knownSecrets) , $0)
+    didcomm_1928_ExampleSecretsResolver_new(FfiConverterSequenceRecordSecret.lower(knownSecrets) , $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_ExampleSecretsResolver_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_1928_ExampleSecretsResolver_object_free(pointer, $0) }
     }
 
     
@@ -1524,7 +1544,7 @@ public class ExampleSecretsResolver: ExampleSecretsResolverProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_ExampleSecretsResolver_get_secret(self.pointer, secretId.lower(), cb.lower() , $0
+    didcomm_1928_ExampleSecretsResolver_get_secret(self.pointer, secretId.lower(), cb.lower() , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1533,7 +1553,7 @@ public class ExampleSecretsResolver: ExampleSecretsResolverProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_ExampleSecretsResolver_find_secrets(self.pointer, FfiConverterSequenceString.lower(secretIds), cb.lower() , $0
+    didcomm_1928_ExampleSecretsResolver_find_secrets(self.pointer, FfiConverterSequenceString.lower(secretIds), cb.lower() , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -2921,7 +2941,7 @@ fileprivate let foreignCallbackCallbackInterfaceDidResolver : ForeignCallback =
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceDidResolver: FfiConverterCallbackInterface<DidResolver> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_DIDResolver_init_callback(foreignCallbackCallbackInterfaceDidResolver, err)
+            ffi_didcomm_1928_DIDResolver_init_callback(foreignCallbackCallbackInterfaceDidResolver, err)
     }
     return FfiConverterCallbackInterface<DidResolver>()
 }()
@@ -2988,7 +3008,7 @@ fileprivate let foreignCallbackCallbackInterfaceSecretsResolver : ForeignCallbac
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceSecretsResolver: FfiConverterCallbackInterface<SecretsResolver> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_SecretsResolver_init_callback(foreignCallbackCallbackInterfaceSecretsResolver, err)
+            ffi_didcomm_1928_SecretsResolver_init_callback(foreignCallbackCallbackInterfaceSecretsResolver, err)
     }
     return FfiConverterCallbackInterface<SecretsResolver>()
 }()
@@ -3051,7 +3071,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackSignedResult : ForeignCall
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackSignedResult: FfiConverterCallbackInterface<OnPackSignedResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnPackSignedResult_init_callback(foreignCallbackCallbackInterfaceOnPackSignedResult, err)
+            ffi_didcomm_1928_OnPackSignedResult_init_callback(foreignCallbackCallbackInterfaceOnPackSignedResult, err)
     }
     return FfiConverterCallbackInterface<OnPackSignedResult>()
 }()
@@ -3114,7 +3134,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackEncryptedResult : ForeignC
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackEncryptedResult: FfiConverterCallbackInterface<OnPackEncryptedResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnPackEncryptedResult_init_callback(foreignCallbackCallbackInterfaceOnPackEncryptedResult, err)
+            ffi_didcomm_1928_OnPackEncryptedResult_init_callback(foreignCallbackCallbackInterfaceOnPackEncryptedResult, err)
     }
     return FfiConverterCallbackInterface<OnPackEncryptedResult>()
 }()
@@ -3176,7 +3196,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackPlaintextResult : ForeignC
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackPlaintextResult: FfiConverterCallbackInterface<OnPackPlaintextResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnPackPlaintextResult_init_callback(foreignCallbackCallbackInterfaceOnPackPlaintextResult, err)
+            ffi_didcomm_1928_OnPackPlaintextResult_init_callback(foreignCallbackCallbackInterfaceOnPackPlaintextResult, err)
     }
     return FfiConverterCallbackInterface<OnPackPlaintextResult>()
 }()
@@ -3239,7 +3259,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnUnpackResult : ForeignCallback
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnUnpackResult: FfiConverterCallbackInterface<OnUnpackResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnUnpackResult, err)
+            ffi_didcomm_1928_OnUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnUnpackResult, err)
     }
     return FfiConverterCallbackInterface<OnUnpackResult>()
 }()
@@ -3302,7 +3322,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnFromPriorPackResult : ForeignC
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnFromPriorPackResult: FfiConverterCallbackInterface<OnFromPriorPackResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnFromPriorPackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorPackResult, err)
+            ffi_didcomm_1928_OnFromPriorPackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorPackResult, err)
     }
     return FfiConverterCallbackInterface<OnFromPriorPackResult>()
 }()
@@ -3365,7 +3385,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnFromPriorUnpackResult : Foreig
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnFromPriorUnpackResult: FfiConverterCallbackInterface<OnFromPriorUnpackResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnFromPriorUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorUnpackResult, err)
+            ffi_didcomm_1928_OnFromPriorUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorUnpackResult, err)
     }
     return FfiConverterCallbackInterface<OnFromPriorUnpackResult>()
 }()
@@ -3427,7 +3447,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnWrapInForwardResult : ForeignC
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnWrapInForwardResult: FfiConverterCallbackInterface<OnWrapInForwardResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnWrapInForwardResult_init_callback(foreignCallbackCallbackInterfaceOnWrapInForwardResult, err)
+            ffi_didcomm_1928_OnWrapInForwardResult_init_callback(foreignCallbackCallbackInterfaceOnWrapInForwardResult, err)
     }
     return FfiConverterCallbackInterface<OnWrapInForwardResult>()
 }()

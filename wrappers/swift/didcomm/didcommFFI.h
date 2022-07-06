@@ -46,155 +46,155 @@ typedef struct RustCallStatus {
 // ⚠️ increment the version suffix in all instances of UNIFFI_SHARED_HEADER_V3 in this file.           ⚠️
 #endif // def UNIFFI_SHARED_H
 
-void ffi_didcomm_f20e_DIDComm_object_free(
+void ffi_didcomm_1928_DIDComm_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_f20e_DIDComm_new(
+void*_Nonnull didcomm_1928_DIDComm_new(
       uint64_t did_resolver,uint64_t secret_resolver,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_f20e_DIDComm_pack_plaintext(
+RustBuffer didcomm_1928_DIDComm_pack_plaintext(
       void*_Nonnull ptr,RustBuffer msg,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_f20e_DIDComm_pack_signed(
+RustBuffer didcomm_1928_DIDComm_pack_signed(
       void*_Nonnull ptr,RustBuffer msg,RustBuffer sign_by,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_f20e_DIDComm_pack_encrypted(
+RustBuffer didcomm_1928_DIDComm_pack_encrypted(
       void*_Nonnull ptr,RustBuffer msg,RustBuffer to,RustBuffer from,RustBuffer sign_by,RustBuffer options,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_f20e_DIDComm_unpack(
+RustBuffer didcomm_1928_DIDComm_unpack(
       void*_Nonnull ptr,RustBuffer msg,RustBuffer options,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_f20e_DIDComm_pack_from_prior(
+RustBuffer didcomm_1928_DIDComm_pack_from_prior(
       void*_Nonnull ptr,RustBuffer msg,RustBuffer issuer_kid,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_f20e_DIDComm_unpack_from_prior(
+RustBuffer didcomm_1928_DIDComm_unpack_from_prior(
       void*_Nonnull ptr,RustBuffer from_prior_jwt,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_f20e_DIDComm_wrap_in_forward(
+RustBuffer didcomm_1928_DIDComm_wrap_in_forward(
       void*_Nonnull ptr,RustBuffer msg,RustBuffer headers,RustBuffer to,RustBuffer routing_keys,RustBuffer enc_alg_anon,uint64_t cb,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_OnDIDResolverResult_object_free(
+void ffi_didcomm_1928_OnDIDResolverResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_f20e_OnDIDResolverResult_success(
+void didcomm_1928_OnDIDResolverResult_success(
       void*_Nonnull ptr,RustBuffer result,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_f20e_OnDIDResolverResult_error(
+void didcomm_1928_OnDIDResolverResult_error(
       void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_ExampleDIDResolver_object_free(
+void ffi_didcomm_1928_ExampleDIDResolver_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_f20e_ExampleDIDResolver_new(
+void*_Nonnull didcomm_1928_ExampleDIDResolver_new(
       RustBuffer known_dids,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_f20e_ExampleDIDResolver_resolve(
+RustBuffer didcomm_1928_ExampleDIDResolver_resolve(
       void*_Nonnull ptr,RustBuffer did,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_OnGetSecretResult_object_free(
+void ffi_didcomm_1928_OnGetSecretResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_f20e_OnGetSecretResult_success(
+void didcomm_1928_OnGetSecretResult_success(
       void*_Nonnull ptr,RustBuffer result,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_f20e_OnGetSecretResult_error(
+void didcomm_1928_OnGetSecretResult_error(
       void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_OnFindSecretsResult_object_free(
+void ffi_didcomm_1928_OnFindSecretsResult_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_f20e_OnFindSecretsResult_success(
+void didcomm_1928_OnFindSecretsResult_success(
       void*_Nonnull ptr,RustBuffer result,
     RustCallStatus *_Nonnull out_status
     );
-void didcomm_f20e_OnFindSecretsResult_error(
+void didcomm_1928_OnFindSecretsResult_error(
       void*_Nonnull ptr,RustBuffer err,RustBuffer msg,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_ExampleSecretsResolver_object_free(
+void ffi_didcomm_1928_ExampleSecretsResolver_object_free(
       void*_Nonnull ptr,
     RustCallStatus *_Nonnull out_status
     );
-void*_Nonnull didcomm_f20e_ExampleSecretsResolver_new(
+void*_Nonnull didcomm_1928_ExampleSecretsResolver_new(
       RustBuffer known_secrets,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_f20e_ExampleSecretsResolver_get_secret(
+RustBuffer didcomm_1928_ExampleSecretsResolver_get_secret(
       void*_Nonnull ptr,RustBuffer secret_id,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer didcomm_f20e_ExampleSecretsResolver_find_secrets(
+RustBuffer didcomm_1928_ExampleSecretsResolver_find_secrets(
       void*_Nonnull ptr,RustBuffer secret_ids,void*_Nonnull cb,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_DIDResolver_init_callback(
+void ffi_didcomm_1928_DIDResolver_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_SecretsResolver_init_callback(
+void ffi_didcomm_1928_SecretsResolver_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_OnPackSignedResult_init_callback(
+void ffi_didcomm_1928_OnPackSignedResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_OnPackEncryptedResult_init_callback(
+void ffi_didcomm_1928_OnPackEncryptedResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_OnPackPlaintextResult_init_callback(
+void ffi_didcomm_1928_OnPackPlaintextResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_OnUnpackResult_init_callback(
+void ffi_didcomm_1928_OnUnpackResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_OnFromPriorPackResult_init_callback(
+void ffi_didcomm_1928_OnFromPriorPackResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_OnFromPriorUnpackResult_init_callback(
+void ffi_didcomm_1928_OnFromPriorUnpackResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_OnWrapInForwardResult_init_callback(
+void ffi_didcomm_1928_OnWrapInForwardResult_init_callback(
       ForeignCallback  _Nonnull callback_stub,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_f20e_rustbuffer_alloc(
+RustBuffer ffi_didcomm_1928_rustbuffer_alloc(
       int32_t size,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_f20e_rustbuffer_from_bytes(
+RustBuffer ffi_didcomm_1928_rustbuffer_from_bytes(
       ForeignBytes bytes,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_didcomm_f20e_rustbuffer_free(
+void ffi_didcomm_1928_rustbuffer_free(
       RustBuffer buf,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_didcomm_f20e_rustbuffer_reserve(
+RustBuffer ffi_didcomm_1928_rustbuffer_reserve(
       RustBuffer buf,int32_t additional,
     RustCallStatus *_Nonnull out_status
     );

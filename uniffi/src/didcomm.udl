@@ -126,11 +126,11 @@ dictionary VerificationMethod {
 
 [Enum]
 interface VerificationMaterial {
-  JWK(JsonValue value);
-  Multibase(string value);
-  Base58(string value);
-  Hex(string value);
-  Other(JsonValue value);
+  JWK(string format, JsonValue value);
+  Multibase(string format, string value);
+  Base58(string format, string value);
+  Hex(string format, string value);
+  Other(string format, JsonValue value);
 };
 
 enum VerificationMethodType {
@@ -199,11 +199,11 @@ dictionary Secret {
 
 [Enum]
 interface SecretMaterial {
-  JWK(JsonValue value);
-  Multibase(string value);
-  Base58(string value);
-  Hex(string value);
-  Other(JsonValue value);
+  JWK(string format, JsonValue value);
+  Multibase(string format, string value);
+  Base58(string format, string value);
+  Hex(string format, string value);
+  Other(string format, JsonValue value);
 };
 
 enum SecretType {
