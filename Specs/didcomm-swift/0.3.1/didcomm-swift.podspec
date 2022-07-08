@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.source           = { :http => 'https://github.com/sicpa-dlab/didcomm-rust/releases/download/v0.3.1/didcomm-swift-0.3.1.tar.gz' }
   s.swift_version = '4.0'
 
-  s.public_header_files = 'didcomm-swift/*.h'
   s.ios.vendored_library = 'didcomm-swift/*.a'
+  s.source_files = "didcomm-swift/*.{.h, swift}"
 
 end
