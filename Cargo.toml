@@ -23,7 +23,7 @@ name = 'routing'
 
 [package]
 name = 'didcomm'
-version = '0.3.0'
+version = '0.3.1'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'DIDComm for Rust'
