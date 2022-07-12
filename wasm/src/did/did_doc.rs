@@ -108,6 +108,6 @@ const DIDCOMM_MESSAGING_SERVICE_TS: &'static str = r#"
 type DIDCommMessagingService = {
     service_endpoint: string,
     accept: Array<string>,
-    route_keys: Array<string>,
+    routing_keys: Array<string>,
 }
 "#;

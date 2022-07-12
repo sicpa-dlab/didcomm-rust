@@ -1,6 +1,6 @@
 {
   "name": "didcomm-demo",
-  "version": "0.2.0",
+  "version": "0.3.2",
   "description": "JS demo for didcomm",
   "scripts": {
     "start": "ts-node src/main.ts",
