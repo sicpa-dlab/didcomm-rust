@@ -27,3 +27,14 @@ Cargo.lock
 *.swp
 
 .idea
+
+# Mac OS X Finder
+.DS_Store
+
+# Xcode
+xcuserdata/
+project.xcworkspace/
+DerivedData/
+
+# Cocoapods
+Pods/

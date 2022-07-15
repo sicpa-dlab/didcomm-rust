@@ -1,0 +1,16 @@
+PODS:
+  - DidcommSDK (0.3.1)
+
+DEPENDENCIES:
+  - DidcommSDK (= 0.3.1)
+
+SPEC REPOS:
+  "git@github.com:rodrigofranzoi/didcomm-rust.git":
+    - DidcommSDK
+
+SPEC CHECKSUMS:
+  DidcommSDK: 99be16fe25310f791171bbccac576419272e217a
+
+PODFILE CHECKSUM: db7d8bde5395a5700b4977ece27e4bd4af0b4a89
+
+COCOAPODS: 1.11.3
