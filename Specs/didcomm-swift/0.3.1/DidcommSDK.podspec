@@ -4,7 +4,7 @@ Pod::Spec.new do |spec|
   spec.version      = "0.3.1"
   spec.summary      = "Didcomm v2 created from rust."
 
-  spec.description  = "Didcomm v2 created from rust. It was used UNIFFI to do the conversion."
+  spec.description  = "Didcomm v2 created from rust. UNIFFI was used to convert from rust to Swift."
   spec.homepage     = "https://github.com/sicpa-dlab/didcomm-rust"
 
   spec.license      =  { :type => 'Apache License 2.0', :file => 'LICENSE.txt' }
