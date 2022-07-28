@@ -91,6 +91,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
 #[cfg(test)]
 mod tests {
     use serde_json::json;
+    use std::borrow::Cow;
 
     use crate::{
         error::ErrorKind,
@@ -158,7 +159,7 @@ mod tests {
                 tag: "6ylC_iAs4JvDQzXeY6MuYQ",
             },
             protected: ProtectedHeader {
-                typ: Some("application/didcomm-encrypted+json"),
+                typ: Some(Cow::Borrowed("application/didcomm-encrypted+json")),
                 alg: jwe::envelope::Algorithm::EcdhEsA256kw,
                 enc: EncAlgorithm::Xc20P,
                 skid: None,
@@ -235,7 +236,7 @@ mod tests {
                 tag: "6ylC_iAs4JvDQzXeY6MuYQ",
             },
             protected: ProtectedHeader {
-                typ: Some("application/didcomm-encrypted+json"),
+                typ: Some(Cow::Borrowed("application/didcomm-encrypted+json")),
                 alg: jwe::envelope::Algorithm::EcdhEsA256kw,
                 enc: EncAlgorithm::Xc20P,
                 skid: None,
@@ -311,7 +312,7 @@ mod tests {
                 tag: "6ylC_iAs4JvDQzXeY6MuYQ",
             },
             protected: ProtectedHeader {
-                typ: Some("application/didcomm-encrypted+json"),
+                typ: Some(Cow::Borrowed("application/didcomm-encrypted+json")),
                 alg: jwe::envelope::Algorithm::EcdhEsA256kw,
                 enc: EncAlgorithm::Xc20P,
                 skid: None,
@@ -387,7 +388,7 @@ mod tests {
                 tag: "uYeo7IsZjN7AnvBjUZE5lNryNENbf6_zew_VC-d4b3U",
             },
             protected: ProtectedHeader {
-                typ: Some("application/didcomm-encrypted+json"),
+                typ: Some(Cow::Borrowed("application/didcomm-encrypted+json")),
                 alg: jwe::envelope::Algorithm::Ecdh1puA256kw,
                 enc: EncAlgorithm::A256cbcHs512,
                 skid: Some("did:example:alice#key-x25519-1"),
@@ -464,7 +465,7 @@ mod tests {
                 tag: "uYeo7IsZjN7AnvBjUZE5lNryNENbf6_zew_VC-d4b3U",
             },
             protected: ProtectedHeader {
-                typ: Some("application/didcomm-encrypted+json"),
+                typ: Some(Cow::Borrowed("application/didcomm-encrypted+json")),
                 alg: jwe::envelope::Algorithm::Ecdh1puA256kw,
                 enc: EncAlgorithm::A256cbcHs512,
                 skid: Some("did:example:alice#key-x25519-1"),
@@ -540,7 +541,7 @@ mod tests {
                 tag: "uYeo7IsZjN7AnvBjUZE5lNryNENbf6_zew_VC-d4b3U",
             },
             protected: ProtectedHeader {
-                typ: Some("application/didcomm-encrypted+json"),
+                typ: Some(Cow::Borrowed("application/didcomm-encrypted+json")),
                 alg: jwe::envelope::Algorithm::Ecdh1puA256kw,
                 enc: EncAlgorithm::A256cbcHs512,
                 skid: Some("did:example:alice#key-x25519-1"),
@@ -965,7 +966,7 @@ mod tests {
                 tag: "6ylC_iAs4JvDQzXeY6MuYQ",
             },
             protected: ProtectedHeader {
-                typ: Some("application/didcomm-encrypted+json"),
+                typ: Some(Cow::Borrowed("application/didcomm-encrypted+json")),
                 alg: jwe::envelope::Algorithm::EcdhEsA256kw,
                 enc: EncAlgorithm::Xc20P,
                 skid: None,
@@ -1044,7 +1045,7 @@ mod tests {
                 tag: "uYeo7IsZjN7AnvBjUZE5lNryNENbf6_zew_VC-d4b3U",
             },
             protected: ProtectedHeader {
-                typ: Some("application/didcomm-encrypted+json"),
+                typ: Some(Cow::Borrowed("application/didcomm-encrypted+json")),
                 alg: jwe::envelope::Algorithm::Ecdh1puA256kw,
                 enc: EncAlgorithm::A256cbcHs512,
                 skid: Some("did:example:alice#key-x25519-1"),

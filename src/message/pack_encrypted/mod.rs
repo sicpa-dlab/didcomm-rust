@@ -274,6 +274,7 @@ pub struct MessagingServiceMetadata {
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Cow;
     use std::{collections::HashMap, iter::FromIterator};
 
     use askar_crypto::{
@@ -2854,7 +2855,7 @@ mod tests {
 
         assert_eq!(
             msg.protected.typ,
-            Some("application/didcomm-encrypted+json")
+            Some(Cow::Borrowed("application/didcomm-encrypted+json"))
         );
 
         assert_eq!(msg.protected.alg, jwe::Algorithm::Ecdh1puA256kw);
@@ -2922,7 +2923,7 @@ mod tests {
 
         assert_eq!(
             msg.protected.typ,
-            Some("application/didcomm-encrypted+json")
+            Some(Cow::Borrowed("application/didcomm-encrypted+json"))
         );
 
         assert_eq!(msg.protected.alg, jwe::Algorithm::EcdhEsA256kw);
@@ -2968,7 +2969,7 @@ mod tests {
         assert_eq!(
             msg.protected,
             vec![jws::ProtectedHeader {
-                typ: "application/didcomm-signed+json",
+                typ: Cow::Borrowed("application/didcomm-signed+json"),
                 alg,
             }]
         );

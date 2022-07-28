@@ -5,6 +5,7 @@ use askar_crypto::{
     random,
     repr::{KeyGen, ToSecretBytes},
 };
+use std::borrow::Cow;
 
 use sha2::{Digest, Sha256};
 
@@ -50,7 +51,7 @@ where
         let apv = base64::encode_config(apv, base64::URL_SAFE_NO_PAD);
 
         let p = ProtectedHeader {
-            typ: Some("application/didcomm-encrypted+json"),
+            typ: Some(Cow::Borrowed("application/didcomm-encrypted+json")),
             alg: alg.clone(),
             enc,
             skid,

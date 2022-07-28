@@ -140,6 +140,7 @@ mod tests {
         alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair},
         sign::KeySigVerify,
     };
+    use std::borrow::Cow;
 
     use serde_json::Value;
 
@@ -245,7 +246,7 @@ mod tests {
             assert_eq!(
                 msg.protected,
                 vec![ProtectedHeader {
-                    typ: "application/didcomm-signed+json",
+                    typ: Cow::Borrowed("application/didcomm-signed+json"),
                     alg,
                 }]
             );
