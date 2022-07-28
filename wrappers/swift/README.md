@@ -14,7 +14,7 @@ Go to UNIFFI folder [here](./../../uniffi/) and run:
 cargo build --target aarch64-apple-ios --release
 cargo build --target x86_64-apple-ios --release
 
-lipo -create target/aarch64-apple-ios/debug/libdidcomm_uniffi.a target/x86_64-apple-ios/debug/libdidcomm_uniffi.a -output target/libDidcommiOS.a
+lipo -create target/aarch64-apple-ios/release/libdidcomm_uniffi.a target/x86_64-apple-ios/release/libdidcomm_uniffi.a -output target/libDidcommiOS.a
 ```
 We created a libDidcommiOS.a that runs both for iOS Simulator (arm64) and iOS Device (aarch64).
 
