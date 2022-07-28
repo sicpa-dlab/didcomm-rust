@@ -99,6 +99,7 @@ mod tests {
             ParsedJWS,
         },
     };
+    use std::borrow::Cow;
 
     #[test]
     fn parse_works() {
@@ -131,7 +132,7 @@ mod tests {
                 payload: "eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3NhbCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVhdGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNzYWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19",
             },
             protected: vec![ProtectedHeader {
-                typ: "application/didcomm-signed+json",
+                typ: Cow::Borrowed("application/didcomm-signed+json"),
                 alg: Algorithm::EdDSA,
             }],
         };
@@ -171,7 +172,7 @@ mod tests {
                 payload: "eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3NhbCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVhdGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNzYWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19",
             },
             protected: vec![ProtectedHeader {
-                typ: "application/didcomm-signed+json",
+                typ: Cow::Borrowed("application/didcomm-signed+json"),
                 alg: Algorithm::EdDSA,
             }],
         };
@@ -210,7 +211,7 @@ mod tests {
                 payload: "eyJpZCI6IjEyMzQ1Njc4OTAiLCJ0eXAiOiJhcHBsaWNhdGlvbi9kaWRjb21tLXBsYWluK2pzb24iLCJ0eXBlIjoiaHR0cDovL2V4YW1wbGUuY29tL3Byb3RvY29scy9sZXRzX2RvX2x1bmNoLzEuMC9wcm9wb3NhbCIsImZyb20iOiJkaWQ6ZXhhbXBsZTphbGljZSIsInRvIjpbImRpZDpleGFtcGxlOmJvYiJdLCJjcmVhdGVkX3RpbWUiOjE1MTYyNjkwMjIsImV4cGlyZXNfdGltZSI6MTUxNjM4NTkzMSwiYm9keSI6eyJtZXNzYWdlc3BlY2lmaWNhdHRyaWJ1dGUiOiJhbmQgaXRzIHZhbHVlIn19",
             },
             protected: vec![ProtectedHeader {
-                typ: "application/didcomm-signed+json",
+                typ: Cow::Borrowed("application/didcomm-signed+json"),
                 alg: Algorithm::EdDSA,
             }],
         };
@@ -264,11 +265,11 @@ mod tests {
             },
             protected: vec![
                 ProtectedHeader {
-                  typ: "application/didcomm-signed+json",
+                  typ: Cow::Borrowed("application/didcomm-signed+json"),
                   alg: Algorithm::EdDSA,
                 },
                 ProtectedHeader {
-                    typ: "application/didcomm-signed+json",
+                    typ: Cow::Borrowed("application/didcomm-signed+json"),
                  alg: Algorithm::EdDSA,
                 }
             ],
