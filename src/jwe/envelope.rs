@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use serde::{Deserialize, Serialize};
 use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
 use serde_json::Value;
@@ -29,7 +30,7 @@ pub(crate) struct ProtectedHeader<'a> {
     /// Must be `application/didcomm-encrypted+json` or `didcomm-encrypted+json` for now.
     /// Something like `application/didcomm-encrypted+cbor` can be introduced in the
     /// future.
-    pub typ: Option<&'a str>,
+    pub typ: Option<Cow<'a, str>>,
 
     /// Cryptographic algorithm used to encrypt or determine the value of the CEK.
     pub alg: Algorithm,

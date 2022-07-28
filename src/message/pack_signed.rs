@@ -136,6 +136,7 @@ pub struct PackSignedMetadata {
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Cow;
     use askar_crypto::{
         alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair},
         sign::KeySigVerify,
@@ -245,7 +246,7 @@ mod tests {
             assert_eq!(
                 msg.protected,
                 vec![ProtectedHeader {
-                    typ: "application/didcomm-signed+json",
+                    typ: Cow::Borrowed("application/didcomm-signed+json"),
                     alg,
                 }]
             );

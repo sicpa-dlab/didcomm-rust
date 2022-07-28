@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use askar_crypto::sign::SignatureType;
 use serde::{Deserialize, Serialize};
 use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
@@ -37,7 +38,7 @@ pub(crate) struct ProtectedHeader<'a> {
     /// Must be `application/didcomm-signed+json` or `didcomm-signed+json` for now.
     /// Something like `application/didcomm-signed+cbor` can be introduced in the
     /// future.
-    pub typ: &'a str,
+    pub typ: Cow<'a, str>,
 
     /// Cryptographic algorithm used to produce signature.
     pub alg: Algorithm,

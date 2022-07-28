@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use askar_crypto::sign::KeySign;
 
 use crate::{
@@ -16,7 +17,7 @@ pub(crate) fn sign<Key: KeySign>(
 
     let protected = {
         let protected = ProtectedHeader {
-            typ: "application/didcomm-signed+json",
+            typ: Cow::Borrowed("application/didcomm-signed+json"),
             alg,
         };
 
