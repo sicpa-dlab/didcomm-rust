@@ -274,8 +274,8 @@ pub struct MessagingServiceMetadata {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, iter::FromIterator};
     use std::borrow::Cow;
+    use std::{collections::HashMap, iter::FromIterator};
 
     use askar_crypto::{
         alg::{

@@ -90,7 +90,6 @@ pub(crate) fn parse_compact<'a>(
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Cow;
     use crate::jws::{CompactHeader, ParsedCompactJWS};
     use crate::{
         error::ErrorKind,
@@ -100,6 +99,7 @@ mod tests {
             ParsedJWS,
         },
     };
+    use std::borrow::Cow;
 
     #[test]
     fn parse_works() {

@@ -1,7 +1,7 @@
-use std::borrow::Cow;
 use serde::{Deserialize, Serialize};
 use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
 use serde_json::Value;
+use std::borrow::Cow;
 
 /// Subset of JWE in generic json serialization form used for authcrypt
 /// and anoncrypt message types.

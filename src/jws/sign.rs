@@ -1,5 +1,5 @@
-use std::borrow::Cow;
 use askar_crypto::sign::KeySign;
+use std::borrow::Cow;
 
 use crate::{
     error::{ErrorKind, Result, ResultExt},

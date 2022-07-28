@@ -136,11 +136,11 @@ pub struct PackSignedMetadata {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Cow;
     use askar_crypto::{
         alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair},
         sign::KeySigVerify,
     };
+    use std::borrow::Cow;
 
     use serde_json::Value;
 

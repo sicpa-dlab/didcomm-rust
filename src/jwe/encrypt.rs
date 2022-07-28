@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use askar_crypto::{
     buffer::SecretBytes,
     encrypt::{KeyAeadInPlace, KeyAeadMeta},
@@ -6,6 +5,7 @@ use askar_crypto::{
     random,
     repr::{KeyGen, ToSecretBytes},
 };
+use std::borrow::Cow;
 
 use sha2::{Digest, Sha256};
 

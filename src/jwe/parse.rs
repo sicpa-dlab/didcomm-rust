@@ -90,8 +90,8 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Cow;
     use serde_json::json;
+    use std::borrow::Cow;
 
     use crate::{
         error::ErrorKind,

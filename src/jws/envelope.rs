@@ -1,7 +1,7 @@
-use std::borrow::Cow;
 use askar_crypto::sign::SignatureType;
 use serde::{Deserialize, Serialize};
 use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
+use std::borrow::Cow;
 
 use crate::error::{err_msg, ErrorKind, Result};
 
