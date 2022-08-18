@@ -156,7 +156,7 @@ interface ServiceKind {
 
 dictionary DIDCommMessagingService {
   string service_endpoint;
-  sequence<string> accept;
+  sequence<string>? accept;
   sequence<string> routing_keys;
 };
 

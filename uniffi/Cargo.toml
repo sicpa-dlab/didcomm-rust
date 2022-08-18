@@ -1,6 +1,6 @@
 [package]
 name = 'didcomm-uniffi'
-version = '0.3.3'
+version = '0.3.4'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'FFI wrapper for DIDComm'

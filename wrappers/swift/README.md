@@ -11,8 +11,8 @@ crate-type = [
 
 Go to UNIFFI folder [here](./../../uniffi/) and run:
 ```bash
-cargo build --target aarch64-apple-ios --release
-cargo build --target x86_64-apple-ios --release
+cargo build --release --target aarch64-apple-ios
+cargo build --release --target x86_64-apple-ios
 
 lipo -create target/aarch64-apple-ios/release/libdidcomm_uniffi.a target/x86_64-apple-ios/release/libdidcomm_uniffi.a -output target/libDidcommiOS.a
 ```

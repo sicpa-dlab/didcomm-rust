@@ -45,16 +45,19 @@ async fn find_did_comm_service<'dr>(
                 })?;
 
             match service.kind {
-                ServiceKind::DIDCommMessaging { ref value } => {
-                    if value.accept.contains(&DIDCOMM_V2_PROFILE.into()) {
-                        Ok(Some((service.id.clone(), value.clone())))
-                    } else {
-                        Err(err_msg(
-                            ErrorKind::IllegalArgument,
-                            "Service with the specified ID does not accept didcomm/v2 profile",
-                        ))
+                ServiceKind::DIDCommMessaging { ref value } => match value.accept.as_ref() {
+                    Some(accept) => {
+                        if accept.is_empty() || accept.contains(&DIDCOMM_V2_PROFILE.into()) {
+                            Ok(Some((service.id.clone(), value.clone())))
+                        } else {
+                            Err(err_msg(
+                                ErrorKind::IllegalArgument,
+                                "Service with the specified ID does not accept didcomm/v2 profile",
+                            ))
+                        }
                     }
-                }
+                    None => Ok(Some((service.id.clone(), value.clone()))),
+                },
                 _ => Err(err_msg(
                     ErrorKind::IllegalArgument,
                     "Service with the specified ID is not of DIDCommMessaging type",
@@ -66,11 +69,16 @@ async fn find_did_comm_service<'dr>(
             .services
             .iter()
             .find_map(|service| match service.kind {
-                ServiceKind::DIDCommMessaging { ref value }
-                    if value.accept.contains(&DIDCOMM_V2_PROFILE.into()) =>
-                {
-                    Some((service.id.clone(), value.clone()))
-                }
+                ServiceKind::DIDCommMessaging { ref value } => match value.accept.as_ref() {
+                    Some(accept) => {
+                        if accept.is_empty() || accept.contains(&DIDCOMM_V2_PROFILE.into()) {
+                            Some((service.id.clone(), value.clone()))
+                        } else {
+                            None
+                        }
+                    }
+                    None => Some((service.id.clone(), value.clone())),
+                },
                 _ => None,
             })),
     }
