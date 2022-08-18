@@ -201,7 +201,7 @@ lazy_static! {
     pub static ref BOB_DID_COMM_MESSAGING_SERVICE: DIDCommMessagingService =
         DIDCommMessagingService {
             service_endpoint: "http://example.com/path".into(),
-            accept: vec!["didcomm/v2".into(), "didcomm/aip2;env=rfc587".into()],
+            accept: Some(vec!["didcomm/v2".into(), "didcomm/aip2;env=rfc587".into()]),
             routing_keys: vec!["did:example:mediator1#key-x25519-1".into()],
         };
     pub static ref BOB_SERVICE: Service = Service {
