@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_didcomm_f20e_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_didcomm_f269_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_didcomm_f20e_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_didcomm_f269_rustbuffer_free(self, $0) }
     }
 }
 
@@ -1057,12 +1057,12 @@ public class DidComm: DIDCommProtocol {
     
     rustCall() {
     
-    didcomm_f20e_DIDComm_new(ffiConverterCallbackInterfaceDidResolver.lower(didResolver), ffiConverterCallbackInterfaceSecretsResolver.lower(secretResolver) , $0)
+    didcomm_f269_DIDComm_new(ffiConverterCallbackInterfaceDidResolver.lower(didResolver), ffiConverterCallbackInterfaceSecretsResolver.lower(secretResolver) , $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_DIDComm_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_f269_DIDComm_object_free(pointer, $0) }
     }
 
     
@@ -1072,7 +1072,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_pack_plaintext(self.pointer, msg.lower(), ffiConverterCallbackInterfaceOnPackPlaintextResult.lower(cb) , $0
+    didcomm_f269_DIDComm_pack_plaintext(self.pointer, msg.lower(), ffiConverterCallbackInterfaceOnPackPlaintextResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1081,7 +1081,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_pack_signed(self.pointer, msg.lower(), signBy.lower(), ffiConverterCallbackInterfaceOnPackSignedResult.lower(cb) , $0
+    didcomm_f269_DIDComm_pack_signed(self.pointer, msg.lower(), signBy.lower(), ffiConverterCallbackInterfaceOnPackSignedResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1090,7 +1090,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_pack_encrypted(self.pointer, msg.lower(), to.lower(), FfiConverterOptionString.lower(from), FfiConverterOptionString.lower(signBy), options.lower(), ffiConverterCallbackInterfaceOnPackEncryptedResult.lower(cb) , $0
+    didcomm_f269_DIDComm_pack_encrypted(self.pointer, msg.lower(), to.lower(), FfiConverterOptionString.lower(from), FfiConverterOptionString.lower(signBy), options.lower(), ffiConverterCallbackInterfaceOnPackEncryptedResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1099,7 +1099,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_unpack(self.pointer, msg.lower(), options.lower(), ffiConverterCallbackInterfaceOnUnpackResult.lower(cb) , $0
+    didcomm_f269_DIDComm_unpack(self.pointer, msg.lower(), options.lower(), ffiConverterCallbackInterfaceOnUnpackResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1108,7 +1108,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_pack_from_prior(self.pointer, msg.lower(), FfiConverterOptionString.lower(issuerKid), ffiConverterCallbackInterfaceOnFromPriorPackResult.lower(cb) , $0
+    didcomm_f269_DIDComm_pack_from_prior(self.pointer, msg.lower(), FfiConverterOptionString.lower(issuerKid), ffiConverterCallbackInterfaceOnFromPriorPackResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1117,7 +1117,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_unpack_from_prior(self.pointer, fromPriorJwt.lower(), ffiConverterCallbackInterfaceOnFromPriorUnpackResult.lower(cb) , $0
+    didcomm_f269_DIDComm_unpack_from_prior(self.pointer, fromPriorJwt.lower(), ffiConverterCallbackInterfaceOnFromPriorUnpackResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1126,7 +1126,7 @@ public class DidComm: DIDCommProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_DIDComm_wrap_in_forward(self.pointer, msg.lower(), FfiConverterDictionaryJsonValue.lower(headers), to.lower(), FfiConverterSequenceString.lower(routingKeys), encAlgAnon.lower(), ffiConverterCallbackInterfaceOnWrapInForwardResult.lower(cb) , $0
+    didcomm_f269_DIDComm_wrap_in_forward(self.pointer, msg.lower(), FfiConverterDictionaryJsonValue.lower(headers), to.lower(), FfiConverterSequenceString.lower(routingKeys), encAlgAnon.lower(), ffiConverterCallbackInterfaceOnWrapInForwardResult.lower(cb) , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1136,9 +1136,9 @@ public class DidComm: DIDCommProtocol {
 
 
 fileprivate extension DidComm {
-    fileprivate typealias FfiType = UnsafeMutableRawPointer
+    typealias FfiType = UnsafeMutableRawPointer
 
-    fileprivate static func read(from buf: Reader) throws -> Self {
+    static func read(from buf: Reader) throws -> Self {
         let v: UInt64 = try buf.readInt()
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
@@ -1149,17 +1149,17 @@ fileprivate extension DidComm {
         return try self.lift(ptr!)
     }
 
-    fileprivate func write(into buf: Writer) {
+    func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
         buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
     }
 
-    fileprivate static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
+    static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
         return Self(unsafeFromRawPointer: pointer)
     }
 
-    fileprivate func lower() -> UnsafeMutableRawPointer {
+    func lower() -> UnsafeMutableRawPointer {
         return self.pointer
     }
 }
@@ -1188,7 +1188,7 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_OnDIDResolverResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_f269_OnDIDResolverResult_object_free(pointer, $0) }
     }
 
     
@@ -1198,7 +1198,7 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnDIDResolverResult_success(self.pointer, FfiConverterOptionRecordDidDoc.lower(result) , $0
+    didcomm_f269_OnDIDResolverResult_success(self.pointer, FfiConverterOptionRecordDidDoc.lower(result) , $0
     )
 }
     }
@@ -1206,7 +1206,7 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnDIDResolverResult_error(self.pointer, err.lower(), msg.lower() , $0
+    didcomm_f269_OnDIDResolverResult_error(self.pointer, err.lower(), msg.lower() , $0
     )
 }
     }
@@ -1215,9 +1215,9 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
 
 
 fileprivate extension OnDidResolverResult {
-    fileprivate typealias FfiType = UnsafeMutableRawPointer
+    typealias FfiType = UnsafeMutableRawPointer
 
-    fileprivate static func read(from buf: Reader) throws -> Self {
+    static func read(from buf: Reader) throws -> Self {
         let v: UInt64 = try buf.readInt()
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
@@ -1228,17 +1228,17 @@ fileprivate extension OnDidResolverResult {
         return try self.lift(ptr!)
     }
 
-    fileprivate func write(into buf: Writer) {
+    func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
         buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
     }
 
-    fileprivate static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
+    static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
         return Self(unsafeFromRawPointer: pointer)
     }
 
-    fileprivate func lower() -> UnsafeMutableRawPointer {
+    func lower() -> UnsafeMutableRawPointer {
         return self.pointer
     }
 }
@@ -1270,12 +1270,12 @@ public class ExampleDidResolver: ExampleDIDResolverProtocol {
     
     rustCall() {
     
-    didcomm_f20e_ExampleDIDResolver_new(FfiConverterSequenceRecordDidDoc.lower(knownDids) , $0)
+    didcomm_f269_ExampleDIDResolver_new(FfiConverterSequenceRecordDidDoc.lower(knownDids) , $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_ExampleDIDResolver_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_f269_ExampleDIDResolver_object_free(pointer, $0) }
     }
 
     
@@ -1285,7 +1285,7 @@ public class ExampleDidResolver: ExampleDIDResolverProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_ExampleDIDResolver_resolve(self.pointer, did.lower(), cb.lower() , $0
+    didcomm_f269_ExampleDIDResolver_resolve(self.pointer, did.lower(), cb.lower() , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1295,9 +1295,9 @@ public class ExampleDidResolver: ExampleDIDResolverProtocol {
 
 
 fileprivate extension ExampleDidResolver {
-    fileprivate typealias FfiType = UnsafeMutableRawPointer
+    typealias FfiType = UnsafeMutableRawPointer
 
-    fileprivate static func read(from buf: Reader) throws -> Self {
+    static func read(from buf: Reader) throws -> Self {
         let v: UInt64 = try buf.readInt()
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
@@ -1308,17 +1308,17 @@ fileprivate extension ExampleDidResolver {
         return try self.lift(ptr!)
     }
 
-    fileprivate func write(into buf: Writer) {
+    func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
         buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
     }
 
-    fileprivate static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
+    static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
         return Self(unsafeFromRawPointer: pointer)
     }
 
-    fileprivate func lower() -> UnsafeMutableRawPointer {
+    func lower() -> UnsafeMutableRawPointer {
         return self.pointer
     }
 }
@@ -1347,7 +1347,7 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_OnGetSecretResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_f269_OnGetSecretResult_object_free(pointer, $0) }
     }
 
     
@@ -1357,7 +1357,7 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnGetSecretResult_success(self.pointer, FfiConverterOptionRecordSecret.lower(result) , $0
+    didcomm_f269_OnGetSecretResult_success(self.pointer, FfiConverterOptionRecordSecret.lower(result) , $0
     )
 }
     }
@@ -1365,7 +1365,7 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnGetSecretResult_error(self.pointer, err.lower(), msg.lower() , $0
+    didcomm_f269_OnGetSecretResult_error(self.pointer, err.lower(), msg.lower() , $0
     )
 }
     }
@@ -1374,9 +1374,9 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
 
 
 fileprivate extension OnGetSecretResult {
-    fileprivate typealias FfiType = UnsafeMutableRawPointer
+    typealias FfiType = UnsafeMutableRawPointer
 
-    fileprivate static func read(from buf: Reader) throws -> Self {
+    static func read(from buf: Reader) throws -> Self {
         let v: UInt64 = try buf.readInt()
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
@@ -1387,17 +1387,17 @@ fileprivate extension OnGetSecretResult {
         return try self.lift(ptr!)
     }
 
-    fileprivate func write(into buf: Writer) {
+    func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
         buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
     }
 
-    fileprivate static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
+    static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
         return Self(unsafeFromRawPointer: pointer)
     }
 
-    fileprivate func lower() -> UnsafeMutableRawPointer {
+    func lower() -> UnsafeMutableRawPointer {
         return self.pointer
     }
 }
@@ -1426,7 +1426,7 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_OnFindSecretsResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_f269_OnFindSecretsResult_object_free(pointer, $0) }
     }
 
     
@@ -1436,7 +1436,7 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnFindSecretsResult_success(self.pointer, FfiConverterSequenceString.lower(result) , $0
+    didcomm_f269_OnFindSecretsResult_success(self.pointer, FfiConverterSequenceString.lower(result) , $0
     )
 }
     }
@@ -1444,7 +1444,7 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
         try
     rustCallWithError(ErrorKind.self) {
     
-    didcomm_f20e_OnFindSecretsResult_error(self.pointer, err.lower(), msg.lower() , $0
+    didcomm_f269_OnFindSecretsResult_error(self.pointer, err.lower(), msg.lower() , $0
     )
 }
     }
@@ -1453,9 +1453,9 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
 
 
 fileprivate extension OnFindSecretsResult {
-    fileprivate typealias FfiType = UnsafeMutableRawPointer
+    typealias FfiType = UnsafeMutableRawPointer
 
-    fileprivate static func read(from buf: Reader) throws -> Self {
+    static func read(from buf: Reader) throws -> Self {
         let v: UInt64 = try buf.readInt()
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
@@ -1466,17 +1466,17 @@ fileprivate extension OnFindSecretsResult {
         return try self.lift(ptr!)
     }
 
-    fileprivate func write(into buf: Writer) {
+    func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
         buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
     }
 
-    fileprivate static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
+    static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
         return Self(unsafeFromRawPointer: pointer)
     }
 
-    fileprivate func lower() -> UnsafeMutableRawPointer {
+    func lower() -> UnsafeMutableRawPointer {
         return self.pointer
     }
 }
@@ -1509,12 +1509,12 @@ public class ExampleSecretsResolver: ExampleSecretsResolverProtocol {
     
     rustCall() {
     
-    didcomm_f20e_ExampleSecretsResolver_new(FfiConverterSequenceRecordSecret.lower(knownSecrets) , $0)
+    didcomm_f269_ExampleSecretsResolver_new(FfiConverterSequenceRecordSecret.lower(knownSecrets) , $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f20e_ExampleSecretsResolver_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_f269_ExampleSecretsResolver_object_free(pointer, $0) }
     }
 
     
@@ -1524,7 +1524,7 @@ public class ExampleSecretsResolver: ExampleSecretsResolverProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_ExampleSecretsResolver_get_secret(self.pointer, secretId.lower(), cb.lower() , $0
+    didcomm_f269_ExampleSecretsResolver_get_secret(self.pointer, secretId.lower(), cb.lower() , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1533,7 +1533,7 @@ public class ExampleSecretsResolver: ExampleSecretsResolverProtocol {
         let _retval = try!
     rustCall() {
     
-    didcomm_f20e_ExampleSecretsResolver_find_secrets(self.pointer, FfiConverterSequenceString.lower(secretIds), cb.lower() , $0
+    didcomm_f269_ExampleSecretsResolver_find_secrets(self.pointer, FfiConverterSequenceString.lower(secretIds), cb.lower() , $0
     )
 }
         return try! ErrorCode.lift(_retval)
@@ -1543,9 +1543,9 @@ public class ExampleSecretsResolver: ExampleSecretsResolverProtocol {
 
 
 fileprivate extension ExampleSecretsResolver {
-    fileprivate typealias FfiType = UnsafeMutableRawPointer
+    typealias FfiType = UnsafeMutableRawPointer
 
-    fileprivate static func read(from buf: Reader) throws -> Self {
+    static func read(from buf: Reader) throws -> Self {
         let v: UInt64 = try buf.readInt()
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
@@ -1556,17 +1556,17 @@ fileprivate extension ExampleSecretsResolver {
         return try self.lift(ptr!)
     }
 
-    fileprivate func write(into buf: Writer) {
+    func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
         buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
     }
 
-    fileprivate static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
+    static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
         return Self(unsafeFromRawPointer: pointer)
     }
 
-    fileprivate func lower() -> UnsafeMutableRawPointer {
+    func lower() -> UnsafeMutableRawPointer {
         return self.pointer
     }
 }
@@ -2185,7 +2185,7 @@ fileprivate extension DidCommMessagingService {
 
     func write(into buf: Writer) {
         self.serviceEndpoint.write(into: buf)
-        FfiConverterSequenceString.write(self.accept, into: buf)
+        FfiConverterOptionSequenceString.write(self.accept, into: buf)
         FfiConverterSequenceString.write(self.routingKeys, into: buf)
     }
 }
@@ -2892,8 +2892,8 @@ fileprivate let foreignCallbackCallbackInterfaceDidResolver : ForeignCallback =
 
             let reader = Reader(data: Data(rustBuffer: args))
             let result =  swiftCallbackInterface.resolve(
-                    did: try String.read(from: reader), 
-                    cb: try OnDidResolverResult.read(from: reader) 
+                    did: try String.read(from: reader),
+                    cb: try OnDidResolverResult.read(from: reader)
                     )
             let writer = Writer()
                 result.write(into: writer)
@@ -2921,7 +2921,7 @@ fileprivate let foreignCallbackCallbackInterfaceDidResolver : ForeignCallback =
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceDidResolver: FfiConverterCallbackInterface<DidResolver> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_DIDResolver_init_callback(foreignCallbackCallbackInterfaceDidResolver, err)
+            ffi_didcomm_f269_DIDResolver_init_callback(foreignCallbackCallbackInterfaceDidResolver, err)
     }
     return FfiConverterCallbackInterface<DidResolver>()
 }()
@@ -2943,8 +2943,8 @@ fileprivate let foreignCallbackCallbackInterfaceSecretsResolver : ForeignCallbac
 
             let reader = Reader(data: Data(rustBuffer: args))
             let result =  swiftCallbackInterface.getSecret(
-                    secretid: try String.read(from: reader), 
-                    cb: try OnGetSecretResult.read(from: reader) 
+                    secretid: try String.read(from: reader),
+                    cb: try OnGetSecretResult.read(from: reader)
                     )
             let writer = Writer()
                 result.write(into: writer)
@@ -2958,8 +2958,8 @@ fileprivate let foreignCallbackCallbackInterfaceSecretsResolver : ForeignCallbac
 
             let reader = Reader(data: Data(rustBuffer: args))
             let result =  swiftCallbackInterface.findSecrets(
-                    secretids: try FfiConverterSequenceString.read(from: reader), 
-                    cb: try OnFindSecretsResult.read(from: reader) 
+                    secretids: try FfiConverterSequenceString.read(from: reader),
+                    cb: try OnFindSecretsResult.read(from: reader)
                     )
             let writer = Writer()
                 result.write(into: writer)
@@ -2988,7 +2988,7 @@ fileprivate let foreignCallbackCallbackInterfaceSecretsResolver : ForeignCallbac
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceSecretsResolver: FfiConverterCallbackInterface<SecretsResolver> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_SecretsResolver_init_callback(foreignCallbackCallbackInterfaceSecretsResolver, err)
+            ffi_didcomm_f269_SecretsResolver_init_callback(foreignCallbackCallbackInterfaceSecretsResolver, err)
     }
     return FfiConverterCallbackInterface<SecretsResolver>()
 }()
@@ -2997,8 +2997,8 @@ private let ffiConverterCallbackInterfaceSecretsResolver: FfiConverterCallbackIn
 // Declaration and FfiConverters for OnPackSignedResult Callback Interface
 
 public protocol OnPackSignedResult : AnyObject {
-    func success(result: String, metadata: PackSignedMetadata ) 
-    func error(err: ErrorKind, msg: String ) 
+    func success(result: String, metadata: PackSignedMetadata )
+    func error(err: ErrorKind, msg: String )
     
 }
 
@@ -3010,8 +3010,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackSignedResult : ForeignCall
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.success(
-                    result: try String.read(from: reader), 
-                    metadata: try PackSignedMetadata.read(from: reader) 
+                    result: try String.read(from: reader),
+                    metadata: try PackSignedMetadata.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3023,8 +3023,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackSignedResult : ForeignCall
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader), 
-                    msg: try String.read(from: reader) 
+                    err: try ErrorKind.read(from: reader),
+                    msg: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3051,7 +3051,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackSignedResult : ForeignCall
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackSignedResult: FfiConverterCallbackInterface<OnPackSignedResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnPackSignedResult_init_callback(foreignCallbackCallbackInterfaceOnPackSignedResult, err)
+            ffi_didcomm_f269_OnPackSignedResult_init_callback(foreignCallbackCallbackInterfaceOnPackSignedResult, err)
     }
     return FfiConverterCallbackInterface<OnPackSignedResult>()
 }()
@@ -3060,8 +3060,8 @@ private let ffiConverterCallbackInterfaceOnPackSignedResult: FfiConverterCallbac
 // Declaration and FfiConverters for OnPackEncryptedResult Callback Interface
 
 public protocol OnPackEncryptedResult : AnyObject {
-    func success(result: String, metadata: PackEncryptedMetadata ) 
-    func error(err: ErrorKind, msg: String ) 
+    func success(result: String, metadata: PackEncryptedMetadata )
+    func error(err: ErrorKind, msg: String )
     
 }
 
@@ -3073,8 +3073,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackEncryptedResult : ForeignC
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.success(
-                    result: try String.read(from: reader), 
-                    metadata: try PackEncryptedMetadata.read(from: reader) 
+                    result: try String.read(from: reader),
+                    metadata: try PackEncryptedMetadata.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3086,8 +3086,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackEncryptedResult : ForeignC
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader), 
-                    msg: try String.read(from: reader) 
+                    err: try ErrorKind.read(from: reader),
+                    msg: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3114,7 +3114,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackEncryptedResult : ForeignC
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackEncryptedResult: FfiConverterCallbackInterface<OnPackEncryptedResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnPackEncryptedResult_init_callback(foreignCallbackCallbackInterfaceOnPackEncryptedResult, err)
+            ffi_didcomm_f269_OnPackEncryptedResult_init_callback(foreignCallbackCallbackInterfaceOnPackEncryptedResult, err)
     }
     return FfiConverterCallbackInterface<OnPackEncryptedResult>()
 }()
@@ -3123,8 +3123,8 @@ private let ffiConverterCallbackInterfaceOnPackEncryptedResult: FfiConverterCall
 // Declaration and FfiConverters for OnPackPlaintextResult Callback Interface
 
 public protocol OnPackPlaintextResult : AnyObject {
-    func success(result: String ) 
-    func error(err: ErrorKind, msg: String ) 
+    func success(result: String )
+    func error(err: ErrorKind, msg: String )
     
 }
 
@@ -3136,7 +3136,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackPlaintextResult : ForeignC
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.success(
-                    result: try String.read(from: reader) 
+                    result: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3148,8 +3148,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackPlaintextResult : ForeignC
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader), 
-                    msg: try String.read(from: reader) 
+                    err: try ErrorKind.read(from: reader),
+                    msg: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3176,7 +3176,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnPackPlaintextResult : ForeignC
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackPlaintextResult: FfiConverterCallbackInterface<OnPackPlaintextResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnPackPlaintextResult_init_callback(foreignCallbackCallbackInterfaceOnPackPlaintextResult, err)
+            ffi_didcomm_f269_OnPackPlaintextResult_init_callback(foreignCallbackCallbackInterfaceOnPackPlaintextResult, err)
     }
     return FfiConverterCallbackInterface<OnPackPlaintextResult>()
 }()
@@ -3185,8 +3185,8 @@ private let ffiConverterCallbackInterfaceOnPackPlaintextResult: FfiConverterCall
 // Declaration and FfiConverters for OnUnpackResult Callback Interface
 
 public protocol OnUnpackResult : AnyObject {
-    func success(result: Message, metadata: UnpackMetadata ) 
-    func error(err: ErrorKind, msg: String ) 
+    func success(result: Message, metadata: UnpackMetadata )
+    func error(err: ErrorKind, msg: String )
     
 }
 
@@ -3198,8 +3198,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnUnpackResult : ForeignCallback
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.success(
-                    result: try Message.read(from: reader), 
-                    metadata: try UnpackMetadata.read(from: reader) 
+                    result: try Message.read(from: reader),
+                    metadata: try UnpackMetadata.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3211,8 +3211,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnUnpackResult : ForeignCallback
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader), 
-                    msg: try String.read(from: reader) 
+                    err: try ErrorKind.read(from: reader),
+                    msg: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3239,7 +3239,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnUnpackResult : ForeignCallback
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnUnpackResult: FfiConverterCallbackInterface<OnUnpackResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnUnpackResult, err)
+            ffi_didcomm_f269_OnUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnUnpackResult, err)
     }
     return FfiConverterCallbackInterface<OnUnpackResult>()
 }()
@@ -3248,8 +3248,8 @@ private let ffiConverterCallbackInterfaceOnUnpackResult: FfiConverterCallbackInt
 // Declaration and FfiConverters for OnFromPriorPackResult Callback Interface
 
 public protocol OnFromPriorPackResult : AnyObject {
-    func success(frompriorjwt: String, kid: String ) 
-    func error(err: ErrorKind, msg: String ) 
+    func success(frompriorjwt: String, kid: String )
+    func error(err: ErrorKind, msg: String )
     
 }
 
@@ -3261,8 +3261,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnFromPriorPackResult : ForeignC
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.success(
-                    frompriorjwt: try String.read(from: reader), 
-                    kid: try String.read(from: reader) 
+                    frompriorjwt: try String.read(from: reader),
+                    kid: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3274,8 +3274,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnFromPriorPackResult : ForeignC
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader), 
-                    msg: try String.read(from: reader) 
+                    err: try ErrorKind.read(from: reader),
+                    msg: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3302,7 +3302,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnFromPriorPackResult : ForeignC
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnFromPriorPackResult: FfiConverterCallbackInterface<OnFromPriorPackResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnFromPriorPackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorPackResult, err)
+            ffi_didcomm_f269_OnFromPriorPackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorPackResult, err)
     }
     return FfiConverterCallbackInterface<OnFromPriorPackResult>()
 }()
@@ -3311,8 +3311,8 @@ private let ffiConverterCallbackInterfaceOnFromPriorPackResult: FfiConverterCall
 // Declaration and FfiConverters for OnFromPriorUnpackResult Callback Interface
 
 public protocol OnFromPriorUnpackResult : AnyObject {
-    func success(fromprior: FromPrior, kid: String ) 
-    func error(err: ErrorKind, msg: String ) 
+    func success(fromprior: FromPrior, kid: String )
+    func error(err: ErrorKind, msg: String )
     
 }
 
@@ -3324,8 +3324,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnFromPriorUnpackResult : Foreig
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.success(
-                    fromprior: try FromPrior.read(from: reader), 
-                    kid: try String.read(from: reader) 
+                    fromprior: try FromPrior.read(from: reader),
+                    kid: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3337,8 +3337,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnFromPriorUnpackResult : Foreig
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader), 
-                    msg: try String.read(from: reader) 
+                    err: try ErrorKind.read(from: reader),
+                    msg: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3365,7 +3365,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnFromPriorUnpackResult : Foreig
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnFromPriorUnpackResult: FfiConverterCallbackInterface<OnFromPriorUnpackResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnFromPriorUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorUnpackResult, err)
+            ffi_didcomm_f269_OnFromPriorUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorUnpackResult, err)
     }
     return FfiConverterCallbackInterface<OnFromPriorUnpackResult>()
 }()
@@ -3374,8 +3374,8 @@ private let ffiConverterCallbackInterfaceOnFromPriorUnpackResult: FfiConverterCa
 // Declaration and FfiConverters for OnWrapInForwardResult Callback Interface
 
 public protocol OnWrapInForwardResult : AnyObject {
-    func success(result: String ) 
-    func error(err: ErrorKind, msg: String ) 
+    func success(result: String )
+    func error(err: ErrorKind, msg: String )
     
 }
 
@@ -3387,7 +3387,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnWrapInForwardResult : ForeignC
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.success(
-                    result: try String.read(from: reader) 
+                    result: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3399,8 +3399,8 @@ fileprivate let foreignCallbackCallbackInterfaceOnWrapInForwardResult : ForeignC
 
             let reader = Reader(data: Data(rustBuffer: args))
               swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader), 
-                    msg: try String.read(from: reader) 
+                    err: try ErrorKind.read(from: reader),
+                    msg: try String.read(from: reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -3427,7 +3427,7 @@ fileprivate let foreignCallbackCallbackInterfaceOnWrapInForwardResult : ForeignC
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnWrapInForwardResult: FfiConverterCallbackInterface<OnWrapInForwardResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f20e_OnWrapInForwardResult_init_callback(foreignCallbackCallbackInterfaceOnWrapInForwardResult, err)
+            ffi_didcomm_f269_OnWrapInForwardResult_init_callback(foreignCallbackCallbackInterfaceOnWrapInForwardResult, err)
     }
     return FfiConverterCallbackInterface<OnWrapInForwardResult>()
 }()
