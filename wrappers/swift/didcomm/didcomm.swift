@@ -2139,12 +2139,12 @@ extension Service: ViaFfiUsingByteBuffer, ViaFfi {}
 
 public struct DidCommMessagingService {
     public var serviceEndpoint: String
-    public var accept: [String]
+    public var accept: [String]?
     public var routingKeys: [String]
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(serviceEndpoint: String, accept: [String], routingKeys: [String] ) {
+    public init(serviceEndpoint: String, accept: [String]?, routingKeys: [String] ) {
         self.serviceEndpoint = serviceEndpoint
         self.accept = accept
         self.routingKeys = routingKeys
@@ -2178,7 +2178,7 @@ fileprivate extension DidCommMessagingService {
     static func read(from buf: Reader) throws -> DidCommMessagingService {
         return try DidCommMessagingService(
             serviceEndpoint: String.read(from: buf),
-            accept: FfiConverterSequenceString.read(from: buf),
+            accept: FfiConverterOptionSequenceString.read(from: buf),
             routingKeys: FfiConverterSequenceString.read(from: buf)
         )
     }

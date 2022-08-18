@@ -37,7 +37,7 @@ lazy_static! {
     pub static ref CHARLIE_DID_COMM_MESSAGING_SERVICE: DIDCommMessagingService =
         DIDCommMessagingService {
             service_endpoint: "did:example:mediator3".into(),
-            accept: vec!["didcomm/v2".into(), "didcomm/aip2;env=rfc587".into()],
+            accept: Some(vec!["didcomm/v2".into(), "didcomm/aip2;env=rfc587".into()]),
             routing_keys: vec![
                 "did:example:mediator2#key-x25519-1".into(),
                 "did:example:mediator1#key-x25519-1".into(),
