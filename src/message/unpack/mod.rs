@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use anoncrypt::_try_unpack_anoncrypt;
 use authcrypt::_try_unpack_authcrypt;
-use sign::_try_unapck_sign;
+use sign::_try_unpack_sign;
 
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
@@ -109,7 +109,7 @@ impl Message {
                 .await?;
         let msg = authcrypted.as_deref().unwrap_or(msg);
 
-        let signed = _try_unapck_sign(msg, did_resolver, options, &mut metadata).await?;
+        let signed = _try_unpack_sign(msg, did_resolver, options, &mut metadata).await?;
         let msg = signed.as_deref().unwrap_or(msg);
 
         let msg = _try_unpack_plaintext(msg, did_resolver, &mut metadata)
