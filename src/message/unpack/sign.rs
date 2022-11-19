@@ -10,7 +10,7 @@ use crate::{
     UnpackMetadata, UnpackOptions,
 };
 
-pub(crate) async fn _try_unapck_sign<'dr>(
+pub(crate) async fn _try_unpack_sign<'dr>(
     msg: &str,
     did_resolver: &'dr (dyn DIDResolver + 'dr),
     _opts: &UnpackOptions,
