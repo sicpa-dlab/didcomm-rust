@@ -10,9 +10,9 @@ The result is passed to a callback function.
 - The language specific bidnings are generated for the API exposed in [didcomm.udl](src/didcomm.udl) file.
 
 ### Swift Build
-1. Install uniffi_bindgen:
+1. Install uniffi_bindgen (replace `VERSION` with the UniFFI version currently installed, which can be checked in `Cargo.toml`, under the `uniffi` dependency):
 ```
-cargo install uniffi_bindgen
+cargo install uniffi_bindgen --version VERSION
 ```
 
 2. Build:
