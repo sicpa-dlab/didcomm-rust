@@ -67,13 +67,13 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
         .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Sender did not found"))?;
 
     let from_kid = from_ddoc
-        .key_agreements
+        .key_agreement
         .iter()
         .find(|&k| k.as_str() == from_kid)
         .ok_or_else(|| err_msg(ErrorKind::DIDUrlNotFound, "Sender kid not found in did"))?;
 
     let from_key = from_ddoc
-        .verification_methods
+        .verification_method
         .iter()
         .find(|&vm| &vm.id == from_kid)
         .ok_or_else(|| {

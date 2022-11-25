@@ -62,7 +62,7 @@ impl FromPrior {
             })?;
 
         let kid = did_doc
-            .authentications
+            .authentication
             .iter()
             .find(|&k| k.as_str() == kid)
             .ok_or_else(|| {
@@ -74,7 +74,7 @@ impl FromPrior {
             .as_str();
 
         let key = did_doc
-            .verification_methods
+            .verification_method
             .iter()
             .find(|&vm| &vm.id == kid)
             .ok_or_else(|| {

@@ -1585,7 +1585,7 @@ mod tests {
                 pack_metadata.messaging_service.as_ref(),
                 Some(&MessagingServiceMetadata {
                     id: BOB_SERVICE.id.clone(),
-                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.service_endpoint.clone(),
+                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.uri.clone(),
                 })
             );
 
@@ -1775,7 +1775,7 @@ mod tests {
                 Some(&MessagingServiceMetadata {
                     id: CHARLIE_SERVICE.id.clone(),
                     service_endpoint: MEDIATOR3_DID_COMM_MESSAGING_SERVICE
-                        .service_endpoint
+                        .uri
                         .clone(),
                 })
             );
@@ -2021,7 +2021,7 @@ mod tests {
                 pack_metadata.messaging_service.as_ref(),
                 Some(&MessagingServiceMetadata {
                     id: BOB_SERVICE.id.clone(),
-                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.service_endpoint.clone(),
+                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.uri.clone(),
                 })
             );
 

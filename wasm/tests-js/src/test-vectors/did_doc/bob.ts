@@ -128,8 +128,8 @@ export const BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_2: VerificationMethod = {
 };
 
 export const BOB_DID_DOC: DIDDoc = {
-  did: "did:example:bob",
-  key_agreements: [
+  id: "did:example:bob",
+  keyAgreement: [
     "did:example:bob#key-x25519-1",
     "did:example:bob#key-x25519-2",
     "did:example:bob#key-x25519-3",
@@ -140,8 +140,8 @@ export const BOB_DID_DOC: DIDDoc = {
     "did:example:bob#key-p521-1",
     "did:example:bob#key-p521-2",
   ],
-  authentications: [],
-  verification_methods: [
+  authentication: [],
+  verificationMethod: [
     BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_1,
     BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_2,
     BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_3,
@@ -152,5 +152,5 @@ export const BOB_DID_DOC: DIDDoc = {
     BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_1,
     BOB_VERIFICATION_METHOD_KEY_AGREEM_P521_2,
   ],
-  services: [],
+  service: [],
 };

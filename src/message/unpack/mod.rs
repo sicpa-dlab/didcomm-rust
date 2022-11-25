@@ -238,7 +238,7 @@ async fn has_key_agreement_secret<'dr, 'sr>(
                 .resolve(did)
                 .await?
                 .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Next DID doc not found"))?;
-            did_doc.key_agreements
+            did_doc.key_agreement
         }
     };
 
@@ -646,7 +646,7 @@ mod test {
                 pack_metadata.messaging_service.as_ref(),
                 Some(&MessagingServiceMetadata {
                     id: BOB_SERVICE.id.clone(),
-                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.service_endpoint.clone(),
+                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.uri.clone(),
                 })
             );
 
@@ -771,7 +771,7 @@ mod test {
                 pack_metadata.messaging_service.as_ref(),
                 Some(&MessagingServiceMetadata {
                     id: BOB_SERVICE.id.clone(),
-                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.service_endpoint.clone(),
+                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.uri.clone(),
                 })
             );
 

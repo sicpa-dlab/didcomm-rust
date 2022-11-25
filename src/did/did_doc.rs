@@ -7,23 +7,25 @@ use serde_json::Value;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DIDDoc {
     /// DID for the given DID Doc
-    pub did: String,
+    pub id: String,
 
     /// DID URLs of verification methods used for key agreement.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    pub key_agreements: Vec<String>,
+    #[serde(rename = "keyAgreement")]
+    pub key_agreement: Vec<String>,
 
     /// Returns DID URLs of verification methods used for authentication.
     /// See https://www.w3.org/TR/did-core/#authentication
-    pub authentications: Vec<String>,
+    pub authentication: Vec<String>,
 
     /// All local verification methods including embedded to
     /// key agreement and authentication sections.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    pub verification_methods: Vec<VerificationMethod>,
+    #[serde(rename = "verificationMethod")]
+    pub verification_method: Vec<VerificationMethod>,
 
     /// All services (https://www.w3.org/TR/did-core/#services)
-    pub services: Vec<Service>,
+    pub service: Vec<Service>,
 }
 
 /// Represents verification method record in DID Document
@@ -34,6 +36,7 @@ pub struct VerificationMethod {
     #[serde(rename = "type")]
     pub type_: VerificationMethodType,
     pub controller: String,
+    // TODO: this should be publicKeyJwk/publicKeyMultibase
     pub verification_material: VerificationMaterial,
 }
 
@@ -63,11 +66,34 @@ pub enum VerificationMaterial {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Service {
     pub id: String,
-    pub kind: ServiceKind,
+
+    #[serde(flatten)]
+    pub service_endpoint: ServiceKind,
+
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::did::{DIDCommMessagingService, Service, ServiceKind};
+
+    #[test]
+    fn test_display_service() {
+        println!("{}", serde_json::to_string(&Service{
+            id: "test".into(),
+            service_endpoint: ServiceKind::DIDCommMessaging {
+                value: DIDCommMessagingService {
+                    uri: "demo".into(),
+                    routing_keys: vec!["test".into()],
+                    accept: None,
+                }
+            }
+        }).unwrap())
+    }
 }
 
 /// Represents additional service properties defined for specific Service type.
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "type", content = "serviceEndpoint")]
 pub enum ServiceKind {
     DIDCommMessaging {
         #[serde(flatten)]
@@ -83,9 +109,12 @@ pub enum ServiceKind {
 /// (https://identity.foundation/didcomm-messaging/spec/#did-document-service-endpoint).
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DIDCommMessagingService {
-    pub service_endpoint: String,
+    pub uri: String,
+
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub accept: Option<Vec<String>>,
+
+    #[serde(rename = "routingKeys")]
     pub routing_keys: Vec<String>,
 }

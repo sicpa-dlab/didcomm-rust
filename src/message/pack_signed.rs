@@ -60,7 +60,7 @@ impl Message {
 
         let authentications: Vec<_> = if let Some(key_id) = key_id {
             did_doc
-                .authentications
+                .authentication
                 .iter()
                 .find(|a| *a == key_id)
                 .ok_or_else(|| {
@@ -72,7 +72,7 @@ impl Message {
 
             vec![key_id]
         } else {
-            did_doc.authentications.iter().map(|s| s.as_str()).collect()
+            did_doc.authentication.iter().map(|s| s.as_str()).collect()
         };
 
         let key_id = *secrets_resolver
@@ -178,7 +178,7 @@ mod tests {
             &ALICE_AUTH_METHOD_25519.id,
             Algorithm::EdDSA,
             PLAINTEXT_MSG_SIMPLE,
-            &ALICE_DID_DOC.verification_methods[4].verification_material,
+            &ALICE_DID_DOC.verification_method[4].verification_material,
         )
         .await;
 
@@ -190,7 +190,7 @@ mod tests {
             &ALICE_AUTH_METHOD_25519.id,
             Algorithm::EdDSA,
             PLAINTEXT_MSG_SIMPLE,
-            &ALICE_DID_DOC.verification_methods[4].verification_material,
+            &ALICE_DID_DOC.verification_method[4].verification_material,
         )
         .await;
 
@@ -202,7 +202,7 @@ mod tests {
             &ALICE_AUTH_METHOD_P256.id,
             Algorithm::Es256,
             PLAINTEXT_MSG_SIMPLE,
-            &ALICE_DID_DOC.verification_methods[5].verification_material,
+            &ALICE_DID_DOC.verification_method[5].verification_material,
         )
         .await;
 
@@ -214,7 +214,7 @@ mod tests {
             &ALICE_AUTH_METHOD_SECPP256K1.id,
             Algorithm::Es256K,
             PLAINTEXT_MSG_SIMPLE,
-            &ALICE_DID_DOC.verification_methods[6].verification_material,
+            &ALICE_DID_DOC.verification_method[6].verification_material,
         )
         .await;
 
@@ -303,7 +303,7 @@ mod tests {
     #[tokio::test]
     async fn pack_signed_works_signer_is_not_did_our_did_url() {
         let mut did_doc = ALICE_DID_DOC.clone();
-        did_doc.did = "not-a-did".into();
+        did_doc.id = "not-a-did".into();
         let did_resolver = ExampleDIDResolver::new(vec![did_doc]);
         let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
 
@@ -388,7 +388,7 @@ mod tests {
     async fn pack_signed_works_unable_instantiate_sign_key() {
         let mut did_doc = ALICE_DID_DOC.clone();
         did_doc
-            .authentications
+            .authentication
             .push("did:example:alice#key-d25519-1".into());
         let mut secrets = ALICE_SECRETS.clone();
         secrets.push(Secret {

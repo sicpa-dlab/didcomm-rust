@@ -74,14 +74,14 @@ pub(crate) async fn _try_unpack_sign<'dr>(
         .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Signer did not found"))?;
 
     let signer_kid = signer_ddoc
-        .authentications
+        .authentication
         .iter()
         .find(|&k| k.as_str() == signer_kid)
         .ok_or_else(|| err_msg(ErrorKind::DIDUrlNotFound, "Signer kid not found in did"))?
         .as_str();
 
     let signer_key = signer_ddoc
-        .verification_methods
+        .verification_method
         .iter()
         .find(|&vm| &vm.id == signer_kid)
         .ok_or_else(|| {

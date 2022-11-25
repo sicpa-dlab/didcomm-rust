@@ -1,10 +1,10 @@
 import { DIDDoc } from "didcomm";
 
 export const CHARLIE_DID_DOC: DIDDoc = {
-  did: "did:example:charlie",
-  key_agreements: ["did:example:charlie#key-x25519-1"],
-  authentications: ["did:example:charlie#key-1"],
-  verification_methods: [
+  id: "did:example:charlie",
+  keyAgreement: ["did:example:charlie#key-x25519-1"],
+  authentication: ["did:example:charlie#key-1"],
+  verificationMethod: [
     {
       id: "did:example:charlie#key-x25519-1",
       type: "JsonWebKey2020",
@@ -32,5 +32,5 @@ export const CHARLIE_DID_DOC: DIDDoc = {
       },
     },
   ],
-  services: [],
+  service: [],
 };

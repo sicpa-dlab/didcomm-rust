@@ -66,16 +66,16 @@ lazy_static! {
             },
         };
     pub static ref MEDIATOR2_DID_DOC: DIDDoc = DIDDoc {
-        did: "did:example:mediator2".into(),
-        authentications: vec![],
-        key_agreements: vec![
+        id: "did:example:mediator2".into(),
+        authentication: vec![],
+        key_agreement: vec![
             "did:example:mediator2#key-x25519-1".into(),
             "did:example:mediator2#key-p256-1".into(),
             "did:example:mediator2#key-p384-1".into(),
             "did:example:mediator2#key-p521-1".into(),
         ],
-        services: vec![],
-        verification_methods: vec![
+        service: vec![],
+        verification_method: vec![
             MEDIATOR2_VERIFICATION_METHOD_KEY_AGREEM_X25519_1.clone(),
             MEDIATOR2_VERIFICATION_METHOD_KEY_AGREEM_P256_1.clone(),
             MEDIATOR2_VERIFICATION_METHOD_KEY_AGREEM_P384_1.clone(),

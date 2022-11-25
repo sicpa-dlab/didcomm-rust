@@ -111,20 +111,20 @@ lazy_static! {
         },
     };
     pub static ref ALICE_DID_DOC: DIDDoc = DIDDoc {
-        did: "did:example:alice".into(),
-        authentications: vec![
+        id: "did:example:alice".into(),
+        authentication: vec![
             "did:example:alice#key-1".into(),
             "did:example:alice#key-2".into(),
             "did:example:alice#key-3".into(),
         ],
-        key_agreements: vec![
+        key_agreement: vec![
             "did:example:alice#key-x25519-not-in-secrets-1".into(),
             "did:example:alice#key-x25519-1".into(),
             "did:example:alice#key-p256-1".into(),
             "did:example:alice#key-p521-1".into(),
         ],
-        services: vec![],
-        verification_methods: vec![
+        service: vec![],
+        verification_method: vec![
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.clone(),
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.clone(),
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_P521.clone(),
@@ -135,21 +135,21 @@ lazy_static! {
         ],
     };
     pub static ref ALICE_DID_DOC_WITH_NO_SECRETS: DIDDoc = DIDDoc {
-        did: "did:example:alice".into(),
-        authentications: vec![
+        id: "did:example:alice".into(),
+        authentication: vec![
             "did:example:alice#key-not-in-secrets-1".into(),
             "did:example:alice#key-1".into(),
             "did:example:alice#key-2".into(),
             "did:example:alice#key-3".into(),
         ],
-        key_agreements: vec![
+        key_agreement: vec![
             "did:example:alice#key-x25519-not-in-secrets-1".into(),
             "did:example:alice#key-x25519-1".into(),
             "did:example:alice#key-p256-1".into(),
             "did:example:alice#key-p521-1".into(),
         ],
-        services: vec![],
-        verification_methods: vec![
+        service: vec![],
+        verification_method: vec![
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET.clone(),
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519.clone(),
             ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256.clone(),

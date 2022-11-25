@@ -9,31 +9,31 @@ type DIDDoc = {
     /**
      * DID for the given DID Doc
      */
-    did: string,
+    id: string,
 
     /**
      * DID URLs of verification methods used for key agreement.
      * See https://www.w3.org/TR/did-core/#verification-methods.
      */
-    key_agreements: Array<string>,
+    keyAgreement: Array<string>,
 
     /**
      * Returns DID URLs of verification methods used for authentication.
      * See https://www.w3.org/TR/did-core/#authentication
      */
-    authentications: Array<string>,
+    authentication: Array<string>,
 
     /**
      * All local verification methods including embedded to
      * key agreement and authentication sections.
      * See https://www.w3.org/TR/did-core/#verification-methods.
      */
-    verification_methods: Array<VerificationMethod>,
+    verificationMethod: Array<VerificationMethod>,
 
     /**
      * All services (https://www.w3.org/TR/did-core/#services)
      */
-    services: Array<Service>,
+    service: Array<Service>,
 }
 "#;
 
@@ -83,7 +83,8 @@ const SERVICE_TS: &'static str = r#"
  */
 type Service = {
     id: string,
-    kind: ServiceKind,
+    type: string,
+    serviceEndpoint: ServiceKind,
 }
 "#;
 
@@ -92,11 +93,7 @@ const SERVICE_KIND_TS: &'static str = r#"
 /**
  * Represents additional service properties defined for specific Service type.
  */
-type ServiceKind = {
-    "DIDCommMessaging": DIDCommMessagingService,
-} | {
-    "Other": any,
-}
+type ServiceKind = DIDCommMessagingService | any
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
@@ -106,7 +103,7 @@ const DIDCOMM_MESSAGING_SERVICE_TS: &'static str = r#"
  * (https://identity.foundation/didcomm-messaging/spec/#did-document-service-endpoint).
  */
 type DIDCommMessagingService = {
-    service_endpoint: string,
+    uri: string,
     accept?: Array<string>,
     routing_keys: Array<string>,
 }

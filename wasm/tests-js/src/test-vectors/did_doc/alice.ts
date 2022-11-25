@@ -104,19 +104,19 @@ export const ALICE_AUTH_METHOD_SECP256K1: VerificationMethod = {
 };
 
 export const ALICE_DID_DOC: DIDDoc = {
-  did: "did:example:alice",
-  key_agreements: [
+  id: "did:example:alice",
+  keyAgreement: [
     "did:example:alice#key-x25519-not-in-secrets-1",
     "did:example:alice#key-x25519-1",
     "did:example:alice#key-p256-1",
     "did:example:alice#key-p521-1",
   ],
-  authentications: [
+  authentication: [
     "did:example:alice#key-1",
     "did:example:alice#key-2",
     "did:example:alice#key-3",
   ],
-  verification_methods: [
+  verificationMethod: [
     ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519_NOT_IN_SECRET,
     ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519,
     ALICE_VERIFICATION_METHOD_KEY_AGREEM_P256,
@@ -125,5 +125,18 @@ export const ALICE_DID_DOC: DIDDoc = {
     ALICE_AUTH_METHOD_P256,
     ALICE_AUTH_METHOD_SECP256K1,
   ],
-  services: [],
+  service: [
+    {
+      id: "service1",
+      type: "DIDCommMessaging",
+      serviceEndpoint: {
+        "uri": "https://example.com/path",
+        "accept": [
+          "didcomm/v2",
+          "didcomm/aip2;env=rfc587"
+        ],
+        "routingKeys": ["did:example:somemediator#somekey"]
+      }
+    },
+  ],
 };

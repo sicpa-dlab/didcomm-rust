@@ -110,11 +110,11 @@ interface OnDIDResolverResult {
 };
 
 dictionary DIDDoc {
-  string did;
-  sequence<string> key_agreements;
-  sequence<string> authentications;
-  sequence<VerificationMethod> verification_methods;
-  sequence<Service> services;
+  string id;
+  sequence<string> key_agreement;
+  sequence<string> authentication;
+  sequence<VerificationMethod> verification_method;
+  sequence<Service> service;
 };
 
 dictionary VerificationMethod {
