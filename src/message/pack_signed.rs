@@ -271,7 +271,7 @@ mod tests {
             );
 
             let signer_key = match verification_material {
-                VerificationMaterial::JWK { ref value } => {
+                VerificationMaterial::PublicKeyJwk(ref value) => {
                     Key::from_jwk_value(value).expect("Unable from_jwk_value")
                 }
                 _ => panic!("Unexpected verification_material"),

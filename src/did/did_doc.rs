@@ -36,7 +36,7 @@ pub struct VerificationMethod {
     #[serde(rename = "type")]
     pub type_: VerificationMethodType,
     pub controller: String,
-    // TODO: this should be publicKeyJwk/publicKeyMultibase
+    #[serde(flatten)]
     pub verification_material: VerificationMaterial,
 }
 
@@ -53,13 +53,17 @@ pub enum VerificationMethodType {
 
 /// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(tag = "format")]
 pub enum VerificationMaterial {
-    JWK { value: Value },
-    Multibase { value: String },
-    Base58 { value: String },
-    Hex { value: String },
-    Other { value: Value },
+    #[serde(rename = "publicKeyJwk")]
+    PublicKeyJwk(Value),
+
+    #[serde(rename = "publicKeyMultibase")]
+    PublicKeyMultibase(String),
+
+    #[serde(rename = "publicKeyBase58")]
+    PublicKeyBase58(String),
+
+    Other(Value),
 }
 
 /// Represents service record in DID Document (https://www.w3.org/TR/did-core/#services).
@@ -70,25 +74,6 @@ pub struct Service {
     #[serde(flatten)]
     pub service_endpoint: ServiceKind,
 
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::did::{DIDCommMessagingService, Service, ServiceKind};
-
-    #[test]
-    fn test_display_service() {
-        println!("{}", serde_json::to_string(&Service{
-            id: "test".into(),
-            service_endpoint: ServiceKind::DIDCommMessaging {
-                value: DIDCommMessagingService {
-                    uri: "demo".into(),
-                    routing_keys: vec!["test".into()],
-                    accept: None,
-                }
-            }
-        }).unwrap())
-    }
 }
 
 /// Represents additional service properties defined for specific Service type.

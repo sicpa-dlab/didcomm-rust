@@ -2869,7 +2869,7 @@ mod tests {
             let to_kid = &to_key.id;
 
             let from_key = match from_key.verification_material {
-                VerificationMaterial::JWK { ref value } => {
+                VerificationMaterial::PublicKeyJwk(ref value) => {
                     KE::from_jwk_value(value).expect("Unable from_jwk_value")
                 }
                 _ => panic!("Unexpected verification method"),
@@ -2984,7 +2984,7 @@ mod tests {
         let sign_key_id = &sign_key.id;
 
         let sign_key = match sign_key.verification_material {
-            VerificationMaterial::JWK { ref value } => {
+            VerificationMaterial::PublicKeyJwk(ref value) => {
                 Key::from_jwk_value(value).expect("Unable from_jwk_value")
             }
             _ => panic!("Unexpected verification_material"),
