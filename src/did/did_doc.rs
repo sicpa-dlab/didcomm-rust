@@ -5,13 +5,13 @@ use serde_json::Value;
 
 /// Represents DID Document (https://www.w3.org/TR/did-core/)
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DIDDoc {
     /// DID for the given DID Doc
     pub id: String,
 
     /// DID URLs of verification methods used for key agreement.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    #[serde(rename = "keyAgreement")]
     pub key_agreement: Vec<String>,
 
     /// Returns DID URLs of verification methods used for authentication.
@@ -21,7 +21,6 @@ pub struct DIDDoc {
     /// All local verification methods including embedded to
     /// key agreement and authentication sections.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    #[serde(rename = "verificationMethod")]
     pub verification_method: Vec<VerificationMethod>,
 
     /// All services (https://www.w3.org/TR/did-core/#services)
@@ -53,17 +52,45 @@ pub enum VerificationMethodType {
 
 /// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum VerificationMaterial {
-    #[serde(rename = "publicKeyJwk")]
-    PublicKeyJwk(Value),
+    PublicKeyJwk { value: Value },
 
-    #[serde(rename = "publicKeyMultibase")]
-    PublicKeyMultibase(String),
+    PublicKeyMultibase { value: String },
 
-    #[serde(rename = "publicKeyBase58")]
-    PublicKeyBase58(String),
+    PublicKeyBase58 { value: String },
 
-    Other(Value),
+    Other { value: Value },
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::did::{DIDCommMessagingService, DIDDoc, Service, ServiceKind, VerificationMaterial, VerificationMethod, VerificationMethodType};
+
+    #[test]
+    fn print_a_diddoc() {
+       println!("{}", serde_json::to_string(&DIDDoc{
+           id: "test".into(),
+           key_agreement: vec!["key1".into(), "key2".into()],
+           authentication: vec!["auth1".into()],
+           verification_method: vec![VerificationMethod{
+               id: "verif1".into(),
+               type_: VerificationMethodType::Ed25519VerificationKey2020,
+               controller: "cont1".into(),
+               verification_material: VerificationMaterial::PublicKeyBase58 {value:"0x111".into()}
+           }],
+           service: vec![Service{
+               id:"service1".into(),
+               service_endpoint: ServiceKind::DIDCommMessaging {
+                   value: DIDCommMessagingService {
+                       uri: "http://".into(),
+                       accept: Some(vec!["acc1".into(), "acc2".into()]),
+                       routing_keys: vec!["routingke1".into()]
+                   }
+               }
+           }]
+       }).unwrap())
+    }
 }
 
 /// Represents service record in DID Document (https://www.w3.org/TR/did-core/#services).
@@ -93,6 +120,7 @@ pub enum ServiceKind {
 /// Properties for DIDCommMessagingService
 /// (https://identity.foundation/didcomm-messaging/spec/#did-document-service-endpoint).
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DIDCommMessagingService {
     pub uri: String,
 
@@ -100,6 +128,5 @@ pub struct DIDCommMessagingService {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub accept: Option<Vec<String>>,
 
-    #[serde(rename = "routingKeys")]
     pub routing_keys: Vec<String>,
 }

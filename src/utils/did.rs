@@ -32,7 +32,7 @@ pub(crate) fn did_or_url(did_or_url: &str) -> (&str, Option<&str>) {
 impl AsKnownKeyPair for VerificationMethod {
     fn key_alg(&self) -> KnownKeyAlg {
         match (&self.type_, &self.verification_material) {
-            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::PublicKeyJwk(ref value)) => {
+            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::PublicKeyJwk { ref value }) => {
                 match (value["kty"].as_str(), value["crv"].as_str()) {
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => KnownKeyAlg::P256,
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
@@ -49,19 +49,19 @@ impl AsKnownKeyPair for VerificationMethod {
             }
             (
                 VerificationMethodType::X25519KeyAgreementKey2019,
-                VerificationMaterial::PublicKeyBase58(_),
+                VerificationMaterial::PublicKeyBase58 { value: _ },
             ) => KnownKeyAlg::X25519,
             (
                 VerificationMethodType::Ed25519VerificationKey2018,
-                VerificationMaterial::PublicKeyBase58(_),
+                VerificationMaterial::PublicKeyBase58 { value: _ },
             ) => KnownKeyAlg::Ed25519,
             (
                 VerificationMethodType::X25519KeyAgreementKey2020,
-                VerificationMaterial::PublicKeyMultibase(_),
+                VerificationMaterial::PublicKeyMultibase { value: _ },
             ) => KnownKeyAlg::X25519,
             (
                 VerificationMethodType::Ed25519VerificationKey2020,
-                VerificationMaterial::PublicKeyMultibase(_),
+                VerificationMaterial::PublicKeyMultibase { value: _ },
             ) => KnownKeyAlg::Ed25519,
             _ => KnownKeyAlg::Unsupported,
         }
@@ -69,7 +69,7 @@ impl AsKnownKeyPair for VerificationMethod {
 
     fn as_key_pair(&self) -> Result<KnownKeyPair> {
         match (&self.type_, &self.verification_material) {
-            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::PublicKeyJwk(ref value)) => {
+            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::PublicKeyJwk { ref value }) => {
                 match (value["kty"].as_str(), value["crv"].as_str()) {
                     (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
                         P256KeyPair::from_jwk_value(value)
@@ -100,7 +100,7 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::X25519KeyAgreementKey2019,
-                VerificationMaterial::PublicKeyBase58(ref value),
+                VerificationMaterial::PublicKeyBase58 { ref value },
             ) => {
                 let decoded_value = bs58::decode(value)
                     .into_vec()
@@ -124,7 +124,7 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::Ed25519VerificationKey2018,
-                VerificationMaterial::PublicKeyBase58(ref value),
+                VerificationMaterial::PublicKeyBase58 { ref value },
             ) => {
                 let decoded_value = bs58::decode(value)
                     .into_vec()
@@ -148,7 +148,7 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::X25519KeyAgreementKey2020,
-                VerificationMaterial::PublicKeyMultibase(ref value),
+                VerificationMaterial::PublicKeyMultibase { ref value },
             ) => {
                 if !value.starts_with('z') {
                     Err(err_msg(
@@ -186,7 +186,7 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::Ed25519VerificationKey2020,
-                VerificationMaterial::PublicKeyMultibase(ref value),
+                VerificationMaterial::PublicKeyMultibase { ref value },
             ) => {
                 if !value.starts_with('z') {
                     Err(err_msg(
@@ -579,7 +579,7 @@ mod tests {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: VerificationMethodType::X25519KeyAgreementKey2019,
             controller: "did:example:eve#key-x25519-1".to_string(),
-            verification_material: (VerificationMaterial::PublicKeyBase58("JhNWeSVLMYccCk7iopQW4guaSJTojqpMEELgSLhKwRr".to_string())),
+            verification_material: (VerificationMaterial::PublicKeyBase58 { value: "JhNWeSVLMYccCk7iopQW4guaSJTojqpMEELgSLhKwRr".to_string() }),
         }
         .as_key_pair()
         .unwrap();
@@ -600,7 +600,7 @@ mod tests {
             id: "did:example:eve#key-ed25519-1".to_string(),
             type_: VerificationMethodType::Ed25519VerificationKey2018,
             controller: "did:example:eve#key-ed25519-1".to_string(),
-            verification_material: (VerificationMaterial::PublicKeyBase58("ByHnpUCFb1vAfh9CFZ8ZkmUZguURW8nSw889hy6rD8L7".to_string())),
+            verification_material: (VerificationMaterial::PublicKeyBase58 { value: "ByHnpUCFb1vAfh9CFZ8ZkmUZguURW8nSw889hy6rD8L7".to_string() }),
         }
         .as_key_pair()
         .unwrap();
@@ -621,7 +621,7 @@ mod tests {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: VerificationMethodType::X25519KeyAgreementKey2020,
             controller: "did:example:eve#key-x25519-1".to_string(),
-            verification_material: (VerificationMaterial::PublicKeyMultibase("z6LSbysY2xFMRpGMhb7tFTLMpeuPRaqaWM1yECx2AtzE3KCc".to_string())),
+            verification_material: (VerificationMaterial::PublicKeyMultibase { value: "z6LSbysY2xFMRpGMhb7tFTLMpeuPRaqaWM1yECx2AtzE3KCc".to_string() }),
         }
         .as_key_pair()
         .unwrap();
@@ -642,7 +642,7 @@ mod tests {
             id: "did:example:eve#key-ed25519-1".to_string(),
             type_: VerificationMethodType::Ed25519VerificationKey2020,
             controller: "did:example:eve#key-ed25519-1".to_string(),
-            verification_material: (VerificationMaterial::PublicKeyMultibase("z6MkqRYqQiSgvZQdnBytw86Qbs2ZWUkGv22od935YF4s8M7V".to_string())),
+            verification_material: (VerificationMaterial::PublicKeyMultibase { value: "z6MkqRYqQiSgvZQdnBytw86Qbs2ZWUkGv22od935YF4s8M7V".to_string() }),
         }
         .as_key_pair()
         .unwrap();
