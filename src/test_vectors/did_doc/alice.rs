@@ -11,8 +11,8 @@ lazy_static! {
             id: "did:example:alice#key-x25519-not-in-secrets-1".into(),
             controller: "did:example:alice#key-x25519-not-in-secrets-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!({
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!({
                     "kty": "OKP",
                     "crv": "X25519",
                     "x": "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
@@ -23,8 +23,8 @@ lazy_static! {
             id: "did:example:alice#key-x25519-1".into(),
             controller: "did:example:alice#key-x25519-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!({
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!({
                     "kty": "OKP",
                     "crv": "X25519",
                     "x": "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
@@ -36,8 +36,8 @@ lazy_static! {
             id: "did:example:alice#key-p256-1".into(),
             controller: "did:example:alice#key-p256-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!({
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!({
                     "kty": "EC",
                     "crv": "P-256",
                     "x": "L0crjMN1g0Ih4sYAJ_nGoHUck2cloltUpUVQDhF2nHE",
@@ -50,8 +50,8 @@ lazy_static! {
             id: "did:example:alice#key-p521-1".into(),
             controller: "did:example:alice#key-p521-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!({
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!({
                     "kty": "EC",
                     "crv": "P-521",
                     "x": "AHBEVPRhAv-WHDEvxVM9S0px9WxxwHL641Pemgk9sDdxvli9VpKCBdra5gg_4kupBDhz__AlaBgKOC_15J2Byptz",
@@ -63,8 +63,8 @@ lazy_static! {
         id: "did:example:alice#key-not-in-secrets-1".into(),
         controller: "did:example:alice#key-not-in-secrets-1".into(),
         type_: VerificationMethodType::JsonWebKey2020,
-        verification_material: VerificationMaterial::PublicKeyJwk {
-            value: json!({
+        verification_material: VerificationMaterial::JWK {
+            public_key_jwk: json!({
                 "kty": "OKP",
                 "crv": "Ed25519",
                 "x": "G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww",
@@ -75,8 +75,8 @@ lazy_static! {
         id: "did:example:alice#key-1".into(),
         controller: "did:example:alice#key-1".into(),
         type_: VerificationMethodType::JsonWebKey2020,
-        verification_material: VerificationMaterial::PublicKeyJwk {
-            value: json!({
+        verification_material: VerificationMaterial::JWK {
+            public_key_jwk: json!({
                 "kty": "OKP",
                 "crv": "Ed25519",
                 "x": "G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww",
@@ -87,8 +87,8 @@ lazy_static! {
         id: "did:example:alice#key-2".into(),
         controller: "did:example:alice#key-2".into(),
         type_: VerificationMethodType::JsonWebKey2020,
-        verification_material: VerificationMaterial::PublicKeyJwk {
-            value: json!({
+        verification_material: VerificationMaterial::JWK {
+            public_key_jwk: json!({
                 "kty": "EC",
                 "crv": "P-256",
                 "x": "2syLh57B-dGpa0F8p1JrO6JU7UUSF6j7qL-vfk1eOoY",
@@ -100,8 +100,8 @@ lazy_static! {
         id: "did:example:alice#key-3".into(),
         controller: "did:example:alice#key-3".into(),
         type_: VerificationMethodType::JsonWebKey2020,
-        verification_material: VerificationMaterial::PublicKeyJwk {
-            value: json!({
+        verification_material: VerificationMaterial::JWK {
+            public_key_jwk: json!({
                 "kty": "EC",
                 "crv": "secp256k1",
                 "x": "aToW5EaTq5mlAf8C5ECYDSkqsJycrW-e1SQ6_GJcAOk",

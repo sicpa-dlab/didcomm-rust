@@ -52,15 +52,16 @@ pub enum VerificationMethodType {
 
 /// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(untagged)]
 pub enum VerificationMaterial {
-    PublicKeyJwk { value: Value },
+    #[serde(rename_all = "camelCase")]
+    JWK { public_key_jwk: Value },
 
-    PublicKeyMultibase { value: String },
+    #[serde(rename_all = "camelCase")]
+    Multibase { public_key_multibase: String },
 
-    PublicKeyBase58 { value: String },
-
-    Other { value: Value },
+    #[serde(rename_all = "camelCase")]
+    Base58 { public_key_base58: String },
 }
 
 #[cfg(test)]
@@ -77,7 +78,7 @@ mod tests {
                id: "verif1".into(),
                type_: VerificationMethodType::Ed25519VerificationKey2020,
                controller: "cont1".into(),
-               verification_material: VerificationMaterial::PublicKeyBase58 {value:"0x111".into()}
+               verification_material: VerificationMaterial::Base58 { public_key_base58:"0x111".into()}
            }],
            service: vec![Service{
                id:"service1".into(),

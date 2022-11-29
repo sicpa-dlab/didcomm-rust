@@ -12,8 +12,8 @@ lazy_static! {
             id: "did:example:mediator3#key-x25519-1".into(),
             controller: "did:example:mediator3#key-x25519-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -26,8 +26,8 @@ lazy_static! {
             id: "did:example:mediator3#key-p256-1".into(),
             controller: "did:example:mediator3#key-p256-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-256",
@@ -41,8 +41,8 @@ lazy_static! {
             id: "did:example:mediator3#key-p384-1".into(),
             controller: "did:example:mediator3#key-p384-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-384",
@@ -56,8 +56,8 @@ lazy_static! {
             id: "did:example:mediator3#key-p521-1".into(),
             controller: "did:example:mediator3#key-p521-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-521",

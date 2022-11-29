@@ -12,8 +12,8 @@ lazy_static! {
             id: "did:example:bob#key-x25519-1".into(),
             controller: "did:example:bob#key-x25519-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -26,8 +26,8 @@ lazy_static! {
             id: "did:example:bob#key-x25519-2".into(),
             controller: "did:example:bob#key-x25519-2".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -40,8 +40,8 @@ lazy_static! {
             id: "did:example:bob#key-x25519-3".into(),
             controller: "did:example:bob#key-x25519-3".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -54,8 +54,8 @@ lazy_static! {
             id: "did:example:bob#key-x25519-not-secrets-1".into(),
             controller: "did:example:bob#key-x25519-not-secrets-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -68,8 +68,8 @@ lazy_static! {
             id: "did:example:bob#key-p256-1".into(),
             controller: "did:example:bob#key-p256-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-256",
@@ -83,8 +83,8 @@ lazy_static! {
             id: "did:example:bob#key-p256-2".into(),
             controller: "did:example:bob#key-p256-2".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-256",
@@ -98,8 +98,8 @@ lazy_static! {
             id: "did:example:bob#key-p256-not-secrets-1".into(),
             controller: "did:example:bob#key-p256-not-secrets-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-256",
@@ -113,8 +113,8 @@ lazy_static! {
             id: "did:example:bob#key-p384-1".into(),
             controller: "did:example:bob#key-p384-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-384",
@@ -128,8 +128,8 @@ lazy_static! {
             id: "did:example:bob#key-p384-2".into(),
             controller: "did:example:bob#key-p384-2".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-384",
@@ -143,8 +143,8 @@ lazy_static! {
             id: "did:example:bob#key-p384-not-secrets-1".into(),
             controller: "did:example:bob#key-p384-not-secrets-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-384",
@@ -158,8 +158,8 @@ lazy_static! {
             id: "did:example:bob#key-p521-1".into(),
             controller: "did:example:bob#key-p521-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-521",
@@ -173,8 +173,8 @@ lazy_static! {
             id: "did:example:bob#key-p521-2".into(),
             controller: "did:example:bob#key-p521-2".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-521",
@@ -188,8 +188,8 @@ lazy_static! {
             id: "did:example:bob#key-p521-not-secrets-1".into(),
             controller: "did:example:bob#key-p521-not-secrets-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-521",

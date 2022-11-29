@@ -12,8 +12,8 @@ lazy_static! {
             id: "did:example:charlie#key-x25519-1".into(),
             controller: "did:example:charlie#key-x25519-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
-            verification_material: VerificationMaterial::PublicKeyJwk {
-                value: json!(
+            verification_material: VerificationMaterial::JWK {
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -25,8 +25,8 @@ lazy_static! {
         id: "did:example:charlie#key-1".into(),
         controller: "did:example:charlie#key-1".into(),
         type_: VerificationMethodType::JsonWebKey2020,
-        verification_material: VerificationMaterial::PublicKeyJwk {
-            value: json!(
+        verification_material: VerificationMaterial::JWK {
+            public_key_jwk: json!(
             {
                 "kty": "OKP",
                 "crv": "Ed25519",
