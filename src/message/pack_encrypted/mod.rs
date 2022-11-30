@@ -2874,9 +2874,9 @@ mod tests {
             };
 
             let to_key = match to_key.secret_material {
-                SecretMaterial::JWK { private_key_jwk: ref value } => {
-                    KE::from_jwk_value(value).expect("Unable from_jwk_value")
-                }
+                SecretMaterial::JWK {
+                    private_key_jwk: ref value,
+                } => KE::from_jwk_value(value).expect("Unable from_jwk_value"),
                 _ => panic!("Unexpected verification method"),
             };
 
@@ -2934,9 +2934,9 @@ mod tests {
             let to_kid = &to_key.id;
 
             let to_key = match to_key.secret_material {
-                SecretMaterial::JWK { private_key_jwk: ref value } => {
-                    KE::from_jwk_value(value).expect("Unable from_jwk_value")
-                }
+                SecretMaterial::JWK {
+                    private_key_jwk: ref value,
+                } => KE::from_jwk_value(value).expect("Unable from_jwk_value"),
                 _ => panic!("Unexpected verification method"),
             };
 
