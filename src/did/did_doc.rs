@@ -64,36 +64,6 @@ pub enum VerificationMaterial {
     Base58 { public_key_base58: String },
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::did::{DIDCommMessagingService, DIDDoc, Service, ServiceKind, VerificationMaterial, VerificationMethod, VerificationMethodType};
-
-    #[test]
-    fn print_a_diddoc() {
-       println!("{}", serde_json::to_string(&DIDDoc{
-           id: "test".into(),
-           key_agreement: vec!["key1".into(), "key2".into()],
-           authentication: vec!["auth1".into()],
-           verification_method: vec![VerificationMethod{
-               id: "verif1".into(),
-               type_: VerificationMethodType::Ed25519VerificationKey2020,
-               controller: "cont1".into(),
-               verification_material: VerificationMaterial::Base58 { public_key_base58:"0x111".into()}
-           }],
-           service: vec![Service{
-               id:"service1".into(),
-               service_endpoint: ServiceKind::DIDCommMessaging {
-                   value: DIDCommMessagingService {
-                       uri: "http://".into(),
-                       accept: Some(vec!["acc1".into(), "acc2".into()]),
-                       routing_keys: vec!["routingke1".into()]
-                   }
-               }
-           }]
-       }).unwrap())
-    }
-}
-
 /// Represents service record in DID Document (https://www.w3.org/TR/did-core/#services).
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Service {
@@ -101,7 +71,6 @@ pub struct Service {
 
     #[serde(flatten)]
     pub service_endpoint: ServiceKind,
-
 }
 
 /// Represents additional service properties defined for specific Service type.

@@ -16,7 +16,8 @@ lazy_static! {
                     "kty": "OKP",
                     "crv": "X25519",
                     "x": "avH0O2Y4tqLAq8y9zpianr8ajii5m4F_mICrzNlatXs",
-                })}
+                })
+            }
         };
     pub static ref ALICE_VERIFICATION_METHOD_KEY_AGREEM_X25519: VerificationMethod =
         VerificationMethod {

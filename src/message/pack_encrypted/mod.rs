@@ -1774,9 +1774,7 @@ mod tests {
                 pack_metadata.messaging_service.as_ref(),
                 Some(&MessagingServiceMetadata {
                     id: CHARLIE_SERVICE.id.clone(),
-                    service_endpoint: MEDIATOR3_DID_COMM_MESSAGING_SERVICE
-                        .uri
-                        .clone(),
+                    service_endpoint: MEDIATOR3_DID_COMM_MESSAGING_SERVICE.uri.clone(),
                 })
             );
 
@@ -2869,9 +2867,9 @@ mod tests {
             let to_kid = &to_key.id;
 
             let from_key = match from_key.verification_material {
-                VerificationMaterial::JWK { public_key_jwk: ref value } => {
-                    KE::from_jwk_value(value).expect("Unable from_jwk_value")
-                }
+                VerificationMaterial::JWK {
+                    public_key_jwk: ref value,
+                } => KE::from_jwk_value(value).expect("Unable from_jwk_value"),
                 _ => panic!("Unexpected verification method"),
             };
 
@@ -2984,9 +2982,9 @@ mod tests {
         let sign_key_id = &sign_key.id;
 
         let sign_key = match sign_key.verification_material {
-            VerificationMaterial::JWK { public_key_jwk: ref value } => {
-                Key::from_jwk_value(value).expect("Unable from_jwk_value")
-            }
+            VerificationMaterial::JWK {
+                public_key_jwk: ref value,
+            } => Key::from_jwk_value(value).expect("Unable from_jwk_value"),
             _ => panic!("Unexpected verification_material"),
         };
 
