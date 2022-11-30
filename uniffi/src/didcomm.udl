@@ -197,11 +197,9 @@ dictionary Secret {
 
 [Enum]
 interface SecretMaterial {
-  JWK(JsonValue value);
-  Multibase(string value);
-  Base58(string value);
-  Hex(string value);
-  Other(JsonValue value);
+  JWK(JsonValue private_key_jwk);
+  Multibase(string private_key_multibase);
+  Base58(string private_key_base58);
 };
 
 enum SecretType {

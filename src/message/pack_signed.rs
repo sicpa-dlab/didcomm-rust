@@ -395,7 +395,7 @@ mod tests {
             id: "did:example:alice#key-d25519-1".into(),
             type_: SecretType::JsonWebKey2020,
             secret_material: SecretMaterial::JWK {
-                value: serde_json::json!({
+                private_key_jwk: serde_json::json!({
                     "kty": "EC",
                     "d": "sB0bYtpaXyp-h17dDpMx91N3Du1AdN4z1FUq02GbmLw",
                     "crv": "A-256",

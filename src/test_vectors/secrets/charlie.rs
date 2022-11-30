@@ -8,7 +8,7 @@ lazy_static! {
         id: "did:example:charlie#key-x25519-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!({
+            private_key_jwk: json!({
                 "kty": "OKP",
                 "crv": "X25519",
                 "x": "nTiVFj7DChMsETDdxd5dIzLAJbSQ4j4UG6ZU1ogLNlw",
@@ -20,7 +20,7 @@ lazy_static! {
         id: "did:example:charlie#key-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!({
+            private_key_jwk: json!({
                 "kty": "OKP",
                 "crv": "Ed25519",
                 "x": "VDXDwuGKVq91zxU6q7__jLDUq8_C5cuxECgd-1feFTE",
