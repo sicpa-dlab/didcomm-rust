@@ -47,7 +47,9 @@ type VerificationMethod = {
     id: string,
     type: VerificationMethodType,
     controller: string,
-    verification_material: VerificationMaterial,
+    publicKeyJwk?: any,
+    publicKeyMultibase?: string,
+    publicKeyBase58?: string,
 }
 "#;
 
@@ -55,25 +57,6 @@ type VerificationMethod = {
 const VERIFICATION_METHOD_TYPE_TS: &'static str = r#"
 type VerificationMethodType = "JsonWebKey2020" | "X25519KeyAgreementKey2019" 
     | "Ed25519VerificationKey2018" | "EcdsaSecp256k1VerificationKey2019" | string
-"#;
-
-#[wasm_bindgen(typescript_custom_section)]
-const VERIFICATION_MATERIAL_FORMAT_TS: &'static str = r#"
-/**
- * The representation format of secret material
- */
-type VerificationMaterialFormat = "JWK" | "Multibase" | "Base58" | "Hex" | "Other" | string
-"#;
-
-#[wasm_bindgen(typescript_custom_section)]
-const VERIFICATION_MATERIAL_TYPE_TS: &'static str = r#"
-/**
- * Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
- */
-type VerificationMaterial = {
-    format: string,
-    value: any,
-}
 "#;
 
 #[wasm_bindgen(typescript_custom_section)]
