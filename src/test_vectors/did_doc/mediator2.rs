@@ -12,7 +12,7 @@ lazy_static! {
             controller: "did:example:mediator2#key-x25519-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -26,7 +26,7 @@ lazy_static! {
             controller: "did:example:mediator2#key-p256-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-256",
@@ -41,7 +41,7 @@ lazy_static! {
             controller: "did:example:mediator2#key-p384-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-384",
@@ -56,7 +56,7 @@ lazy_static! {
             controller: "did:example:mediator2#key-p521-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-521",
@@ -66,16 +66,16 @@ lazy_static! {
             },
         };
     pub static ref MEDIATOR2_DID_DOC: DIDDoc = DIDDoc {
-        did: "did:example:mediator2".into(),
-        authentications: vec![],
-        key_agreements: vec![
+        id: "did:example:mediator2".into(),
+        authentication: vec![],
+        key_agreement: vec![
             "did:example:mediator2#key-x25519-1".into(),
             "did:example:mediator2#key-p256-1".into(),
             "did:example:mediator2#key-p384-1".into(),
             "did:example:mediator2#key-p521-1".into(),
         ],
-        services: vec![],
-        verification_methods: vec![
+        service: vec![],
+        verification_method: vec![
             MEDIATOR2_VERIFICATION_METHOD_KEY_AGREEM_X25519_1.clone(),
             MEDIATOR2_VERIFICATION_METHOD_KEY_AGREEM_P256_1.clone(),
             MEDIATOR2_VERIFICATION_METHOD_KEY_AGREEM_P384_1.clone(),

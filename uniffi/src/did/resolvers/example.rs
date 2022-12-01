@@ -22,7 +22,7 @@ impl DIDResolver for ExampleDIDResolver {
         let diddoc = self
             .known_dids
             .iter()
-            .find(|ddoc| ddoc.did == did)
+            .find(|ddoc| ddoc.id == did)
             .map(|ddoc| ddoc.clone());
 
         match cb.success(diddoc) {

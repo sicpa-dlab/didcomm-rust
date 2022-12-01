@@ -5,25 +5,26 @@ use serde_json::Value;
 
 /// Represents DID Document (https://www.w3.org/TR/did-core/)
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DIDDoc {
     /// DID for the given DID Doc
-    pub did: String,
+    pub id: String,
 
     /// DID URLs of verification methods used for key agreement.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    pub key_agreements: Vec<String>,
+    pub key_agreement: Vec<String>,
 
     /// Returns DID URLs of verification methods used for authentication.
     /// See https://www.w3.org/TR/did-core/#authentication
-    pub authentications: Vec<String>,
+    pub authentication: Vec<String>,
 
     /// All local verification methods including embedded to
     /// key agreement and authentication sections.
     /// See https://www.w3.org/TR/did-core/#verification-methods.
-    pub verification_methods: Vec<VerificationMethod>,
+    pub verification_method: Vec<VerificationMethod>,
 
     /// All services (https://www.w3.org/TR/did-core/#services)
-    pub services: Vec<Service>,
+    pub service: Vec<Service>,
 }
 
 /// Represents verification method record in DID Document
@@ -34,6 +35,7 @@ pub struct VerificationMethod {
     #[serde(rename = "type")]
     pub type_: VerificationMethodType,
     pub controller: String,
+    #[serde(flatten)]
     pub verification_material: VerificationMaterial,
 }
 
@@ -50,24 +52,30 @@ pub enum VerificationMethodType {
 
 /// Represents verification material (https://www.w3.org/TR/did-core/#verification-material)
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(tag = "format")]
+#[serde(untagged)]
 pub enum VerificationMaterial {
-    JWK { value: Value },
-    Multibase { value: String },
-    Base58 { value: String },
-    Hex { value: String },
-    Other { value: Value },
+    #[serde(rename_all = "camelCase")]
+    JWK { public_key_jwk: Value },
+
+    #[serde(rename_all = "camelCase")]
+    Multibase { public_key_multibase: String },
+
+    #[serde(rename_all = "camelCase")]
+    Base58 { public_key_base58: String },
 }
 
 /// Represents service record in DID Document (https://www.w3.org/TR/did-core/#services).
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Service {
     pub id: String,
-    pub kind: ServiceKind,
+
+    #[serde(flatten)]
+    pub service_endpoint: ServiceKind,
 }
 
 /// Represents additional service properties defined for specific Service type.
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "type", content = "serviceEndpoint")]
 pub enum ServiceKind {
     DIDCommMessaging {
         #[serde(flatten)]
@@ -82,10 +90,13 @@ pub enum ServiceKind {
 /// Properties for DIDCommMessagingService
 /// (https://identity.foundation/didcomm-messaging/spec/#did-document-service-endpoint).
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DIDCommMessagingService {
-    pub service_endpoint: String,
+    pub uri: String,
+
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub accept: Option<Vec<String>>,
+
     pub routing_keys: Vec<String>,
 }

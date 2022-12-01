@@ -34,7 +34,7 @@ async fn find_did_comm_service<'dr>(
     match service_id {
         Some(service_id) => {
             let service: &Service = did_doc
-                .services
+                .service
                 .iter()
                 .find(|&service| service.id == service_id)
                 .ok_or_else(|| {
@@ -44,7 +44,7 @@ async fn find_did_comm_service<'dr>(
                     )
                 })?;
 
-            match service.kind {
+            match service.service_endpoint {
                 ServiceKind::DIDCommMessaging { ref value } => match value.accept.as_ref() {
                     Some(accept) => {
                         if accept.is_empty() || accept.contains(&DIDCOMM_V2_PROFILE.into()) {
@@ -66,9 +66,9 @@ async fn find_did_comm_service<'dr>(
         }
 
         None => Ok(did_doc
-            .services
+            .service
             .iter()
-            .find_map(|service| match service.kind {
+            .find_map(|service| match service.service_endpoint {
                 ServiceKind::DIDCommMessaging { ref value } => match value.accept.as_ref() {
                     Some(accept) => {
                         if accept.is_empty() || accept.contains(&DIDCOMM_V2_PROFILE.into()) {
@@ -100,7 +100,7 @@ async fn resolve_did_comm_services_chain<'dr>(
     let mut service = service.unwrap();
 
     let mut services = vec![service.clone()];
-    let mut service_endpoint = &service.1.service_endpoint;
+    let mut service_endpoint = &service.1.uri;
 
     while is_did(service_endpoint) {
         // Now alternative endpoints recursion is not supported
@@ -123,7 +123,7 @@ async fn resolve_did_comm_services_chain<'dr>(
             })?;
 
         services.insert(0, service.clone());
-        service_endpoint = &service.1.service_endpoint;
+        service_endpoint = &service.1.uri;
     }
 
     Ok(services)
@@ -286,7 +286,7 @@ pub(crate) async fn wrap_in_forward_if_needed<'dr>(
 
     let mut routing_keys = services_chain[1..]
         .iter()
-        .map(|service| service.1.service_endpoint.clone())
+        .map(|service| service.1.uri.clone())
         .collect::<Vec<_>>();
 
     routing_keys.append(&mut services_chain.last().unwrap().1.routing_keys.clone());
@@ -307,7 +307,7 @@ pub(crate) async fn wrap_in_forward_if_needed<'dr>(
 
     let messaging_service = MessagingServiceMetadata {
         id: services_chain.last().unwrap().0.clone(),
-        service_endpoint: services_chain.first().unwrap().1.service_endpoint.clone(),
+        service_endpoint: services_chain.first().unwrap().1.uri.clone(),
     };
 
     Ok(Some((forward_msg, messaging_service)))

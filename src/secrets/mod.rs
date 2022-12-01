@@ -77,6 +77,7 @@ pub struct Secret {
     pub type_: SecretType,
 
     /// Value of the secret (private key)
+    #[serde(flatten)]
     pub secret_material: SecretMaterial,
 }
 
@@ -94,11 +95,14 @@ pub enum SecretType {
 
 /// Represents secret crypto material.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(tag = "format")]
+#[serde(untagged)]
 pub enum SecretMaterial {
-    JWK { value: Value },
-    Multibase { value: String },
-    Base58 { value: String },
-    Hex { value: String },
-    Other { value: Value },
+    #[serde(rename_all = "camelCase")]
+    JWK { private_key_jwk: Value },
+
+    #[serde(rename_all = "camelCase")]
+    Multibase { private_key_multibase: String },
+
+    #[serde(rename_all = "camelCase")]
+    Base58 { private_key_base58: String },
 }

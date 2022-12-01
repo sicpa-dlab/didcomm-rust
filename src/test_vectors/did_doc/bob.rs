@@ -13,7 +13,7 @@ lazy_static! {
             controller: "did:example:bob#key-x25519-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -27,7 +27,7 @@ lazy_static! {
             controller: "did:example:bob#key-x25519-2".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -41,7 +41,7 @@ lazy_static! {
             controller: "did:example:bob#key-x25519-3".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -55,7 +55,7 @@ lazy_static! {
             controller: "did:example:bob#key-x25519-not-secrets-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -69,7 +69,7 @@ lazy_static! {
             controller: "did:example:bob#key-p256-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-256",
@@ -84,7 +84,7 @@ lazy_static! {
             controller: "did:example:bob#key-p256-2".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-256",
@@ -99,7 +99,7 @@ lazy_static! {
             controller: "did:example:bob#key-p256-not-secrets-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-256",
@@ -114,7 +114,7 @@ lazy_static! {
             controller: "did:example:bob#key-p384-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-384",
@@ -129,7 +129,7 @@ lazy_static! {
             controller: "did:example:bob#key-p384-2".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-384",
@@ -144,7 +144,7 @@ lazy_static! {
             controller: "did:example:bob#key-p384-not-secrets-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-384",
@@ -159,7 +159,7 @@ lazy_static! {
             controller: "did:example:bob#key-p521-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-521",
@@ -174,7 +174,7 @@ lazy_static! {
             controller: "did:example:bob#key-p521-2".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-521",
@@ -189,7 +189,7 @@ lazy_static! {
             controller: "did:example:bob#key-p521-not-secrets-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-521",
@@ -200,20 +200,20 @@ lazy_static! {
         };
     pub static ref BOB_DID_COMM_MESSAGING_SERVICE: DIDCommMessagingService =
         DIDCommMessagingService {
-            service_endpoint: "http://example.com/path".into(),
+            uri: "http://example.com/path".into(),
             accept: Some(vec!["didcomm/v2".into(), "didcomm/aip2;env=rfc587".into()]),
             routing_keys: vec!["did:example:mediator1#key-x25519-1".into()],
         };
     pub static ref BOB_SERVICE: Service = Service {
         id: "did:example:bob#didcomm-1".into(),
-        kind: ServiceKind::DIDCommMessaging {
+        service_endpoint: ServiceKind::DIDCommMessaging {
             value: BOB_DID_COMM_MESSAGING_SERVICE.clone()
         },
     };
     pub static ref BOB_DID_DOC: DIDDoc = DIDDoc {
-        did: "did:example:bob".into(),
-        authentications: vec![],
-        key_agreements: vec![
+        id: "did:example:bob".into(),
+        authentication: vec![],
+        key_agreement: vec![
             "did:example:bob#key-x25519-1".into(),
             "did:example:bob#key-x25519-2".into(),
             "did:example:bob#key-x25519-3".into(),
@@ -224,8 +224,8 @@ lazy_static! {
             "did:example:bob#key-p521-1".into(),
             "did:example:bob#key-p521-2".into(),
         ],
-        services: vec![BOB_SERVICE.clone()],
-        verification_methods: vec![
+        service: vec![BOB_SERVICE.clone()],
+        verification_method: vec![
             BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_1.clone(),
             BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_2.clone(),
             BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_3.clone(),
@@ -238,9 +238,9 @@ lazy_static! {
         ],
     };
     pub static ref BOB_DID_DOC_NO_SECRETS: DIDDoc = DIDDoc {
-        did: "did:example:bob".into(),
-        authentications: vec![],
-        key_agreements: vec![
+        id: "did:example:bob".into(),
+        authentication: vec![],
+        key_agreement: vec![
             "did:example:bob#key-x25519-1".into(),
             "did:example:bob#key-x25519-2".into(),
             "did:example:bob#key-x25519-3".into(),
@@ -255,8 +255,8 @@ lazy_static! {
             "did:example:bob#key-p521-2".into(),
             "did:example:bob#key-p521-not-secrets-1".into(),
         ],
-        services: vec![BOB_SERVICE.clone()],
-        verification_methods: vec![
+        service: vec![BOB_SERVICE.clone()],
+        verification_method: vec![
             BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_1.clone(),
             BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_2.clone(),
             BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_3.clone(),

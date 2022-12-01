@@ -8,7 +8,7 @@ lazy_static! {
         id: "did:example:alice#key-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!({
+            private_key_jwk: json!({
                 "kty": "OKP",
                 "d": "pFRUKkyzx4kHdJtFSnlPA9WzqkDT1HWV0xZ5OYZd2SY",
                 "crv": "Ed25519",
@@ -20,7 +20,7 @@ lazy_static! {
         id: "did:example:alice#key-2".into(),
         type_: SecretType::JsonWebKey2020.into(),
         secret_material: SecretMaterial::JWK {
-            value: json!({
+            private_key_jwk: json!({
                 "kty": "EC",
                 "d": "7TCIdt1rhThFtWcEiLnk_COEjh1ZfQhM4bW2wz-dp4A",
                 "crv": "P-256",
@@ -33,7 +33,7 @@ lazy_static! {
         id: "did:example:alice#key-3".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!({
+            private_key_jwk: json!({
                 "kty": "EC",
                 "d": "N3Hm1LXA210YVGGsXw_GklMwcLu_bMgnzDese6YQIyA",
                 "crv": "secp256k1",
@@ -46,7 +46,7 @@ lazy_static! {
         id: "did:example:alice#key-x25519-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!({
+            private_key_jwk: json!({
                 "kty": "OKP",
                 "d": "r-jK2cO3taR8LQnJB1_ikLBTAnOtShJOsHXRUWT-aZA",
                 "crv": "X25519",
@@ -58,7 +58,7 @@ lazy_static! {
         id: "did:example:alice#key-p256-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!({
+            private_key_jwk: json!({
                 "kty": "EC",
                 "d": "sB0bYtpaXyp-h17dDpMx91N3Du1AdN4z1FUq02GbmLw",
                 "crv": "P-256",
@@ -71,7 +71,7 @@ lazy_static! {
         id: "did:example:alice#key-p521-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!({
+            private_key_jwk: json!({
                 "kty": "EC",
                 "d": "AQCQKE7rZpxPnX9RgjXxeywrAMp1fJsyFe4cir1gWj-8t8xWaM_E2qBkTTzyjbRBu-JPXHe_auT850iYmE34SkWi",
                 "crv": "P-521",

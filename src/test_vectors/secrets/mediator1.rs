@@ -8,7 +8,7 @@ lazy_static! {
         id: "did:example:mediator1#key-x25519-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!(
+            private_key_jwk: json!(
             {
                 "kty": "OKP",
                 "d": "b9NnuOCB0hm7YGNvaE9DMhwH_wjZA1-gWD6dA0JWdL0",
@@ -21,7 +21,7 @@ lazy_static! {
         id: "did:example:mediator1#key-p256-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!(
+            private_key_jwk: json!(
             {
                 "kty": "EC",
                 "d": "PgwHnlXxt8pwR6OCTUwwWx-P51BiLkFZyqHzquKddXQ",
@@ -35,7 +35,7 @@ lazy_static! {
         id: "did:example:mediator1#key-p384-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!(
+            private_key_jwk: json!(
             {
                 "kty": "EC",
                 "d": "ajqcWbYA0UDBKfAhkSkeiVjMMt8l-5rcknvEv9t_Os6M8s-HisdywvNCX4CGd_xY",
@@ -49,7 +49,7 @@ lazy_static! {
         id: "did:example:mediator1#key-p521-1".into(),
         type_: SecretType::JsonWebKey2020,
         secret_material: SecretMaterial::JWK {
-            value: json!(
+            private_key_jwk: json!(
             {
                 "kty": "EC",
                 "d": "AV5ocjvy7PkPgNrSuvCxtG70NMj6iTabvvjSLbsdd8OdI9HlXYlFR7RdBbgLUTruvaIRhjEAE9gNTH6rWUIdfuj6",

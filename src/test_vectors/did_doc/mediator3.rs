@@ -13,7 +13,7 @@ lazy_static! {
             controller: "did:example:mediator3#key-x25519-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "OKP",
                     "crv": "X25519",
@@ -27,7 +27,7 @@ lazy_static! {
             controller: "did:example:mediator3#key-p256-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-256",
@@ -42,7 +42,7 @@ lazy_static! {
             controller: "did:example:mediator3#key-p384-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-384",
@@ -57,7 +57,7 @@ lazy_static! {
             controller: "did:example:mediator3#key-p521-1".into(),
             type_: VerificationMethodType::JsonWebKey2020,
             verification_material: VerificationMaterial::JWK {
-                value: json!(
+                public_key_jwk: json!(
                 {
                     "kty": "EC",
                     "crv": "P-521",
@@ -68,27 +68,27 @@ lazy_static! {
         };
     pub static ref MEDIATOR3_DID_COMM_MESSAGING_SERVICE: DIDCommMessagingService =
         DIDCommMessagingService {
-            service_endpoint: "http://example.com/path".into(),
+            uri: "http://example.com/path".into(),
             accept: Some(vec!["didcomm/v2".into(), "didcomm/aip2;env=rfc587".into()]),
             routing_keys: vec![],
         };
     pub static ref MEDIATOR3_SERVICE: Service = Service {
         id: "did:example:mediator3#didcomm-1".into(),
-        kind: ServiceKind::DIDCommMessaging {
+        service_endpoint: ServiceKind::DIDCommMessaging {
             value: MEDIATOR3_DID_COMM_MESSAGING_SERVICE.clone()
         },
     };
     pub static ref MEDIATOR3_DID_DOC: DIDDoc = DIDDoc {
-        did: "did:example:mediator3".into(),
-        authentications: vec![],
-        key_agreements: vec![
+        id: "did:example:mediator3".into(),
+        authentication: vec![],
+        key_agreement: vec![
             "did:example:mediator3#key-x25519-1".into(),
             "did:example:mediator3#key-p256-1".into(),
             "did:example:mediator3#key-p384-1".into(),
             "did:example:mediator3#key-p521-1".into(),
         ],
-        services: vec![MEDIATOR3_SERVICE.clone()],
-        verification_methods: vec![
+        service: vec![MEDIATOR3_SERVICE.clone()],
+        verification_method: vec![
             MEDIATOR3_VERIFICATION_METHOD_KEY_AGREEM_X25519_1.clone(),
             MEDIATOR3_VERIFICATION_METHOD_KEY_AGREEM_P256_1.clone(),
             MEDIATOR3_VERIFICATION_METHOD_KEY_AGREEM_P384_1.clone(),

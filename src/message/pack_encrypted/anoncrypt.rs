@@ -38,7 +38,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
     // Initial list of recipient key ids is all key_agreements of recipient did doc
     // or one key if url was explicitly provided
     let to_kids: Vec<_> = to_ddoc
-        .key_agreements
+        .key_agreement
         .iter()
         .filter(|kid| to_kid.map(|to_kid| kid == &to_kid).unwrap_or(true))
         .map(|s| s.as_str())
@@ -56,7 +56,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
         .into_iter()
         .map(|kid| {
             to_ddoc
-                .verification_methods
+                .verification_method
                 .iter()
                 .find(|vm| vm.id == kid)
                 .ok_or_else(|| {
