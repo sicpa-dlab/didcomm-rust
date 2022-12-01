@@ -10,14 +10,14 @@ The result is passed to a callback function.
 - The language specific bidnings are generated for the API exposed in [didcomm.udl](src/didcomm.udl) file.
 
 ### Swift Build
-1. Install uniffi_bindgen:
-```
-cargo install uniffi_bindgen
-```
-
-2. Build:
+1. Build:
 ```
 cargo build --release
+```
+
+2. Install uniffi_bindgen:
+```
+cargo install uniffi_bindgen --version $(cargo pkgid uniffi | cut -f 2 -d '@')
 ```
 
 3. Generate Swift binding:
