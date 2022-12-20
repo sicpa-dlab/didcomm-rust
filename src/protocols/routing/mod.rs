@@ -133,6 +133,10 @@ fn generate_message_id() -> String {
     Uuid::new_v4().to_string()
 }
 
+fn generate_attachment_id() -> String {
+    Uuid::new_v4().to_string()
+}
+
 fn build_forward_message(
     forwarded_msg: &str,
     next: &str,
@@ -147,6 +151,7 @@ fn build_forward_message(
         serde_json::from_str(forwarded_msg)
             .kind(ErrorKind::Malformed, "Unable deserialize forwarded message")?,
     )
+    .id(generate_attachment_id())
     .finalize();
 
     let mut msg_builder = Message::build(generate_message_id(), FORWARD_MSG_TYPE.to_owned(), body);
