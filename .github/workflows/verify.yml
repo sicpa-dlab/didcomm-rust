@@ -20,7 +20,7 @@ jobs:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Get current version
         id: current_version
@@ -28,13 +28,13 @@ jobs:
           version="$(cargo -q metadata --no-deps \
             | jq -r '.packages[] | select(.name == "${{ env.PKG_NAME }}") | .version')"
           echo "$version"
-          echo "::set-output name=current_version::$version"
+          echo "current_version=$version" >> $GITHUB_OUTPUT
 
           cd wasm
           version="$(cargo -q metadata --no-deps \
             | jq -r '.packages[] | select(.name == "${{ env.PKG_NAME_JS_TMP }}") | .version')"
           echo "$version"
-          echo "::set-output name=current_wasm_version::$version"
+          echo "current_wasm_version=$version" >> $GITHUB_OUTPUT
 
       - name: Check version format
         run: |
@@ -47,7 +47,7 @@ jobs:
         run: |
           release_info="$(curl -s https://api.github.com/repos/${{ github.repository }}/releases \
               | jq '.[] | select(.name == "v${{ steps.current_version.outputs.current_version }}")')"
-          echo "::set-output name=release_info::$release_info"
+          echo "release_info=$release_info" >> $GITHUB_OUTPUT
           echo "$release_info"
 
       - name: check version bumped
@@ -83,7 +83,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set rustup profile & toolchain
         run: |
@@ -92,8 +92,8 @@ jobs:
 
       - name: Get timestamp for cache
         id: date
-        run: echo ::set-output name=yearmo::$(date +%Y%m)
-      - uses: actions/cache@v2
+        run: echo "yearmo=$(date +%Y%m)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -129,7 +129,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set rustup profile & toolchain
         run: |
@@ -138,8 +138,8 @@ jobs:
 
       - name: Get timestamp for cache
         id: date
-        run: echo ::set-output name=yearmo::$(date +%Y%m)
-      - uses: actions/cache@v2
+        run: echo "yearmo=$(date +%Y%m)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -160,7 +160,7 @@ jobs:
 
       # TODO caching, makes sense for demo and tests-js where lock files are presented
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
 
@@ -229,7 +229,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set rustup profile & toolchain
         run: |
@@ -238,8 +238,8 @@ jobs:
 
       - name: Get timestamp for cache
         id: date
-        run: echo ::set-output name=yearmo::$(date +%Y%m)
-      - uses: actions/cache@v2
+        run: echo "yearmo=$(date +%Y%m)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
