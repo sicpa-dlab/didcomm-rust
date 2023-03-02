@@ -71,7 +71,7 @@ impl FromPrior {
             }
 
             let kid = did_doc
-                .authentications
+                .authentication
                 .iter()
                 .find(|a| *a == kid)
                 .ok_or_else(|| {
@@ -83,7 +83,7 @@ impl FromPrior {
 
             vec![kid]
         } else {
-            did_doc.authentications.iter().map(|s| s.as_str()).collect()
+            did_doc.authentication.iter().map(|s| s.as_str()).collect()
         };
 
         let kid = *secrets_resolver

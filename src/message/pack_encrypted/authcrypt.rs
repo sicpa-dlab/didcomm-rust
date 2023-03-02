@@ -51,7 +51,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
     // Initial list of sender keys is all key_agreements of sender did doc
     // or filtered to keep only provided key
     let from_kids: Vec<_> = from_ddoc
-        .key_agreements
+        .key_agreement
         .iter()
         .filter(|kid| from_kid.map(|from_kid| kid == &from_kid).unwrap_or(true))
         .map(|s| s.as_str())
@@ -82,7 +82,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         .into_iter()
         .map(|kid| {
             from_ddoc
-                .verification_methods
+                .verification_method
                 .iter()
                 .find(|vm| vm.id == kid)
                 .ok_or_else(|| {
@@ -101,7 +101,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
     // Initial list of recipient keys is all key_agreements of recipient did doc
     // or filtered to keep only provided key
     let to_kids: Vec<_> = to_ddoc
-        .key_agreements
+        .key_agreement
         .iter()
         .filter(|kid| to_kid.map(|to_kid| kid == &to_kid).unwrap_or(true))
         .map(|s| s.as_str())
@@ -119,7 +119,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
         .into_iter()
         .map(|kid| {
             to_ddoc
-                .verification_methods
+                .verification_method
                 .iter()
                 .find(|vm| vm.id == kid)
                 .ok_or_else(|| {

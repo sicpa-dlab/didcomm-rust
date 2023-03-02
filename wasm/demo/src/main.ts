@@ -22,7 +22,7 @@ class ExampleDIDResolver implements DIDResolver {
   }
 
   async resolve(did: string): Promise<DIDDoc | null> {
-    return this.knownDids.find((ddoc) => ddoc.did === did) || null;
+    return this.knownDids.find((ddoc) => ddoc.id === did) || null;
   }
 }
 

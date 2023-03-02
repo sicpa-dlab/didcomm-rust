@@ -6,10 +6,10 @@ import Foundation
 // might be in a separate module, or it might be compiled inline into
 // this module. This is a bit of light hackery to work with both.
 #if canImport(didcommFFI)
-import didcommFFI
+    import didcommFFI
 #endif
 
-fileprivate extension RustBuffer {
+private extension RustBuffer {
     // Allocate a new buffer, copying the contents of a `UInt8` array.
     init(bytes: [UInt8]) {
         let rbuf = bytes.withUnsafeBufferPointer { ptr in
@@ -19,17 +19,17 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_didcomm_f269_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_didcomm_812c_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_didcomm_f269_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_didcomm_812c_rustbuffer_free(self, $0) }
     }
 }
 
-fileprivate extension ForeignBytes {
+private extension ForeignBytes {
     init(bufferPointer: UnsafeBufferPointer<UInt8>) {
         self.init(len: Int32(bufferPointer.count), data: bufferPointer.baseAddress)
     }
@@ -42,7 +42,7 @@ fileprivate extension ForeignBytes {
 // Helper classes/extensions that don't change.
 // Someday, this will be in a libray of its own.
 
-fileprivate extension Data {
+private extension Data {
     init(rustBuffer: RustBuffer) {
         // TODO: This copies the buffer. Can we read directly from a
         // Rust buffer?
@@ -51,20 +51,20 @@ fileprivate extension Data {
 }
 
 // A helper class to read values out of a byte buffer.
-fileprivate class Reader {
+private class Reader {
     let data: Data
     var offset: Data.Index
 
     init(data: Data) {
         self.data = data
-        self.offset = 0
+        offset = 0
     }
 
     // Reads an integer at the current offset, in big-endian order, and advances
     // the offset on success. Throws if reading the integer would move the
     // offset past the end of the buffer.
     func readInt<T: FixedWidthInteger>() throws -> T {
-        let range = offset..<offset + MemoryLayout<T>.size
+        let range = offset ..< offset + MemoryLayout<T>.size
         guard data.count >= range.upperBound else {
             throw UniffiInternalError.bufferOverflow
         }
@@ -74,22 +74,22 @@ fileprivate class Reader {
             return value as! T
         }
         var value: T = 0
-        let _ = withUnsafeMutableBytes(of: &value, { data.copyBytes(to: $0, from: range)})
+        let _ = withUnsafeMutableBytes(of: &value) { data.copyBytes(to: $0, from: range) }
         offset = range.upperBound
         return value.bigEndian
     }
 
     // Reads an arbitrary number of bytes, to be used to read
     // raw bytes, this is useful when lifting strings
-    func readBytes(count: Int) throws -> Array<UInt8> {
-        let range = offset..<(offset+count)
+    func readBytes(count: Int) throws -> [UInt8] {
+        let range = offset ..< (offset + count)
         guard data.count >= range.upperBound else {
             throw UniffiInternalError.bufferOverflow
         }
         var value = [UInt8](repeating: 0, count: count)
-        value.withUnsafeMutableBufferPointer({ buffer in
+        value.withUnsafeMutableBufferPointer { buffer in
             data.copyBytes(to: buffer, from: range)
-        })
+        }
         offset = range.upperBound
         return value
     }
@@ -114,13 +114,13 @@ fileprivate class Reader {
 }
 
 // A helper class to write values into a byte buffer.
-fileprivate class Writer {
+private class Writer {
     var bytes: [UInt8]
     var offset: Array<UInt8>.Index
 
     init() {
-        self.bytes = []
-        self.offset = 0
+        bytes = []
+        offset = 0
     }
 
     func writeBytes<S>(_ byteArr: S) where S: Sequence, S.Element == UInt8 {
@@ -147,62 +147,62 @@ fileprivate class Writer {
     }
 }
 
-
 // Types conforming to `Serializable` can be read and written in a bytebuffer.
-fileprivate protocol Serializable {
+private protocol Serializable {
     func write(into: Writer)
     static func read(from: Reader) throws -> Self
 }
 
 // Types confirming to `ViaFfi` can be transferred back-and-for over the FFI.
 // This is analogous to the Rust trait of the same name.
-fileprivate protocol ViaFfi: Serializable {
+private protocol ViaFfi: Serializable {
     associatedtype FfiType
     static func lift(_ v: FfiType) throws -> Self
     func lower() -> FfiType
 }
 
 // Types conforming to `Primitive` pass themselves directly over the FFI.
-fileprivate protocol Primitive {}
+private protocol Primitive {}
 
-extension Primitive {
-    fileprivate typealias FfiType = Self
+private extension Primitive {
+    typealias FfiType = Self
 
-    fileprivate static func lift(_ v: Self) throws -> Self {
+    static func lift(_ v: Self) throws -> Self {
         return v
     }
 
-    fileprivate func lower() -> Self {
+    func lower() -> Self {
         return self
     }
 }
 
 // Types conforming to `ViaFfiUsingByteBuffer` lift and lower into a bytebuffer.
 // Use this for complex types where it's hard to write a custom lift/lower.
-fileprivate protocol ViaFfiUsingByteBuffer: Serializable {}
+private protocol ViaFfiUsingByteBuffer: Serializable {}
 
-extension ViaFfiUsingByteBuffer {
-    fileprivate typealias FfiType = RustBuffer
+private extension ViaFfiUsingByteBuffer {
+    typealias FfiType = RustBuffer
 
-    fileprivate static func lift(_ buf: FfiType) throws -> Self {
-      let reader = Reader(data: Data(rustBuffer: buf))
-      let value = try Self.read(from: reader)
-      if reader.hasRemaining() {
-          throw UniffiInternalError.incompleteData
-      }
-      buf.deallocate()
-      return value
+    static func lift(_ buf: FfiType) throws -> Self {
+        let reader = Reader(data: Data(rustBuffer: buf))
+        let value = try Self.read(from: reader)
+        if reader.hasRemaining() {
+            throw UniffiInternalError.incompleteData
+        }
+        buf.deallocate()
+        return value
     }
 
-    fileprivate func lower() -> FfiType {
-      let writer = Writer()
-      self.write(into: writer)
-      return RustBuffer(bytes: writer.bytes)
+    func lower() -> FfiType {
+        let writer = Writer()
+        write(into: writer)
+        return RustBuffer(bytes: writer.bytes)
     }
 }
+
 // An error type for FFI errors. These errors occur at the UniFFI level, not
 // the library level.
-fileprivate enum UniffiInternalError: LocalizedError {
+private enum UniffiInternalError: LocalizedError {
     case bufferOverflow
     case incompleteData
     case unexpectedOptionalTag
@@ -228,15 +228,15 @@ fileprivate enum UniffiInternalError: LocalizedError {
     }
 }
 
-fileprivate let CALL_SUCCESS: Int8 = 0
-fileprivate let CALL_ERROR: Int8 = 1
-fileprivate let CALL_PANIC: Int8 = 2
+private let CALL_SUCCESS: Int8 = 0
+private let CALL_ERROR: Int8 = 1
+private let CALL_PANIC: Int8 = 2
 
-fileprivate extension RustCallStatus {
+private extension RustCallStatus {
     init() {
         self.init(
             code: CALL_SUCCESS,
-            errorBuf: RustBuffer.init(
+            errorBuf: RustBuffer(
                 capacity: 0,
                 len: 0,
                 data: nil
@@ -252,38 +252,39 @@ private func rustCall<T>(_ callback: (UnsafeMutablePointer<RustCallStatus>) -> T
     })
 }
 
-private func rustCallWithError<T, E: ViaFfiUsingByteBuffer & Error>(_ errorClass: E.Type, _ callback: (UnsafeMutablePointer<RustCallStatus>) -> T) throws -> T {
-    try makeRustCall(callback, errorHandler: { return try E.lift($0) })
+private func rustCallWithError<T, E: ViaFfiUsingByteBuffer & Error>(_: E.Type, _ callback: (UnsafeMutablePointer<RustCallStatus>) -> T) throws -> T {
+    try makeRustCall(callback, errorHandler: { try E.lift($0) })
 }
 
 private func makeRustCall<T>(_ callback: (UnsafeMutablePointer<RustCallStatus>) -> T, errorHandler: (RustBuffer) throws -> Error) throws -> T {
-    var callStatus = RustCallStatus.init()
+    var callStatus = RustCallStatus()
     let returnedVal = callback(&callStatus)
     switch callStatus.code {
-        case CALL_SUCCESS:
-            return returnedVal
+    case CALL_SUCCESS:
+        return returnedVal
 
-        case CALL_ERROR:
-            throw try errorHandler(callStatus.errorBuf)
+    case CALL_ERROR:
+        throw try errorHandler(callStatus.errorBuf)
 
-        case CALL_PANIC:
-            // When the rust code sees a panic, it tries to construct a RustBuffer
-            // with the message.  But if that code panics, then it just sends back
-            // an empty buffer.
-            if callStatus.errorBuf.len > 0 {
-                throw UniffiInternalError.rustPanic(try String.lift(callStatus.errorBuf))
-            } else {
-                callStatus.errorBuf.deallocate()
-                throw UniffiInternalError.rustPanic("Rust panic")
-            }
+    case CALL_PANIC:
+        // When the rust code sees a panic, it tries to construct a RustBuffer
+        // with the message.  But if that code panics, then it just sends back
+        // an empty buffer.
+        if callStatus.errorBuf.len > 0 {
+            throw UniffiInternalError.rustPanic(try String.lift(callStatus.errorBuf))
+        } else {
+            callStatus.errorBuf.deallocate()
+            throw UniffiInternalError.rustPanic("Rust panic")
+        }
 
-        default:
-            throw UniffiInternalError.unexpectedRustCallStatusCode
+    default:
+        throw UniffiInternalError.unexpectedRustCallStatusCode
     }
 }
+
 // Protocols for converters we'll implement in templates
 
-fileprivate protocol FfiConverter {
+private protocol FfiConverter {
     associatedtype SwiftType
     associatedtype FfiType
 
@@ -294,7 +295,7 @@ fileprivate protocol FfiConverter {
     static func write(_ value: SwiftType, into: Writer)
 }
 
-fileprivate protocol FfiConverterUsingByteBuffer: FfiConverter where FfiType == RustBuffer {
+private protocol FfiConverterUsingByteBuffer: FfiConverter where FfiType == RustBuffer {
     // Empty, because we want to declare some helper methods in the extension below.
 }
 
@@ -309,7 +310,7 @@ extension FfiConverterUsingByteBuffer {
         let reader = Reader(data: Data(rustBuffer: buf))
         let value = try Self.read(from: reader)
         if reader.hasRemaining() {
-          throw UniffiInternalError.incompleteData
+            throw UniffiInternalError.incompleteData
         }
         buf.deallocate()
         return value
@@ -318,7 +319,7 @@ extension FfiConverterUsingByteBuffer {
 
 // Helpers for structural types. Note that because of canonical_names, it /should/ be impossible
 // to make another `FfiConverterSequence` etc just using the UDL.
-fileprivate enum FfiConverterSequence {
+private enum FfiConverterSequence {
     static func write<T>(_ value: [T], into buf: Writer, writeItem: (T, Writer) -> Void) {
         let len = Int32(value.count)
         buf.writeInt(len)
@@ -338,7 +339,7 @@ fileprivate enum FfiConverterSequence {
     }
 }
 
-fileprivate enum FfiConverterOptional {
+private enum FfiConverterOptional {
     static func write<T>(_ value: T?, into buf: Writer, writeItem: (T, Writer) -> Void) {
         guard let value = value else {
             buf.writeInt(Int8(0))
@@ -357,7 +358,7 @@ fileprivate enum FfiConverterOptional {
     }
 }
 
-fileprivate enum FfiConverterDictionary {
+private enum FfiConverterDictionary {
     static func write<T>(_ value: [String: T], into buf: Writer, writeItem: (String, T, Writer) -> Void) {
         let len = Int32(value.count)
         buf.writeInt(len)
@@ -370,7 +371,7 @@ fileprivate enum FfiConverterDictionary {
         let len: Int32 = try buf.readInt()
         var dict = [String: T]()
         dict.reserveCapacity(Int(len))
-        for _ in 0..<len {
+        for _ in 0 ..< len {
             let (key, value) = try readItem(buf)
             dict[key] = value
         }
@@ -380,17 +381,16 @@ fileprivate enum FfiConverterDictionary {
 
 // Public interface members begin here.
 
-
-fileprivate extension NSLock {
+private extension NSLock {
     func withLock<T>(f: () throws -> T) rethrows -> T {
-        self.lock()
+        lock()
         defer { self.unlock() }
         return try f()
     }
 }
 
-fileprivate typealias Handle = UInt64
-fileprivate class ConcurrentHandleMap<T> {
+private typealias Handle = UInt64
+private class ConcurrentHandleMap<T> {
     private var leftMap: [Handle: T] = [:]
     private var counter: [Handle: UInt64] = [:]
     private var rightMap: [ObjectIdentifier: Handle] = [:]
@@ -442,7 +442,7 @@ fileprivate class ConcurrentHandleMap<T> {
 // to free the callback once it's dropped by Rust.
 private let IDX_CALLBACK_FREE: Int32 = 0
 
-fileprivate class FfiConverterCallbackInterface<CallbackInterface> {
+private class FfiConverterCallbackInterface<CallbackInterface> {
     fileprivate let handleMap = ConcurrentHandleMap<CallbackInterface>()
 
     func drop(handle: Handle) {
@@ -476,25 +476,23 @@ fileprivate class FfiConverterCallbackInterface<CallbackInterface> {
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum AttachmentData {
-    
-    case base64(value: Base64AttachmentData )
-    case json(value: JsonAttachmentData )
-    case links(value: LinksAttachmentData )
+    case base64(value: Base64AttachmentData)
+    case json(value: JsonAttachmentData)
+    case links(value: LinksAttachmentData)
 }
 
 extension AttachmentData: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> AttachmentData {
         let variant: Int32 = try buf.readInt()
         switch variant {
-        
         case 1: return .base64(
-            value: try Base64AttachmentData.read(from: buf)
+                value: try Base64AttachmentData.read(from: buf)
             )
         case 2: return .json(
-            value: try JsonAttachmentData.read(from: buf)
+                value: try JsonAttachmentData.read(from: buf)
             )
         case 3: return .links(
-            value: try LinksAttachmentData.read(from: buf)
+                value: try LinksAttachmentData.read(from: buf)
             )
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -502,38 +500,27 @@ extension AttachmentData: ViaFfiUsingByteBuffer, ViaFfi {
 
     fileprivate func write(into buf: Writer) {
         switch self {
-        
-        
         case let .base64(value):
             buf.writeInt(Int32(1))
             value.write(into: buf)
-            
-        
-        
+
         case let .json(value):
             buf.writeInt(Int32(2))
             value.write(into: buf)
-            
-        
-        
+
         case let .links(value):
             buf.writeInt(Int32(3))
             value.write(into: buf)
-            
-        
         }
     }
 }
 
-
 extension AttachmentData: Equatable, Hashable {}
-
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum ErrorCode {
-    
     case success
     case error
 }
@@ -542,7 +529,6 @@ extension ErrorCode: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> ErrorCode {
         let variant: Int32 = try buf.readInt()
         switch variant {
-        
         case 1: return .success
         case 2: return .error
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -551,54 +537,38 @@ extension ErrorCode: ViaFfiUsingByteBuffer, ViaFfi {
 
     fileprivate func write(into buf: Writer) {
         switch self {
-        
-        
         case .success:
             buf.writeInt(Int32(1))
-        
-        
+
         case .error:
             buf.writeInt(Int32(2))
-        
         }
     }
 }
 
-
 extension ErrorCode: Equatable, Hashable {}
-
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum VerificationMaterial {
-    
-    case jwk(value: String )
-    case multibase(value: String )
-    case base58(value: String )
-    case hex(value: String )
-    case other(value: String )
+    case jwk(publicKeyJwk: String)
+    case multibase(publicKeyMultibase: String)
+    case base58(publicKeyBase58: String)
 }
 
 extension VerificationMaterial: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> VerificationMaterial {
         let variant: Int32 = try buf.readInt()
         switch variant {
-        
         case 1: return .jwk(
-            value: try String.read(from: buf)
+                publicKeyJwk: try String.read(from: buf)
             )
         case 2: return .multibase(
-            value: try String.read(from: buf)
+                publicKeyMultibase: try String.read(from: buf)
             )
         case 3: return .base58(
-            value: try String.read(from: buf)
-            )
-        case 4: return .hex(
-            value: try String.read(from: buf)
-            )
-        case 5: return .other(
-            value: try String.read(from: buf)
+                publicKeyBase58: try String.read(from: buf)
             )
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -606,50 +576,27 @@ extension VerificationMaterial: ViaFfiUsingByteBuffer, ViaFfi {
 
     fileprivate func write(into buf: Writer) {
         switch self {
-        
-        
-        case let .jwk(value):
+        case let .jwk(publicKeyJwk):
             buf.writeInt(Int32(1))
-            value.write(into: buf)
-            
-        
-        
-        case let .multibase(value):
+            publicKeyJwk.write(into: buf)
+
+        case let .multibase(publicKeyMultibase):
             buf.writeInt(Int32(2))
-            value.write(into: buf)
-            
-        
-        
-        case let .base58(value):
+            publicKeyMultibase.write(into: buf)
+
+        case let .base58(publicKeyBase58):
             buf.writeInt(Int32(3))
-            value.write(into: buf)
-            
-        
-        
-        case let .hex(value):
-            buf.writeInt(Int32(4))
-            value.write(into: buf)
-            
-        
-        
-        case let .other(value):
-            buf.writeInt(Int32(5))
-            value.write(into: buf)
-            
-        
+            publicKeyBase58.write(into: buf)
         }
     }
 }
 
-
 extension VerificationMaterial: Equatable, Hashable {}
-
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum VerificationMethodType {
-    
     case jsonWebKey2020
     case x25519KeyAgreementKey2019
     case ed25519VerificationKey2018
@@ -663,7 +610,6 @@ extension VerificationMethodType: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> VerificationMethodType {
         let variant: Int32 = try buf.readInt()
         switch variant {
-        
         case 1: return .jsonWebKey2020
         case 2: return .x25519KeyAgreementKey2019
         case 3: return .ed25519VerificationKey2018
@@ -677,62 +623,49 @@ extension VerificationMethodType: ViaFfiUsingByteBuffer, ViaFfi {
 
     fileprivate func write(into buf: Writer) {
         switch self {
-        
-        
         case .jsonWebKey2020:
             buf.writeInt(Int32(1))
-        
-        
+
         case .x25519KeyAgreementKey2019:
             buf.writeInt(Int32(2))
-        
-        
+
         case .ed25519VerificationKey2018:
             buf.writeInt(Int32(3))
-        
-        
+
         case .ecdsaSecp256k1VerificationKey2019:
             buf.writeInt(Int32(4))
-        
-        
+
         case .x25519KeyAgreementKey2020:
             buf.writeInt(Int32(5))
-        
-        
+
         case .ed25519VerificationKey2020:
             buf.writeInt(Int32(6))
-        
-        
+
         case .other:
             buf.writeInt(Int32(7))
-        
         }
     }
 }
 
-
 extension VerificationMethodType: Equatable, Hashable {}
-
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum ServiceKind {
-    
-    case didCommMessaging(value: DidCommMessagingService )
-    case other(value: String )
+    case didCommMessaging(value: DidCommMessagingService)
+    case other(value: String)
 }
 
 extension ServiceKind: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> ServiceKind {
         let variant: Int32 = try buf.readInt()
         switch variant {
-        
         case 1: return .didCommMessaging(
-            value: try DidCommMessagingService.read(from: buf)
+                value: try DidCommMessagingService.read(from: buf)
             )
         case 2: return .other(
-            value: try String.read(from: buf)
+                value: try String.read(from: buf)
             )
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -740,58 +673,40 @@ extension ServiceKind: ViaFfiUsingByteBuffer, ViaFfi {
 
     fileprivate func write(into buf: Writer) {
         switch self {
-        
-        
         case let .didCommMessaging(value):
             buf.writeInt(Int32(1))
             value.write(into: buf)
-            
-        
-        
+
         case let .other(value):
             buf.writeInt(Int32(2))
             value.write(into: buf)
-            
-        
         }
     }
 }
 
-
 extension ServiceKind: Equatable, Hashable {}
-
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum SecretMaterial {
-    
-    case jwk(value: String )
-    case multibase(value: String )
-    case base58(value: String )
-    case hex(value: String )
-    case other(value: String )
+    case jwk(privateKeyJwk: String)
+    case multibase(privateKeyMultibase: String)
+    case base58(privateKeyBase58: String)
 }
 
 extension SecretMaterial: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> SecretMaterial {
         let variant: Int32 = try buf.readInt()
         switch variant {
-        
         case 1: return .jwk(
-            value: try String.read(from: buf)
+                privateKeyJwk: try String.read(from: buf)
             )
         case 2: return .multibase(
-            value: try String.read(from: buf)
+                privateKeyMultibase: try String.read(from: buf)
             )
         case 3: return .base58(
-            value: try String.read(from: buf)
-            )
-        case 4: return .hex(
-            value: try String.read(from: buf)
-            )
-        case 5: return .other(
-            value: try String.read(from: buf)
+                privateKeyBase58: try String.read(from: buf)
             )
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -799,50 +714,27 @@ extension SecretMaterial: ViaFfiUsingByteBuffer, ViaFfi {
 
     fileprivate func write(into buf: Writer) {
         switch self {
-        
-        
-        case let .jwk(value):
+        case let .jwk(privateKeyJwk):
             buf.writeInt(Int32(1))
-            value.write(into: buf)
-            
-        
-        
-        case let .multibase(value):
+            privateKeyJwk.write(into: buf)
+
+        case let .multibase(privateKeyMultibase):
             buf.writeInt(Int32(2))
-            value.write(into: buf)
-            
-        
-        
-        case let .base58(value):
+            privateKeyMultibase.write(into: buf)
+
+        case let .base58(privateKeyBase58):
             buf.writeInt(Int32(3))
-            value.write(into: buf)
-            
-        
-        
-        case let .hex(value):
-            buf.writeInt(Int32(4))
-            value.write(into: buf)
-            
-        
-        
-        case let .other(value):
-            buf.writeInt(Int32(5))
-            value.write(into: buf)
-            
-        
+            privateKeyBase58.write(into: buf)
         }
     }
 }
 
-
 extension SecretMaterial: Equatable, Hashable {}
-
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum SecretType {
-    
     case jsonWebKey2020
     case x25519KeyAgreementKey2019
     case ed25519VerificationKey2018
@@ -856,7 +748,6 @@ extension SecretType: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> SecretType {
         let variant: Int32 = try buf.readInt()
         switch variant {
-        
         case 1: return .jsonWebKey2020
         case 2: return .x25519KeyAgreementKey2019
         case 3: return .ed25519VerificationKey2018
@@ -870,48 +761,36 @@ extension SecretType: ViaFfiUsingByteBuffer, ViaFfi {
 
     fileprivate func write(into buf: Writer) {
         switch self {
-        
-        
         case .jsonWebKey2020:
             buf.writeInt(Int32(1))
-        
-        
+
         case .x25519KeyAgreementKey2019:
             buf.writeInt(Int32(2))
-        
-        
+
         case .ed25519VerificationKey2018:
             buf.writeInt(Int32(3))
-        
-        
+
         case .ecdsaSecp256k1VerificationKey2019:
             buf.writeInt(Int32(4))
-        
-        
+
         case .x25519KeyAgreementKey2020:
             buf.writeInt(Int32(5))
-        
-        
+
         case .ed25519VerificationKey2020:
             buf.writeInt(Int32(6))
-        
-        
+
         case .other:
             buf.writeInt(Int32(7))
-        
         }
     }
 }
 
-
 extension SecretType: Equatable, Hashable {}
-
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum AuthCryptAlg {
-    
     case a256cbcHs512Ecdh1puA256kw
 }
 
@@ -919,7 +798,6 @@ extension AuthCryptAlg: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> AuthCryptAlg {
         let variant: Int32 = try buf.readInt()
         switch variant {
-        
         case 1: return .a256cbcHs512Ecdh1puA256kw
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -927,24 +805,18 @@ extension AuthCryptAlg: ViaFfiUsingByteBuffer, ViaFfi {
 
     fileprivate func write(into buf: Writer) {
         switch self {
-        
-        
         case .a256cbcHs512Ecdh1puA256kw:
             buf.writeInt(Int32(1))
-        
         }
     }
 }
 
-
 extension AuthCryptAlg: Equatable, Hashable {}
-
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum AnonCryptAlg {
-    
     case a256cbcHs512EcdhEsA256kw
     case xc20pEcdhEsA256kw
     case a256gcmEcdhEsA256kw
@@ -954,7 +826,6 @@ extension AnonCryptAlg: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> AnonCryptAlg {
         let variant: Int32 = try buf.readInt()
         switch variant {
-        
         case 1: return .a256cbcHs512EcdhEsA256kw
         case 2: return .xc20pEcdhEsA256kw
         case 3: return .a256gcmEcdhEsA256kw
@@ -964,32 +835,24 @@ extension AnonCryptAlg: ViaFfiUsingByteBuffer, ViaFfi {
 
     fileprivate func write(into buf: Writer) {
         switch self {
-        
-        
         case .a256cbcHs512EcdhEsA256kw:
             buf.writeInt(Int32(1))
-        
-        
+
         case .xc20pEcdhEsA256kw:
             buf.writeInt(Int32(2))
-        
-        
+
         case .a256gcmEcdhEsA256kw:
             buf.writeInt(Int32(3))
-        
         }
     }
 }
 
-
 extension AnonCryptAlg: Equatable, Hashable {}
-
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
 public enum SignAlg {
-    
     case edDsa
     case es256
     case es256k
@@ -999,7 +862,6 @@ extension SignAlg: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> SignAlg {
         let variant: Int32 = try buf.readInt()
         switch variant {
-        
         case 1: return .edDsa
         case 2: return .es256
         case 3: return .es256k
@@ -1009,37 +871,28 @@ extension SignAlg: ViaFfiUsingByteBuffer, ViaFfi {
 
     fileprivate func write(into buf: Writer) {
         switch self {
-        
-        
         case .edDsa:
             buf.writeInt(Int32(1))
-        
-        
+
         case .es256:
             buf.writeInt(Int32(2))
-        
-        
+
         case .es256k:
             buf.writeInt(Int32(3))
-        
         }
     }
 }
 
-
 extension SignAlg: Equatable, Hashable {}
 
-
-
 public protocol DIDCommProtocol {
-    func packPlaintext(msg: Message, cb: OnPackPlaintextResult )  -> ErrorCode
-    func packSigned(msg: Message, signBy: String, cb: OnPackSignedResult )  -> ErrorCode
-    func packEncrypted(msg: Message, to: String, from: String?, signBy: String?, options: PackEncryptedOptions, cb: OnPackEncryptedResult )  -> ErrorCode
-    func unpack(msg: String, options: UnpackOptions, cb: OnUnpackResult )  -> ErrorCode
-    func packFromPrior(msg: FromPrior, issuerKid: String?, cb: OnFromPriorPackResult )  -> ErrorCode
-    func unpackFromPrior(fromPriorJwt: String, cb: OnFromPriorUnpackResult )  -> ErrorCode
-    func wrapInForward(msg: String, headers: [String: String], to: String, routingKeys: [String], encAlgAnon: AnonCryptAlg, cb: OnWrapInForwardResult )  -> ErrorCode
-    
+    func packPlaintext(msg: Message, cb: OnPackPlaintextResult) -> ErrorCode
+    func packSigned(msg: Message, signBy: String, cb: OnPackSignedResult) -> ErrorCode
+    func packEncrypted(msg: Message, to: String, from: String?, signBy: String?, options: PackEncryptedOptions, cb: OnPackEncryptedResult) -> ErrorCode
+    func unpack(msg: String, options: UnpackOptions, cb: OnUnpackResult) -> ErrorCode
+    func packFromPrior(msg: FromPrior, issuerKid: String?, cb: OnFromPriorPackResult) -> ErrorCode
+    func unpackFromPrior(fromPriorJwt: String, cb: OnFromPriorUnpackResult) -> ErrorCode
+    func wrapInForward(msg: String, headers: [String: String], to: String, routingKeys: [String], encAlgAnon: AnonCryptAlg, cb: OnWrapInForwardResult) -> ErrorCode
 }
 
 public class DidComm: DIDCommProtocol {
@@ -1051,91 +904,77 @@ public class DidComm: DIDCommProtocol {
     required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
-    public convenience init(didResolver: DidResolver, secretResolver: SecretsResolver )  {
+
+    public convenience init(didResolver: DidResolver, secretResolver: SecretsResolver) {
         self.init(unsafeFromRawPointer: try!
-    
-    
-    rustCall() {
-    
-    didcomm_f269_DIDComm_new(ffiConverterCallbackInterfaceDidResolver.lower(didResolver), ffiConverterCallbackInterfaceSecretsResolver.lower(secretResolver) , $0)
-})
+
+            rustCall {
+                didcomm_812c_DIDComm_new(ffiConverterCallbackInterfaceDidResolver.lower(didResolver), ffiConverterCallbackInterfaceSecretsResolver.lower(secretResolver), $0)
+            })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f269_DIDComm_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_812c_DIDComm_object_free(pointer, $0) }
     }
 
-    
+    public func packPlaintext(msg: Message, cb: OnPackPlaintextResult) -> ErrorCode {
+        let _retval = try!
+            rustCall {
+                didcomm_812c_DIDComm_pack_plaintext(self.pointer, msg.lower(), ffiConverterCallbackInterfaceOnPackPlaintextResult.lower(cb), $0)
+            }
+        return try! ErrorCode.lift(_retval)
+    }
 
-    
-    public func packPlaintext(msg: Message, cb: OnPackPlaintextResult )  -> ErrorCode {
+    public func packSigned(msg: Message, signBy: String, cb: OnPackSignedResult) -> ErrorCode {
         let _retval = try!
-    rustCall() {
-    
-    didcomm_f269_DIDComm_pack_plaintext(self.pointer, msg.lower(), ffiConverterCallbackInterfaceOnPackPlaintextResult.lower(cb) , $0
-    )
-}
+            rustCall {
+                didcomm_812c_DIDComm_pack_signed(self.pointer, msg.lower(), signBy.lower(), ffiConverterCallbackInterfaceOnPackSignedResult.lower(cb), $0)
+            }
         return try! ErrorCode.lift(_retval)
     }
-    public func packSigned(msg: Message, signBy: String, cb: OnPackSignedResult )  -> ErrorCode {
+
+    public func packEncrypted(msg: Message, to: String, from: String?, signBy: String?, options: PackEncryptedOptions, cb: OnPackEncryptedResult) -> ErrorCode {
         let _retval = try!
-    rustCall() {
-    
-    didcomm_f269_DIDComm_pack_signed(self.pointer, msg.lower(), signBy.lower(), ffiConverterCallbackInterfaceOnPackSignedResult.lower(cb) , $0
-    )
-}
+            rustCall {
+                didcomm_812c_DIDComm_pack_encrypted(self.pointer, msg.lower(), to.lower(), FfiConverterOptionString.lower(from), FfiConverterOptionString.lower(signBy), options.lower(), ffiConverterCallbackInterfaceOnPackEncryptedResult.lower(cb), $0)
+            }
         return try! ErrorCode.lift(_retval)
     }
-    public func packEncrypted(msg: Message, to: String, from: String?, signBy: String?, options: PackEncryptedOptions, cb: OnPackEncryptedResult )  -> ErrorCode {
+
+    public func unpack(msg: String, options: UnpackOptions, cb: OnUnpackResult) -> ErrorCode {
         let _retval = try!
-    rustCall() {
-    
-    didcomm_f269_DIDComm_pack_encrypted(self.pointer, msg.lower(), to.lower(), FfiConverterOptionString.lower(from), FfiConverterOptionString.lower(signBy), options.lower(), ffiConverterCallbackInterfaceOnPackEncryptedResult.lower(cb) , $0
-    )
-}
+            rustCall {
+                didcomm_812c_DIDComm_unpack(self.pointer, msg.lower(), options.lower(), ffiConverterCallbackInterfaceOnUnpackResult.lower(cb), $0)
+            }
         return try! ErrorCode.lift(_retval)
     }
-    public func unpack(msg: String, options: UnpackOptions, cb: OnUnpackResult )  -> ErrorCode {
+
+    public func packFromPrior(msg: FromPrior, issuerKid: String?, cb: OnFromPriorPackResult) -> ErrorCode {
         let _retval = try!
-    rustCall() {
-    
-    didcomm_f269_DIDComm_unpack(self.pointer, msg.lower(), options.lower(), ffiConverterCallbackInterfaceOnUnpackResult.lower(cb) , $0
-    )
-}
+            rustCall {
+                didcomm_812c_DIDComm_pack_from_prior(self.pointer, msg.lower(), FfiConverterOptionString.lower(issuerKid), ffiConverterCallbackInterfaceOnFromPriorPackResult.lower(cb), $0)
+            }
         return try! ErrorCode.lift(_retval)
     }
-    public func packFromPrior(msg: FromPrior, issuerKid: String?, cb: OnFromPriorPackResult )  -> ErrorCode {
+
+    public func unpackFromPrior(fromPriorJwt: String, cb: OnFromPriorUnpackResult) -> ErrorCode {
         let _retval = try!
-    rustCall() {
-    
-    didcomm_f269_DIDComm_pack_from_prior(self.pointer, msg.lower(), FfiConverterOptionString.lower(issuerKid), ffiConverterCallbackInterfaceOnFromPriorPackResult.lower(cb) , $0
-    )
-}
+            rustCall {
+                didcomm_812c_DIDComm_unpack_from_prior(self.pointer, fromPriorJwt.lower(), ffiConverterCallbackInterfaceOnFromPriorUnpackResult.lower(cb), $0)
+            }
         return try! ErrorCode.lift(_retval)
     }
-    public func unpackFromPrior(fromPriorJwt: String, cb: OnFromPriorUnpackResult )  -> ErrorCode {
+
+    public func wrapInForward(msg: String, headers: [String: String], to: String, routingKeys: [String], encAlgAnon: AnonCryptAlg, cb: OnWrapInForwardResult) -> ErrorCode {
         let _retval = try!
-    rustCall() {
-    
-    didcomm_f269_DIDComm_unpack_from_prior(self.pointer, fromPriorJwt.lower(), ffiConverterCallbackInterfaceOnFromPriorUnpackResult.lower(cb) , $0
-    )
-}
+            rustCall {
+                didcomm_812c_DIDComm_wrap_in_forward(self.pointer, msg.lower(), FfiConverterDictionaryJsonValue.lower(headers), to.lower(), FfiConverterSequenceString.lower(routingKeys), encAlgAnon.lower(), ffiConverterCallbackInterfaceOnWrapInForwardResult.lower(cb), $0)
+            }
         return try! ErrorCode.lift(_retval)
     }
-    public func wrapInForward(msg: String, headers: [String: String], to: String, routingKeys: [String], encAlgAnon: AnonCryptAlg, cb: OnWrapInForwardResult )  -> ErrorCode {
-        let _retval = try!
-    rustCall() {
-    
-    didcomm_f269_DIDComm_wrap_in_forward(self.pointer, msg.lower(), FfiConverterDictionaryJsonValue.lower(headers), to.lower(), FfiConverterSequenceString.lower(routingKeys), encAlgAnon.lower(), ffiConverterCallbackInterfaceOnWrapInForwardResult.lower(cb) , $0
-    )
-}
-        return try! ErrorCode.lift(_retval)
-    }
-    
 }
 
-
-fileprivate extension DidComm {
+private extension DidComm {
     typealias FfiType = UnsafeMutableRawPointer
 
     static func read(from buf: Reader) throws -> Self {
@@ -1143,16 +982,16 @@ fileprivate extension DidComm {
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
         let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if (ptr == nil) {
+        if ptr == nil {
             throw UniffiInternalError.unexpectedNullPointer
         }
-        return try self.lift(ptr!)
+        return try lift(ptr!)
     }
 
     func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
+        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: lower()))))
     }
 
     static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
@@ -1160,7 +999,7 @@ fileprivate extension DidComm {
     }
 
     func lower() -> UnsafeMutableRawPointer {
-        return self.pointer
+        return pointer
     }
 }
 
@@ -1168,13 +1007,11 @@ fileprivate extension DidComm {
 // """
 // 'private' modifier cannot be used with extensions that declare protocol conformances
 // """
-extension DidComm : ViaFfi, Serializable {}
-
+extension DidComm: ViaFfi, Serializable {}
 
 public protocol OnDIDResolverResultProtocol {
-    func success(result: DidDoc? ) throws
-    func error(err: ErrorKind, msg: String ) throws
-    
+    func success(result: DidDoc?) throws
+    func error(err: ErrorKind, msg: String) throws
 }
 
 public class OnDidResolverResult: OnDIDResolverResultProtocol {
@@ -1188,33 +1025,25 @@ public class OnDidResolverResult: OnDIDResolverResultProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f269_OnDIDResolverResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_812c_OnDIDResolverResult_object_free(pointer, $0) }
     }
 
-    
-
-    
-    public func success(result: DidDoc? ) throws {
+    public func success(result: DidDoc?) throws {
         try
-    rustCallWithError(ErrorKind.self) {
-    
-    didcomm_f269_OnDIDResolverResult_success(self.pointer, FfiConverterOptionRecordDidDoc.lower(result) , $0
-    )
-}
+            rustCallWithError(ErrorKind.self) {
+                didcomm_812c_OnDIDResolverResult_success(self.pointer, FfiConverterOptionRecordDidDoc.lower(result), $0)
+            }
     }
-    public func error(err: ErrorKind, msg: String ) throws {
+
+    public func error(err: ErrorKind, msg: String) throws {
         try
-    rustCallWithError(ErrorKind.self) {
-    
-    didcomm_f269_OnDIDResolverResult_error(self.pointer, err.lower(), msg.lower() , $0
-    )
-}
+            rustCallWithError(ErrorKind.self) {
+                didcomm_812c_OnDIDResolverResult_error(self.pointer, err.lower(), msg.lower(), $0)
+            }
     }
-    
 }
 
-
-fileprivate extension OnDidResolverResult {
+private extension OnDidResolverResult {
     typealias FfiType = UnsafeMutableRawPointer
 
     static func read(from buf: Reader) throws -> Self {
@@ -1222,16 +1051,16 @@ fileprivate extension OnDidResolverResult {
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
         let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if (ptr == nil) {
+        if ptr == nil {
             throw UniffiInternalError.unexpectedNullPointer
         }
-        return try self.lift(ptr!)
+        return try lift(ptr!)
     }
 
     func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
+        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: lower()))))
     }
 
     static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
@@ -1239,7 +1068,7 @@ fileprivate extension OnDidResolverResult {
     }
 
     func lower() -> UnsafeMutableRawPointer {
-        return self.pointer
+        return pointer
     }
 }
 
@@ -1247,12 +1076,10 @@ fileprivate extension OnDidResolverResult {
 // """
 // 'private' modifier cannot be used with extensions that declare protocol conformances
 // """
-extension OnDidResolverResult : ViaFfi, Serializable {}
-
+extension OnDidResolverResult: ViaFfi, Serializable {}
 
 public protocol ExampleDIDResolverProtocol {
-    func resolve(did: String, cb: OnDidResolverResult )  -> ErrorCode
-    
+    func resolve(did: String, cb: OnDidResolverResult) -> ErrorCode
 }
 
 public class ExampleDidResolver: ExampleDIDResolverProtocol {
@@ -1264,37 +1091,29 @@ public class ExampleDidResolver: ExampleDIDResolverProtocol {
     required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
-    public convenience init(knownDids: [DidDoc] )  {
+
+    public convenience init(knownDids: [DidDoc]) {
         self.init(unsafeFromRawPointer: try!
-    
-    
-    rustCall() {
-    
-    didcomm_f269_ExampleDIDResolver_new(FfiConverterSequenceRecordDidDoc.lower(knownDids) , $0)
-})
+
+            rustCall {
+                didcomm_812c_ExampleDIDResolver_new(FfiConverterSequenceRecordDidDoc.lower(knownDids), $0)
+            })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f269_ExampleDIDResolver_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_812c_ExampleDIDResolver_object_free(pointer, $0) }
     }
 
-    
-
-    
-    public func resolve(did: String, cb: OnDidResolverResult )  -> ErrorCode {
+    public func resolve(did: String, cb: OnDidResolverResult) -> ErrorCode {
         let _retval = try!
-    rustCall() {
-    
-    didcomm_f269_ExampleDIDResolver_resolve(self.pointer, did.lower(), cb.lower() , $0
-    )
-}
+            rustCall {
+                didcomm_812c_ExampleDIDResolver_resolve(self.pointer, did.lower(), cb.lower(), $0)
+            }
         return try! ErrorCode.lift(_retval)
     }
-    
 }
 
-
-fileprivate extension ExampleDidResolver {
+private extension ExampleDidResolver {
     typealias FfiType = UnsafeMutableRawPointer
 
     static func read(from buf: Reader) throws -> Self {
@@ -1302,16 +1121,16 @@ fileprivate extension ExampleDidResolver {
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
         let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if (ptr == nil) {
+        if ptr == nil {
             throw UniffiInternalError.unexpectedNullPointer
         }
-        return try self.lift(ptr!)
+        return try lift(ptr!)
     }
 
     func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
+        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: lower()))))
     }
 
     static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
@@ -1319,7 +1138,7 @@ fileprivate extension ExampleDidResolver {
     }
 
     func lower() -> UnsafeMutableRawPointer {
-        return self.pointer
+        return pointer
     }
 }
 
@@ -1327,13 +1146,11 @@ fileprivate extension ExampleDidResolver {
 // """
 // 'private' modifier cannot be used with extensions that declare protocol conformances
 // """
-extension ExampleDidResolver : ViaFfi, Serializable {}
-
+extension ExampleDidResolver: ViaFfi, Serializable {}
 
 public protocol OnGetSecretResultProtocol {
-    func success(result: Secret? ) throws
-    func error(err: ErrorKind, msg: String ) throws
-    
+    func success(result: Secret?) throws
+    func error(err: ErrorKind, msg: String) throws
 }
 
 public class OnGetSecretResult: OnGetSecretResultProtocol {
@@ -1347,33 +1164,25 @@ public class OnGetSecretResult: OnGetSecretResultProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f269_OnGetSecretResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_812c_OnGetSecretResult_object_free(pointer, $0) }
     }
 
-    
-
-    
-    public func success(result: Secret? ) throws {
+    public func success(result: Secret?) throws {
         try
-    rustCallWithError(ErrorKind.self) {
-    
-    didcomm_f269_OnGetSecretResult_success(self.pointer, FfiConverterOptionRecordSecret.lower(result) , $0
-    )
-}
+            rustCallWithError(ErrorKind.self) {
+                didcomm_812c_OnGetSecretResult_success(self.pointer, FfiConverterOptionRecordSecret.lower(result), $0)
+            }
     }
-    public func error(err: ErrorKind, msg: String ) throws {
+
+    public func error(err: ErrorKind, msg: String) throws {
         try
-    rustCallWithError(ErrorKind.self) {
-    
-    didcomm_f269_OnGetSecretResult_error(self.pointer, err.lower(), msg.lower() , $0
-    )
-}
+            rustCallWithError(ErrorKind.self) {
+                didcomm_812c_OnGetSecretResult_error(self.pointer, err.lower(), msg.lower(), $0)
+            }
     }
-    
 }
 
-
-fileprivate extension OnGetSecretResult {
+private extension OnGetSecretResult {
     typealias FfiType = UnsafeMutableRawPointer
 
     static func read(from buf: Reader) throws -> Self {
@@ -1381,16 +1190,16 @@ fileprivate extension OnGetSecretResult {
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
         let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if (ptr == nil) {
+        if ptr == nil {
             throw UniffiInternalError.unexpectedNullPointer
         }
-        return try self.lift(ptr!)
+        return try lift(ptr!)
     }
 
     func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
+        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: lower()))))
     }
 
     static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
@@ -1398,7 +1207,7 @@ fileprivate extension OnGetSecretResult {
     }
 
     func lower() -> UnsafeMutableRawPointer {
-        return self.pointer
+        return pointer
     }
 }
 
@@ -1406,13 +1215,11 @@ fileprivate extension OnGetSecretResult {
 // """
 // 'private' modifier cannot be used with extensions that declare protocol conformances
 // """
-extension OnGetSecretResult : ViaFfi, Serializable {}
-
+extension OnGetSecretResult: ViaFfi, Serializable {}
 
 public protocol OnFindSecretsResultProtocol {
-    func success(result: [String] ) throws
-    func error(err: ErrorKind, msg: String ) throws
-    
+    func success(result: [String]) throws
+    func error(err: ErrorKind, msg: String) throws
 }
 
 public class OnFindSecretsResult: OnFindSecretsResultProtocol {
@@ -1426,33 +1233,25 @@ public class OnFindSecretsResult: OnFindSecretsResultProtocol {
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f269_OnFindSecretsResult_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_812c_OnFindSecretsResult_object_free(pointer, $0) }
     }
 
-    
-
-    
-    public func success(result: [String] ) throws {
+    public func success(result: [String]) throws {
         try
-    rustCallWithError(ErrorKind.self) {
-    
-    didcomm_f269_OnFindSecretsResult_success(self.pointer, FfiConverterSequenceString.lower(result) , $0
-    )
-}
+            rustCallWithError(ErrorKind.self) {
+                didcomm_812c_OnFindSecretsResult_success(self.pointer, FfiConverterSequenceString.lower(result), $0)
+            }
     }
-    public func error(err: ErrorKind, msg: String ) throws {
+
+    public func error(err: ErrorKind, msg: String) throws {
         try
-    rustCallWithError(ErrorKind.self) {
-    
-    didcomm_f269_OnFindSecretsResult_error(self.pointer, err.lower(), msg.lower() , $0
-    )
-}
+            rustCallWithError(ErrorKind.self) {
+                didcomm_812c_OnFindSecretsResult_error(self.pointer, err.lower(), msg.lower(), $0)
+            }
     }
-    
 }
 
-
-fileprivate extension OnFindSecretsResult {
+private extension OnFindSecretsResult {
     typealias FfiType = UnsafeMutableRawPointer
 
     static func read(from buf: Reader) throws -> Self {
@@ -1460,16 +1259,16 @@ fileprivate extension OnFindSecretsResult {
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
         let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if (ptr == nil) {
+        if ptr == nil {
             throw UniffiInternalError.unexpectedNullPointer
         }
-        return try self.lift(ptr!)
+        return try lift(ptr!)
     }
 
     func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
+        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: lower()))))
     }
 
     static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
@@ -1477,7 +1276,7 @@ fileprivate extension OnFindSecretsResult {
     }
 
     func lower() -> UnsafeMutableRawPointer {
-        return self.pointer
+        return pointer
     }
 }
 
@@ -1485,13 +1284,11 @@ fileprivate extension OnFindSecretsResult {
 // """
 // 'private' modifier cannot be used with extensions that declare protocol conformances
 // """
-extension OnFindSecretsResult : ViaFfi, Serializable {}
-
+extension OnFindSecretsResult: ViaFfi, Serializable {}
 
 public protocol ExampleSecretsResolverProtocol {
-    func getSecret(secretId: String, cb: OnGetSecretResult )  -> ErrorCode
-    func findSecrets(secretIds: [String], cb: OnFindSecretsResult )  -> ErrorCode
-    
+    func getSecret(secretId: String, cb: OnGetSecretResult) -> ErrorCode
+    func findSecrets(secretIds: [String], cb: OnFindSecretsResult) -> ErrorCode
 }
 
 public class ExampleSecretsResolver: ExampleSecretsResolverProtocol {
@@ -1503,46 +1300,37 @@ public class ExampleSecretsResolver: ExampleSecretsResolverProtocol {
     required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
-    public convenience init(knownSecrets: [Secret] )  {
+
+    public convenience init(knownSecrets: [Secret]) {
         self.init(unsafeFromRawPointer: try!
-    
-    
-    rustCall() {
-    
-    didcomm_f269_ExampleSecretsResolver_new(FfiConverterSequenceRecordSecret.lower(knownSecrets) , $0)
-})
+
+            rustCall {
+                didcomm_812c_ExampleSecretsResolver_new(FfiConverterSequenceRecordSecret.lower(knownSecrets), $0)
+            })
     }
 
     deinit {
-        try! rustCall { ffi_didcomm_f269_ExampleSecretsResolver_object_free(pointer, $0) }
+        try! rustCall { ffi_didcomm_812c_ExampleSecretsResolver_object_free(pointer, $0) }
     }
 
-    
-
-    
-    public func getSecret(secretId: String, cb: OnGetSecretResult )  -> ErrorCode {
+    public func getSecret(secretId: String, cb: OnGetSecretResult) -> ErrorCode {
         let _retval = try!
-    rustCall() {
-    
-    didcomm_f269_ExampleSecretsResolver_get_secret(self.pointer, secretId.lower(), cb.lower() , $0
-    )
-}
+            rustCall {
+                didcomm_812c_ExampleSecretsResolver_get_secret(self.pointer, secretId.lower(), cb.lower(), $0)
+            }
         return try! ErrorCode.lift(_retval)
     }
-    public func findSecrets(secretIds: [String], cb: OnFindSecretsResult )  -> ErrorCode {
+
+    public func findSecrets(secretIds: [String], cb: OnFindSecretsResult) -> ErrorCode {
         let _retval = try!
-    rustCall() {
-    
-    didcomm_f269_ExampleSecretsResolver_find_secrets(self.pointer, FfiConverterSequenceString.lower(secretIds), cb.lower() , $0
-    )
-}
+            rustCall {
+                didcomm_812c_ExampleSecretsResolver_find_secrets(self.pointer, FfiConverterSequenceString.lower(secretIds), cb.lower(), $0)
+            }
         return try! ErrorCode.lift(_retval)
     }
-    
 }
 
-
-fileprivate extension ExampleSecretsResolver {
+private extension ExampleSecretsResolver {
     typealias FfiType = UnsafeMutableRawPointer
 
     static func read(from buf: Reader) throws -> Self {
@@ -1550,16 +1338,16 @@ fileprivate extension ExampleSecretsResolver {
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
         let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if (ptr == nil) {
+        if ptr == nil {
             throw UniffiInternalError.unexpectedNullPointer
         }
-        return try self.lift(ptr!)
+        return try lift(ptr!)
     }
 
     func write(into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: self.lower()))))
+        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: lower()))))
     }
 
     static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Self {
@@ -1567,7 +1355,7 @@ fileprivate extension ExampleSecretsResolver {
     }
 
     func lower() -> UnsafeMutableRawPointer {
-        return self.pointer
+        return pointer
     }
 }
 
@@ -1575,7 +1363,7 @@ fileprivate extension ExampleSecretsResolver {
 // """
 // 'private' modifier cannot be used with extensions that declare protocol conformances
 // """
-extension ExampleSecretsResolver : ViaFfi, Serializable {}
+extension ExampleSecretsResolver: ViaFfi, Serializable {}
 
 public struct Message {
     public var id: String
@@ -1594,7 +1382,7 @@ public struct Message {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: String, typ: String, type: String, body: String, from: String?, to: [String]?, thid: String?, pthid: String?, extraHeaders: [String: String], createdTime: UInt64?, expiresTime: UInt64?, fromPrior: String?, attachments: [Attachment]? ) {
+    public init(id: String, typ: String, type: String, body: String, from: String?, to: [String]?, thid: String?, pthid: String?, extraHeaders: [String: String], createdTime: UInt64?, expiresTime: UInt64?, fromPrior: String?, attachments: [Attachment]?) {
         self.id = id
         self.typ = typ
         self.type = type
@@ -1611,9 +1399,8 @@ public struct Message {
     }
 }
 
-
 extension Message: Equatable, Hashable {
-    public static func ==(lhs: Message, rhs: Message) -> Bool {
+    public static func == (lhs: Message, rhs: Message) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -1673,8 +1460,7 @@ extension Message: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension Message {
+private extension Message {
     static func read(from buf: Reader) throws -> Message {
         return try Message(
             id: String.read(from: buf),
@@ -1694,19 +1480,19 @@ fileprivate extension Message {
     }
 
     func write(into buf: Writer) {
-        self.id.write(into: buf)
-        self.typ.write(into: buf)
-        self.type.write(into: buf)
-        self.body.write(into: buf)
-        FfiConverterOptionString.write(self.from, into: buf)
-        FfiConverterOptionSequenceString.write(self.to, into: buf)
-        FfiConverterOptionString.write(self.thid, into: buf)
-        FfiConverterOptionString.write(self.pthid, into: buf)
-        FfiConverterDictionaryJsonValue.write(self.extraHeaders, into: buf)
-        FfiConverterOptionUInt64.write(self.createdTime, into: buf)
-        FfiConverterOptionUInt64.write(self.expiresTime, into: buf)
-        FfiConverterOptionString.write(self.fromPrior, into: buf)
-        FfiConverterOptionSequenceRecordAttachment.write(self.attachments, into: buf)
+        id.write(into: buf)
+        typ.write(into: buf)
+        type.write(into: buf)
+        body.write(into: buf)
+        FfiConverterOptionString.write(from, into: buf)
+        FfiConverterOptionSequenceString.write(to, into: buf)
+        FfiConverterOptionString.write(thid, into: buf)
+        FfiConverterOptionString.write(pthid, into: buf)
+        FfiConverterDictionaryJsonValue.write(extraHeaders, into: buf)
+        FfiConverterOptionUInt64.write(createdTime, into: buf)
+        FfiConverterOptionUInt64.write(expiresTime, into: buf)
+        FfiConverterOptionString.write(fromPrior, into: buf)
+        FfiConverterOptionSequenceRecordAttachment.write(attachments, into: buf)
     }
 }
 
@@ -1724,7 +1510,7 @@ public struct Attachment {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(data: AttachmentData, id: String?, description: String?, filename: String?, mediaType: String?, format: String?, lastmodTime: UInt64?, byteCount: UInt64? ) {
+    public init(data: AttachmentData, id: String?, description: String?, filename: String?, mediaType: String?, format: String?, lastmodTime: UInt64?, byteCount: UInt64?) {
         self.data = data
         self.id = id
         self.description = description
@@ -1736,9 +1522,8 @@ public struct Attachment {
     }
 }
 
-
 extension Attachment: Equatable, Hashable {
-    public static func ==(lhs: Attachment, rhs: Attachment) -> Bool {
+    public static func == (lhs: Attachment, rhs: Attachment) -> Bool {
         if lhs.data != rhs.data {
             return false
         }
@@ -1778,8 +1563,7 @@ extension Attachment: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension Attachment {
+private extension Attachment {
     static func read(from buf: Reader) throws -> Attachment {
         return try Attachment(
             data: AttachmentData.read(from: buf),
@@ -1794,14 +1578,14 @@ fileprivate extension Attachment {
     }
 
     func write(into buf: Writer) {
-        self.data.write(into: buf)
-        FfiConverterOptionString.write(self.id, into: buf)
-        FfiConverterOptionString.write(self.description, into: buf)
-        FfiConverterOptionString.write(self.filename, into: buf)
-        FfiConverterOptionString.write(self.mediaType, into: buf)
-        FfiConverterOptionString.write(self.format, into: buf)
-        FfiConverterOptionUInt64.write(self.lastmodTime, into: buf)
-        FfiConverterOptionUInt64.write(self.byteCount, into: buf)
+        data.write(into: buf)
+        FfiConverterOptionString.write(id, into: buf)
+        FfiConverterOptionString.write(description, into: buf)
+        FfiConverterOptionString.write(filename, into: buf)
+        FfiConverterOptionString.write(mediaType, into: buf)
+        FfiConverterOptionString.write(format, into: buf)
+        FfiConverterOptionUInt64.write(lastmodTime, into: buf)
+        FfiConverterOptionUInt64.write(byteCount, into: buf)
     }
 }
 
@@ -1813,15 +1597,14 @@ public struct Base64AttachmentData {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(base64: String, jws: String? ) {
+    public init(base64: String, jws: String?) {
         self.base64 = base64
         self.jws = jws
     }
 }
 
-
 extension Base64AttachmentData: Equatable, Hashable {
-    public static func ==(lhs: Base64AttachmentData, rhs: Base64AttachmentData) -> Bool {
+    public static func == (lhs: Base64AttachmentData, rhs: Base64AttachmentData) -> Bool {
         if lhs.base64 != rhs.base64 {
             return false
         }
@@ -1837,8 +1620,7 @@ extension Base64AttachmentData: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension Base64AttachmentData {
+private extension Base64AttachmentData {
     static func read(from buf: Reader) throws -> Base64AttachmentData {
         return try Base64AttachmentData(
             base64: String.read(from: buf),
@@ -1847,8 +1629,8 @@ fileprivate extension Base64AttachmentData {
     }
 
     func write(into buf: Writer) {
-        self.base64.write(into: buf)
-        FfiConverterOptionString.write(self.jws, into: buf)
+        base64.write(into: buf)
+        FfiConverterOptionString.write(jws, into: buf)
     }
 }
 
@@ -1860,15 +1642,14 @@ public struct JsonAttachmentData {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(json: String, jws: String? ) {
+    public init(json: String, jws: String?) {
         self.json = json
         self.jws = jws
     }
 }
 
-
 extension JsonAttachmentData: Equatable, Hashable {
-    public static func ==(lhs: JsonAttachmentData, rhs: JsonAttachmentData) -> Bool {
+    public static func == (lhs: JsonAttachmentData, rhs: JsonAttachmentData) -> Bool {
         if lhs.json != rhs.json {
             return false
         }
@@ -1884,8 +1665,7 @@ extension JsonAttachmentData: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension JsonAttachmentData {
+private extension JsonAttachmentData {
     static func read(from buf: Reader) throws -> JsonAttachmentData {
         return try JsonAttachmentData(
             json: String.read(from: buf),
@@ -1894,8 +1674,8 @@ fileprivate extension JsonAttachmentData {
     }
 
     func write(into buf: Writer) {
-        self.json.write(into: buf)
-        FfiConverterOptionString.write(self.jws, into: buf)
+        json.write(into: buf)
+        FfiConverterOptionString.write(jws, into: buf)
     }
 }
 
@@ -1908,16 +1688,15 @@ public struct LinksAttachmentData {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(links: [String], hash: String, jws: String? ) {
+    public init(links: [String], hash: String, jws: String?) {
         self.links = links
         self.hash = hash
         self.jws = jws
     }
 }
 
-
 extension LinksAttachmentData: Equatable, Hashable {
-    public static func ==(lhs: LinksAttachmentData, rhs: LinksAttachmentData) -> Bool {
+    public static func == (lhs: LinksAttachmentData, rhs: LinksAttachmentData) -> Bool {
         if lhs.links != rhs.links {
             return false
         }
@@ -1937,8 +1716,7 @@ extension LinksAttachmentData: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension LinksAttachmentData {
+private extension LinksAttachmentData {
     static func read(from buf: Reader) throws -> LinksAttachmentData {
         return try LinksAttachmentData(
             links: FfiConverterSequenceString.read(from: buf),
@@ -1948,80 +1726,78 @@ fileprivate extension LinksAttachmentData {
     }
 
     func write(into buf: Writer) {
-        FfiConverterSequenceString.write(self.links, into: buf)
-        self.hash.write(into: buf)
-        FfiConverterOptionString.write(self.jws, into: buf)
+        FfiConverterSequenceString.write(links, into: buf)
+        hash.write(into: buf)
+        FfiConverterOptionString.write(jws, into: buf)
     }
 }
 
 extension LinksAttachmentData: ViaFfiUsingByteBuffer, ViaFfi {}
 
 public struct DidDoc {
-    public var did: String
-    public var keyAgreements: [String]
-    public var authentications: [String]
-    public var verificationMethods: [VerificationMethod]
-    public var services: [Service]
+    public var id: String
+    public var keyAgreement: [String]
+    public var authentication: [String]
+    public var verificationMethod: [VerificationMethod]
+    public var service: [Service]
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(did: String, keyAgreements: [String], authentications: [String], verificationMethods: [VerificationMethod], services: [Service] ) {
-        self.did = did
-        self.keyAgreements = keyAgreements
-        self.authentications = authentications
-        self.verificationMethods = verificationMethods
-        self.services = services
+    public init(id: String, keyAgreement: [String], authentication: [String], verificationMethod: [VerificationMethod], service: [Service]) {
+        self.id = id
+        self.keyAgreement = keyAgreement
+        self.authentication = authentication
+        self.verificationMethod = verificationMethod
+        self.service = service
     }
 }
 
-
 extension DidDoc: Equatable, Hashable {
-    public static func ==(lhs: DidDoc, rhs: DidDoc) -> Bool {
-        if lhs.did != rhs.did {
+    public static func == (lhs: DidDoc, rhs: DidDoc) -> Bool {
+        if lhs.id != rhs.id {
             return false
         }
-        if lhs.keyAgreements != rhs.keyAgreements {
+        if lhs.keyAgreement != rhs.keyAgreement {
             return false
         }
-        if lhs.authentications != rhs.authentications {
+        if lhs.authentication != rhs.authentication {
             return false
         }
-        if lhs.verificationMethods != rhs.verificationMethods {
+        if lhs.verificationMethod != rhs.verificationMethod {
             return false
         }
-        if lhs.services != rhs.services {
+        if lhs.service != rhs.service {
             return false
         }
         return true
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(did)
-        hasher.combine(keyAgreements)
-        hasher.combine(authentications)
-        hasher.combine(verificationMethods)
-        hasher.combine(services)
+        hasher.combine(id)
+        hasher.combine(keyAgreement)
+        hasher.combine(authentication)
+        hasher.combine(verificationMethod)
+        hasher.combine(service)
     }
 }
 
-
-fileprivate extension DidDoc {
+private extension DidDoc {
     static func read(from buf: Reader) throws -> DidDoc {
         return try DidDoc(
-            did: String.read(from: buf),
-            keyAgreements: FfiConverterSequenceString.read(from: buf),
-            authentications: FfiConverterSequenceString.read(from: buf),
-            verificationMethods: FfiConverterSequenceRecordVerificationMethod.read(from: buf),
-            services: FfiConverterSequenceRecordService.read(from: buf)
+            id: String.read(from: buf),
+            keyAgreement: FfiConverterSequenceString.read(from: buf),
+            authentication: FfiConverterSequenceString.read(from: buf),
+            verificationMethod: FfiConverterSequenceRecordVerificationMethod.read(from: buf),
+            service: FfiConverterSequenceRecordService.read(from: buf)
         )
     }
 
     func write(into buf: Writer) {
-        self.did.write(into: buf)
-        FfiConverterSequenceString.write(self.keyAgreements, into: buf)
-        FfiConverterSequenceString.write(self.authentications, into: buf)
-        FfiConverterSequenceRecordVerificationMethod.write(self.verificationMethods, into: buf)
-        FfiConverterSequenceRecordService.write(self.services, into: buf)
+        id.write(into: buf)
+        FfiConverterSequenceString.write(keyAgreement, into: buf)
+        FfiConverterSequenceString.write(authentication, into: buf)
+        FfiConverterSequenceRecordVerificationMethod.write(verificationMethod, into: buf)
+        FfiConverterSequenceRecordService.write(service, into: buf)
     }
 }
 
@@ -2035,7 +1811,7 @@ public struct VerificationMethod {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: String, type: VerificationMethodType, controller: String, verificationMaterial: VerificationMaterial ) {
+    public init(id: String, type: VerificationMethodType, controller: String, verificationMaterial: VerificationMaterial) {
         self.id = id
         self.type = type
         self.controller = controller
@@ -2043,9 +1819,8 @@ public struct VerificationMethod {
     }
 }
 
-
 extension VerificationMethod: Equatable, Hashable {
-    public static func ==(lhs: VerificationMethod, rhs: VerificationMethod) -> Bool {
+    public static func == (lhs: VerificationMethod, rhs: VerificationMethod) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -2069,8 +1844,7 @@ extension VerificationMethod: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension VerificationMethod {
+private extension VerificationMethod {
     static func read(from buf: Reader) throws -> VerificationMethod {
         return try VerificationMethod(
             id: String.read(from: buf),
@@ -2081,10 +1855,10 @@ fileprivate extension VerificationMethod {
     }
 
     func write(into buf: Writer) {
-        self.id.write(into: buf)
-        self.type.write(into: buf)
-        self.controller.write(into: buf)
-        self.verificationMaterial.write(into: buf)
+        id.write(into: buf)
+        type.write(into: buf)
+        controller.write(into: buf)
+        verificationMaterial.write(into: buf)
     }
 }
 
@@ -2092,23 +1866,22 @@ extension VerificationMethod: ViaFfiUsingByteBuffer, ViaFfi {}
 
 public struct Service {
     public var id: String
-    public var kind: ServiceKind
+    public var serviceEndpoint: ServiceKind
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: String, kind: ServiceKind ) {
+    public init(id: String, serviceEndpoint: ServiceKind) {
         self.id = id
-        self.kind = kind
+        self.serviceEndpoint = serviceEndpoint
     }
 }
 
-
 extension Service: Equatable, Hashable {
-    public static func ==(lhs: Service, rhs: Service) -> Bool {
+    public static func == (lhs: Service, rhs: Service) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
-        if lhs.kind != rhs.kind {
+        if lhs.serviceEndpoint != rhs.serviceEndpoint {
             return false
         }
         return true
@@ -2116,45 +1889,43 @@ extension Service: Equatable, Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
-        hasher.combine(kind)
+        hasher.combine(serviceEndpoint)
     }
 }
 
-
-fileprivate extension Service {
+private extension Service {
     static func read(from buf: Reader) throws -> Service {
         return try Service(
             id: String.read(from: buf),
-            kind: ServiceKind.read(from: buf)
+            serviceEndpoint: ServiceKind.read(from: buf)
         )
     }
 
     func write(into buf: Writer) {
-        self.id.write(into: buf)
-        self.kind.write(into: buf)
+        id.write(into: buf)
+        serviceEndpoint.write(into: buf)
     }
 }
 
 extension Service: ViaFfiUsingByteBuffer, ViaFfi {}
 
 public struct DidCommMessagingService {
-    public var serviceEndpoint: String
+    public var uri: String
     public var accept: [String]?
     public var routingKeys: [String]
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(serviceEndpoint: String, accept: [String]?, routingKeys: [String] ) {
-        self.serviceEndpoint = serviceEndpoint
+    public init(uri: String, accept: [String]?, routingKeys: [String]) {
+        self.uri = uri
         self.accept = accept
         self.routingKeys = routingKeys
     }
 }
 
-
 extension DidCommMessagingService: Equatable, Hashable {
-    public static func ==(lhs: DidCommMessagingService, rhs: DidCommMessagingService) -> Bool {
-        if lhs.serviceEndpoint != rhs.serviceEndpoint {
+    public static func == (lhs: DidCommMessagingService, rhs: DidCommMessagingService) -> Bool {
+        if lhs.uri != rhs.uri {
             return false
         }
         if lhs.accept != rhs.accept {
@@ -2167,26 +1938,25 @@ extension DidCommMessagingService: Equatable, Hashable {
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(serviceEndpoint)
+        hasher.combine(uri)
         hasher.combine(accept)
         hasher.combine(routingKeys)
     }
 }
 
-
-fileprivate extension DidCommMessagingService {
+private extension DidCommMessagingService {
     static func read(from buf: Reader) throws -> DidCommMessagingService {
         return try DidCommMessagingService(
-            serviceEndpoint: String.read(from: buf),
+            uri: String.read(from: buf),
             accept: FfiConverterOptionSequenceString.read(from: buf),
             routingKeys: FfiConverterSequenceString.read(from: buf)
         )
     }
 
     func write(into buf: Writer) {
-        self.serviceEndpoint.write(into: buf)
-        FfiConverterOptionSequenceString.write(self.accept, into: buf)
-        FfiConverterSequenceString.write(self.routingKeys, into: buf)
+        uri.write(into: buf)
+        FfiConverterOptionSequenceString.write(accept, into: buf)
+        FfiConverterSequenceString.write(routingKeys, into: buf)
     }
 }
 
@@ -2199,16 +1969,15 @@ public struct Secret {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: String, type: SecretType, secretMaterial: SecretMaterial ) {
+    public init(id: String, type: SecretType, secretMaterial: SecretMaterial) {
         self.id = id
         self.type = type
         self.secretMaterial = secretMaterial
     }
 }
 
-
 extension Secret: Equatable, Hashable {
-    public static func ==(lhs: Secret, rhs: Secret) -> Bool {
+    public static func == (lhs: Secret, rhs: Secret) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -2228,8 +1997,7 @@ extension Secret: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension Secret {
+private extension Secret {
     static func read(from buf: Reader) throws -> Secret {
         return try Secret(
             id: String.read(from: buf),
@@ -2239,9 +2007,9 @@ fileprivate extension Secret {
     }
 
     func write(into buf: Writer) {
-        self.id.write(into: buf)
-        self.type.write(into: buf)
-        self.secretMaterial.write(into: buf)
+        id.write(into: buf)
+        type.write(into: buf)
+        secretMaterial.write(into: buf)
     }
 }
 
@@ -2252,14 +2020,13 @@ public struct PackSignedMetadata {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(signByKid: String ) {
+    public init(signByKid: String) {
         self.signByKid = signByKid
     }
 }
 
-
 extension PackSignedMetadata: Equatable, Hashable {
-    public static func ==(lhs: PackSignedMetadata, rhs: PackSignedMetadata) -> Bool {
+    public static func == (lhs: PackSignedMetadata, rhs: PackSignedMetadata) -> Bool {
         if lhs.signByKid != rhs.signByKid {
             return false
         }
@@ -2271,8 +2038,7 @@ extension PackSignedMetadata: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension PackSignedMetadata {
+private extension PackSignedMetadata {
     static func read(from buf: Reader) throws -> PackSignedMetadata {
         return try PackSignedMetadata(
             signByKid: String.read(from: buf)
@@ -2280,7 +2046,7 @@ fileprivate extension PackSignedMetadata {
     }
 
     func write(into buf: Writer) {
-        self.signByKid.write(into: buf)
+        signByKid.write(into: buf)
     }
 }
 
@@ -2294,7 +2060,7 @@ public struct PackEncryptedMetadata {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(messagingService: MessagingServiceMetadata?, fromKid: String?, signByKid: String?, toKids: [String] ) {
+    public init(messagingService: MessagingServiceMetadata?, fromKid: String?, signByKid: String?, toKids: [String]) {
         self.messagingService = messagingService
         self.fromKid = fromKid
         self.signByKid = signByKid
@@ -2302,9 +2068,8 @@ public struct PackEncryptedMetadata {
     }
 }
 
-
 extension PackEncryptedMetadata: Equatable, Hashable {
-    public static func ==(lhs: PackEncryptedMetadata, rhs: PackEncryptedMetadata) -> Bool {
+    public static func == (lhs: PackEncryptedMetadata, rhs: PackEncryptedMetadata) -> Bool {
         if lhs.messagingService != rhs.messagingService {
             return false
         }
@@ -2328,8 +2093,7 @@ extension PackEncryptedMetadata: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension PackEncryptedMetadata {
+private extension PackEncryptedMetadata {
     static func read(from buf: Reader) throws -> PackEncryptedMetadata {
         return try PackEncryptedMetadata(
             messagingService: FfiConverterOptionRecordMessagingServiceMetadata.read(from: buf),
@@ -2340,10 +2104,10 @@ fileprivate extension PackEncryptedMetadata {
     }
 
     func write(into buf: Writer) {
-        FfiConverterOptionRecordMessagingServiceMetadata.write(self.messagingService, into: buf)
-        FfiConverterOptionString.write(self.fromKid, into: buf)
-        FfiConverterOptionString.write(self.signByKid, into: buf)
-        FfiConverterSequenceString.write(self.toKids, into: buf)
+        FfiConverterOptionRecordMessagingServiceMetadata.write(messagingService, into: buf)
+        FfiConverterOptionString.write(fromKid, into: buf)
+        FfiConverterOptionString.write(signByKid, into: buf)
+        FfiConverterSequenceString.write(toKids, into: buf)
     }
 }
 
@@ -2355,15 +2119,14 @@ public struct MessagingServiceMetadata {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: String, serviceEndpoint: String ) {
+    public init(id: String, serviceEndpoint: String) {
         self.id = id
         self.serviceEndpoint = serviceEndpoint
     }
 }
 
-
 extension MessagingServiceMetadata: Equatable, Hashable {
-    public static func ==(lhs: MessagingServiceMetadata, rhs: MessagingServiceMetadata) -> Bool {
+    public static func == (lhs: MessagingServiceMetadata, rhs: MessagingServiceMetadata) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -2379,8 +2142,7 @@ extension MessagingServiceMetadata: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension MessagingServiceMetadata {
+private extension MessagingServiceMetadata {
     static func read(from buf: Reader) throws -> MessagingServiceMetadata {
         return try MessagingServiceMetadata(
             id: String.read(from: buf),
@@ -2389,8 +2151,8 @@ fileprivate extension MessagingServiceMetadata {
     }
 
     func write(into buf: Writer) {
-        self.id.write(into: buf)
-        self.serviceEndpoint.write(into: buf)
+        id.write(into: buf)
+        serviceEndpoint.write(into: buf)
     }
 }
 
@@ -2406,7 +2168,7 @@ public struct PackEncryptedOptions {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(protectSender: Bool, forward: Bool, forwardHeaders: [String: String]?, messagingService: String?, encAlgAuth: AuthCryptAlg, encAlgAnon: AnonCryptAlg ) {
+    public init(protectSender: Bool, forward: Bool, forwardHeaders: [String: String]?, messagingService: String?, encAlgAuth: AuthCryptAlg, encAlgAnon: AnonCryptAlg) {
         self.protectSender = protectSender
         self.forward = forward
         self.forwardHeaders = forwardHeaders
@@ -2416,9 +2178,8 @@ public struct PackEncryptedOptions {
     }
 }
 
-
 extension PackEncryptedOptions: Equatable, Hashable {
-    public static func ==(lhs: PackEncryptedOptions, rhs: PackEncryptedOptions) -> Bool {
+    public static func == (lhs: PackEncryptedOptions, rhs: PackEncryptedOptions) -> Bool {
         if lhs.protectSender != rhs.protectSender {
             return false
         }
@@ -2450,8 +2211,7 @@ extension PackEncryptedOptions: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension PackEncryptedOptions {
+private extension PackEncryptedOptions {
     static func read(from buf: Reader) throws -> PackEncryptedOptions {
         return try PackEncryptedOptions(
             protectSender: Bool.read(from: buf),
@@ -2464,12 +2224,12 @@ fileprivate extension PackEncryptedOptions {
     }
 
     func write(into buf: Writer) {
-        self.protectSender.write(into: buf)
-        self.forward.write(into: buf)
-        FfiConverterOptionDictionaryJsonValue.write(self.forwardHeaders, into: buf)
-        FfiConverterOptionString.write(self.messagingService, into: buf)
-        self.encAlgAuth.write(into: buf)
-        self.encAlgAnon.write(into: buf)
+        protectSender.write(into: buf)
+        forward.write(into: buf)
+        FfiConverterOptionDictionaryJsonValue.write(forwardHeaders, into: buf)
+        FfiConverterOptionString.write(messagingService, into: buf)
+        encAlgAuth.write(into: buf)
+        encAlgAnon.write(into: buf)
     }
 }
 
@@ -2493,7 +2253,7 @@ public struct UnpackMetadata {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(encrypted: Bool, authenticated: Bool, nonRepudiation: Bool, anonymousSender: Bool, reWrappedInForward: Bool, encryptedFromKid: String?, encryptedToKids: [String]?, signFrom: String?, fromPriorIssuerKid: String?, encAlgAuth: AuthCryptAlg?, encAlgAnon: AnonCryptAlg?, signAlg: SignAlg?, signedMessage: String?, fromPrior: FromPrior? ) {
+    public init(encrypted: Bool, authenticated: Bool, nonRepudiation: Bool, anonymousSender: Bool, reWrappedInForward: Bool, encryptedFromKid: String?, encryptedToKids: [String]?, signFrom: String?, fromPriorIssuerKid: String?, encAlgAuth: AuthCryptAlg?, encAlgAnon: AnonCryptAlg?, signAlg: SignAlg?, signedMessage: String?, fromPrior: FromPrior?) {
         self.encrypted = encrypted
         self.authenticated = authenticated
         self.nonRepudiation = nonRepudiation
@@ -2511,9 +2271,8 @@ public struct UnpackMetadata {
     }
 }
 
-
 extension UnpackMetadata: Equatable, Hashable {
-    public static func ==(lhs: UnpackMetadata, rhs: UnpackMetadata) -> Bool {
+    public static func == (lhs: UnpackMetadata, rhs: UnpackMetadata) -> Bool {
         if lhs.encrypted != rhs.encrypted {
             return false
         }
@@ -2577,8 +2336,7 @@ extension UnpackMetadata: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension UnpackMetadata {
+private extension UnpackMetadata {
     static func read(from buf: Reader) throws -> UnpackMetadata {
         return try UnpackMetadata(
             encrypted: Bool.read(from: buf),
@@ -2599,20 +2357,20 @@ fileprivate extension UnpackMetadata {
     }
 
     func write(into buf: Writer) {
-        self.encrypted.write(into: buf)
-        self.authenticated.write(into: buf)
-        self.nonRepudiation.write(into: buf)
-        self.anonymousSender.write(into: buf)
-        self.reWrappedInForward.write(into: buf)
-        FfiConverterOptionString.write(self.encryptedFromKid, into: buf)
-        FfiConverterOptionSequenceString.write(self.encryptedToKids, into: buf)
-        FfiConverterOptionString.write(self.signFrom, into: buf)
-        FfiConverterOptionString.write(self.fromPriorIssuerKid, into: buf)
-        FfiConverterOptionEnumAuthCryptAlg.write(self.encAlgAuth, into: buf)
-        FfiConverterOptionEnumAnonCryptAlg.write(self.encAlgAnon, into: buf)
-        FfiConverterOptionEnumSignAlg.write(self.signAlg, into: buf)
-        FfiConverterOptionString.write(self.signedMessage, into: buf)
-        FfiConverterOptionRecordFromPrior.write(self.fromPrior, into: buf)
+        encrypted.write(into: buf)
+        authenticated.write(into: buf)
+        nonRepudiation.write(into: buf)
+        anonymousSender.write(into: buf)
+        reWrappedInForward.write(into: buf)
+        FfiConverterOptionString.write(encryptedFromKid, into: buf)
+        FfiConverterOptionSequenceString.write(encryptedToKids, into: buf)
+        FfiConverterOptionString.write(signFrom, into: buf)
+        FfiConverterOptionString.write(fromPriorIssuerKid, into: buf)
+        FfiConverterOptionEnumAuthCryptAlg.write(encAlgAuth, into: buf)
+        FfiConverterOptionEnumAnonCryptAlg.write(encAlgAnon, into: buf)
+        FfiConverterOptionEnumSignAlg.write(signAlg, into: buf)
+        FfiConverterOptionString.write(signedMessage, into: buf)
+        FfiConverterOptionRecordFromPrior.write(fromPrior, into: buf)
     }
 }
 
@@ -2624,15 +2382,14 @@ public struct UnpackOptions {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(expectDecryptByAllKeys: Bool, unwrapReWrappingForward: Bool ) {
+    public init(expectDecryptByAllKeys: Bool, unwrapReWrappingForward: Bool) {
         self.expectDecryptByAllKeys = expectDecryptByAllKeys
         self.unwrapReWrappingForward = unwrapReWrappingForward
     }
 }
 
-
 extension UnpackOptions: Equatable, Hashable {
-    public static func ==(lhs: UnpackOptions, rhs: UnpackOptions) -> Bool {
+    public static func == (lhs: UnpackOptions, rhs: UnpackOptions) -> Bool {
         if lhs.expectDecryptByAllKeys != rhs.expectDecryptByAllKeys {
             return false
         }
@@ -2648,8 +2405,7 @@ extension UnpackOptions: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension UnpackOptions {
+private extension UnpackOptions {
     static func read(from buf: Reader) throws -> UnpackOptions {
         return try UnpackOptions(
             expectDecryptByAllKeys: Bool.read(from: buf),
@@ -2658,8 +2414,8 @@ fileprivate extension UnpackOptions {
     }
 
     func write(into buf: Writer) {
-        self.expectDecryptByAllKeys.write(into: buf)
-        self.unwrapReWrappingForward.write(into: buf)
+        expectDecryptByAllKeys.write(into: buf)
+        unwrapReWrappingForward.write(into: buf)
     }
 }
 
@@ -2676,7 +2432,7 @@ public struct FromPrior {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(iss: String, sub: String, aud: String?, exp: UInt64?, nbf: UInt64?, iat: UInt64?, jti: String? ) {
+    public init(iss: String, sub: String, aud: String?, exp: UInt64?, nbf: UInt64?, iat: UInt64?, jti: String?) {
         self.iss = iss
         self.sub = sub
         self.aud = aud
@@ -2687,9 +2443,8 @@ public struct FromPrior {
     }
 }
 
-
 extension FromPrior: Equatable, Hashable {
-    public static func ==(lhs: FromPrior, rhs: FromPrior) -> Bool {
+    public static func == (lhs: FromPrior, rhs: FromPrior) -> Bool {
         if lhs.iss != rhs.iss {
             return false
         }
@@ -2725,8 +2480,7 @@ extension FromPrior: Equatable, Hashable {
     }
 }
 
-
-fileprivate extension FromPrior {
+private extension FromPrior {
     static func read(from buf: Reader) throws -> FromPrior {
         return try FromPrior(
             iss: String.read(from: buf),
@@ -2740,106 +2494,93 @@ fileprivate extension FromPrior {
     }
 
     func write(into buf: Writer) {
-        self.iss.write(into: buf)
-        self.sub.write(into: buf)
-        FfiConverterOptionString.write(self.aud, into: buf)
-        FfiConverterOptionUInt64.write(self.exp, into: buf)
-        FfiConverterOptionUInt64.write(self.nbf, into: buf)
-        FfiConverterOptionUInt64.write(self.iat, into: buf)
-        FfiConverterOptionString.write(self.jti, into: buf)
+        iss.write(into: buf)
+        sub.write(into: buf)
+        FfiConverterOptionString.write(aud, into: buf)
+        FfiConverterOptionUInt64.write(exp, into: buf)
+        FfiConverterOptionUInt64.write(nbf, into: buf)
+        FfiConverterOptionUInt64.write(iat, into: buf)
+        FfiConverterOptionString.write(jti, into: buf)
     }
 }
 
 extension FromPrior: ViaFfiUsingByteBuffer, ViaFfi {}
 
 public enum ErrorKind {
-
-    
-    
     // Simple error enums only carry a message
     case DidNotResolved(message: String)
-    
+
     // Simple error enums only carry a message
     case DidUrlNotFound(message: String)
-    
+
     // Simple error enums only carry a message
     case SecretNotFound(message: String)
-    
+
     // Simple error enums only carry a message
     case Malformed(message: String)
-    
+
     // Simple error enums only carry a message
     case IoError(message: String)
-    
+
     // Simple error enums only carry a message
     case InvalidState(message: String)
-    
+
     // Simple error enums only carry a message
     case NoCompatibleCrypto(message: String)
-    
+
     // Simple error enums only carry a message
     case Unsupported(message: String)
-    
+
     // Simple error enums only carry a message
     case IllegalArgument(message: String)
-    
 }
 
 extension ErrorKind: ViaFfiUsingByteBuffer, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> ErrorKind {
         let variant: Int32 = try buf.readInt()
         switch variant {
-
-        
-
-        
         case 1: return .DidNotResolved(
-            message: try String.read(from: buf)
-        )
-        
-        case 2: return .DidUrlNotFound(
-            message: try String.read(from: buf)
-        )
-        
-        case 3: return .SecretNotFound(
-            message: try String.read(from: buf)
-        )
-        
-        case 4: return .Malformed(
-            message: try String.read(from: buf)
-        )
-        
-        case 5: return .IoError(
-            message: try String.read(from: buf)
-        )
-        
-        case 6: return .InvalidState(
-            message: try String.read(from: buf)
-        )
-        
-        case 7: return .NoCompatibleCrypto(
-            message: try String.read(from: buf)
-        )
-        
-        case 8: return .Unsupported(
-            message: try String.read(from: buf)
-        )
-        
-        case 9: return .IllegalArgument(
-            message: try String.read(from: buf)
-        )
-        
+                message: try String.read(from: buf)
+            )
 
-         default: throw UniffiInternalError.unexpectedEnumCase
+        case 2: return .DidUrlNotFound(
+                message: try String.read(from: buf)
+            )
+
+        case 3: return .SecretNotFound(
+                message: try String.read(from: buf)
+            )
+
+        case 4: return .Malformed(
+                message: try String.read(from: buf)
+            )
+
+        case 5: return .IoError(
+                message: try String.read(from: buf)
+            )
+
+        case 6: return .InvalidState(
+                message: try String.read(from: buf)
+            )
+
+        case 7: return .NoCompatibleCrypto(
+                message: try String.read(from: buf)
+            )
+
+        case 8: return .Unsupported(
+                message: try String.read(from: buf)
+            )
+
+        case 9: return .IllegalArgument(
+                message: try String.read(from: buf)
+            )
+
+        default: throw UniffiInternalError.unexpectedEnumCase
         }
     }
 
     fileprivate func write(into buf: Writer) {
         switch self {
-
-        
-
-        
         case let .DidNotResolved(message):
             buf.writeInt(Int32(1))
             message.write(into: buf)
@@ -2871,584 +2612,541 @@ extension ErrorKind: ViaFfiUsingByteBuffer, ViaFfi {
     }
 }
 
-
 extension ErrorKind: Equatable, Hashable {}
 
-extension ErrorKind: Error { }
-
+extension ErrorKind: Error {}
 
 // Declaration and FfiConverters for DidResolver Callback Interface
 
-public protocol DidResolver : AnyObject {
-    func resolve(did: String, cb: OnDidResolverResult )  -> ErrorCode
-    
+public protocol DidResolver: AnyObject {
+    func resolve(did: String, cb: OnDidResolverResult) -> ErrorCode
 }
 
 // The ForeignCallback that is passed to Rust.
-fileprivate let foreignCallbackCallbackInterfaceDidResolver : ForeignCallback =
+private let foreignCallbackCallbackInterfaceDidResolver: ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer) -> RustBuffer in
         func invokeResolve(_ swiftCallbackInterface: DidResolver, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-            let result =  swiftCallbackInterface.resolve(
-                    did: try String.read(from: reader),
-                    cb: try OnDidResolverResult.read(from: reader)
-                    )
+            let result = swiftCallbackInterface.resolve(
+                did: try String.read(from: reader),
+                cb: try OnDidResolverResult.read(from: reader)
+            )
             let writer = Writer()
-                result.write(into: writer)
-                return RustBuffer(bytes: writer.bytes)
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    
+            result.write(into: writer)
+            return RustBuffer(bytes: writer.bytes)
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
 
         let cb = try! ffiConverterCallbackInterfaceDidResolver.lift(handle)
         switch method {
-            case IDX_CALLBACK_FREE:
-                ffiConverterCallbackInterfaceDidResolver.drop(handle: handle)
-                return RustBuffer()
-            case 1: return try! invokeResolve(cb, args)
-            
-            // This should never happen, because an out of bounds method index won't
-            // ever be used. Once we can catch errors, we should return an InternalError.
-            // https://github.com/mozilla/uniffi-rs/issues/351
-            default: return RustBuffer()
+        case IDX_CALLBACK_FREE:
+            ffiConverterCallbackInterfaceDidResolver.drop(handle: handle)
+            return RustBuffer()
+        case 1: return try! invokeResolve(cb, args)
+
+        // This should never happen, because an out of bounds method index won't
+        // ever be used. Once we can catch errors, we should return an InternalError.
+        // https://github.com/mozilla/uniffi-rs/issues/351
+        default: return RustBuffer()
         }
     }
 
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceDidResolver: FfiConverterCallbackInterface<DidResolver> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f269_DIDResolver_init_callback(foreignCallbackCallbackInterfaceDidResolver, err)
+        ffi_didcomm_812c_DIDResolver_init_callback(foreignCallbackCallbackInterfaceDidResolver, err)
     }
     return FfiConverterCallbackInterface<DidResolver>()
 }()
 
-
 // Declaration and FfiConverters for SecretsResolver Callback Interface
 
-public protocol SecretsResolver : AnyObject {
-    func getSecret(secretid: String, cb: OnGetSecretResult )  -> ErrorCode
-    func findSecrets(secretids: [String], cb: OnFindSecretsResult )  -> ErrorCode
-    
+public protocol SecretsResolver: AnyObject {
+    func getSecret(secretid: String, cb: OnGetSecretResult) -> ErrorCode
+    func findSecrets(secretids: [String], cb: OnFindSecretsResult) -> ErrorCode
 }
 
 // The ForeignCallback that is passed to Rust.
-fileprivate let foreignCallbackCallbackInterfaceSecretsResolver : ForeignCallback =
+private let foreignCallbackCallbackInterfaceSecretsResolver: ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer) -> RustBuffer in
         func invokeGetSecret(_ swiftCallbackInterface: SecretsResolver, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-            let result =  swiftCallbackInterface.getSecret(
-                    secretid: try String.read(from: reader),
-                    cb: try OnGetSecretResult.read(from: reader)
-                    )
+            let result = swiftCallbackInterface.getSecret(
+                secretid: try String.read(from: reader),
+                cb: try OnGetSecretResult.read(from: reader)
+            )
             let writer = Writer()
-                result.write(into: writer)
-                return RustBuffer(bytes: writer.bytes)
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeFindSecrets(_ swiftCallbackInterface: SecretsResolver, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            result.write(into: writer)
+            return RustBuffer(bytes: writer.bytes)
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
+        func invokeFindSecrets(_ swiftCallbackInterface: SecretsResolver, _ args: RustBuffer) throws -> RustBuffer {
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-            let result =  swiftCallbackInterface.findSecrets(
-                    secretids: try FfiConverterSequenceString.read(from: reader),
-                    cb: try OnFindSecretsResult.read(from: reader)
-                    )
+            let result = swiftCallbackInterface.findSecrets(
+                secretids: try FfiConverterSequenceString.read(from: reader),
+                cb: try OnFindSecretsResult.read(from: reader)
+            )
             let writer = Writer()
-                result.write(into: writer)
-                return RustBuffer(bytes: writer.bytes)
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    
+            result.write(into: writer)
+            return RustBuffer(bytes: writer.bytes)
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
 
         let cb = try! ffiConverterCallbackInterfaceSecretsResolver.lift(handle)
         switch method {
-            case IDX_CALLBACK_FREE:
-                ffiConverterCallbackInterfaceSecretsResolver.drop(handle: handle)
-                return RustBuffer()
-            case 1: return try! invokeGetSecret(cb, args)
-            case 2: return try! invokeFindSecrets(cb, args)
-            
-            // This should never happen, because an out of bounds method index won't
-            // ever be used. Once we can catch errors, we should return an InternalError.
-            // https://github.com/mozilla/uniffi-rs/issues/351
-            default: return RustBuffer()
+        case IDX_CALLBACK_FREE:
+            ffiConverterCallbackInterfaceSecretsResolver.drop(handle: handle)
+            return RustBuffer()
+        case 1: return try! invokeGetSecret(cb, args)
+        case 2: return try! invokeFindSecrets(cb, args)
+
+        // This should never happen, because an out of bounds method index won't
+        // ever be used. Once we can catch errors, we should return an InternalError.
+        // https://github.com/mozilla/uniffi-rs/issues/351
+        default: return RustBuffer()
         }
     }
 
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceSecretsResolver: FfiConverterCallbackInterface<SecretsResolver> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f269_SecretsResolver_init_callback(foreignCallbackCallbackInterfaceSecretsResolver, err)
+        ffi_didcomm_812c_SecretsResolver_init_callback(foreignCallbackCallbackInterfaceSecretsResolver, err)
     }
     return FfiConverterCallbackInterface<SecretsResolver>()
 }()
 
-
 // Declaration and FfiConverters for OnPackSignedResult Callback Interface
 
-public protocol OnPackSignedResult : AnyObject {
-    func success(result: String, metadata: PackSignedMetadata )
-    func error(err: ErrorKind, msg: String )
-    
+public protocol OnPackSignedResult: AnyObject {
+    func success(result: String, metadata: PackSignedMetadata)
+    func error(err: ErrorKind, msg: String)
 }
 
 // The ForeignCallback that is passed to Rust.
-fileprivate let foreignCallbackCallbackInterfaceOnPackSignedResult : ForeignCallback =
+private let foreignCallbackCallbackInterfaceOnPackSignedResult: ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer) -> RustBuffer in
         func invokeSuccess(_ swiftCallbackInterface: OnPackSignedResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.success(
-                    result: try String.read(from: reader),
-                    metadata: try PackSignedMetadata.read(from: reader)
-                    )
+            swiftCallbackInterface.success(
+                result: try String.read(from: reader),
+                metadata: try PackSignedMetadata.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeError(_ swiftCallbackInterface: OnPackSignedResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
+        func invokeError(_ swiftCallbackInterface: OnPackSignedResult, _ args: RustBuffer) throws -> RustBuffer {
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader),
-                    msg: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.error(
+                err: try ErrorKind.read(from: reader),
+                msg: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
 
         let cb = try! ffiConverterCallbackInterfaceOnPackSignedResult.lift(handle)
         switch method {
-            case IDX_CALLBACK_FREE:
-                ffiConverterCallbackInterfaceOnPackSignedResult.drop(handle: handle)
-                return RustBuffer()
-            case 1: return try! invokeSuccess(cb, args)
-            case 2: return try! invokeError(cb, args)
-            
-            // This should never happen, because an out of bounds method index won't
-            // ever be used. Once we can catch errors, we should return an InternalError.
-            // https://github.com/mozilla/uniffi-rs/issues/351
-            default: return RustBuffer()
+        case IDX_CALLBACK_FREE:
+            ffiConverterCallbackInterfaceOnPackSignedResult.drop(handle: handle)
+            return RustBuffer()
+        case 1: return try! invokeSuccess(cb, args)
+        case 2: return try! invokeError(cb, args)
+
+        // This should never happen, because an out of bounds method index won't
+        // ever be used. Once we can catch errors, we should return an InternalError.
+        // https://github.com/mozilla/uniffi-rs/issues/351
+        default: return RustBuffer()
         }
     }
 
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackSignedResult: FfiConverterCallbackInterface<OnPackSignedResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f269_OnPackSignedResult_init_callback(foreignCallbackCallbackInterfaceOnPackSignedResult, err)
+        ffi_didcomm_812c_OnPackSignedResult_init_callback(foreignCallbackCallbackInterfaceOnPackSignedResult, err)
     }
     return FfiConverterCallbackInterface<OnPackSignedResult>()
 }()
 
-
 // Declaration and FfiConverters for OnPackEncryptedResult Callback Interface
 
-public protocol OnPackEncryptedResult : AnyObject {
-    func success(result: String, metadata: PackEncryptedMetadata )
-    func error(err: ErrorKind, msg: String )
-    
+public protocol OnPackEncryptedResult: AnyObject {
+    func success(result: String, metadata: PackEncryptedMetadata)
+    func error(err: ErrorKind, msg: String)
 }
 
 // The ForeignCallback that is passed to Rust.
-fileprivate let foreignCallbackCallbackInterfaceOnPackEncryptedResult : ForeignCallback =
+private let foreignCallbackCallbackInterfaceOnPackEncryptedResult: ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer) -> RustBuffer in
         func invokeSuccess(_ swiftCallbackInterface: OnPackEncryptedResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.success(
-                    result: try String.read(from: reader),
-                    metadata: try PackEncryptedMetadata.read(from: reader)
-                    )
+            swiftCallbackInterface.success(
+                result: try String.read(from: reader),
+                metadata: try PackEncryptedMetadata.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeError(_ swiftCallbackInterface: OnPackEncryptedResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
+        func invokeError(_ swiftCallbackInterface: OnPackEncryptedResult, _ args: RustBuffer) throws -> RustBuffer {
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader),
-                    msg: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.error(
+                err: try ErrorKind.read(from: reader),
+                msg: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
 
         let cb = try! ffiConverterCallbackInterfaceOnPackEncryptedResult.lift(handle)
         switch method {
-            case IDX_CALLBACK_FREE:
-                ffiConverterCallbackInterfaceOnPackEncryptedResult.drop(handle: handle)
-                return RustBuffer()
-            case 1: return try! invokeSuccess(cb, args)
-            case 2: return try! invokeError(cb, args)
-            
-            // This should never happen, because an out of bounds method index won't
-            // ever be used. Once we can catch errors, we should return an InternalError.
-            // https://github.com/mozilla/uniffi-rs/issues/351
-            default: return RustBuffer()
+        case IDX_CALLBACK_FREE:
+            ffiConverterCallbackInterfaceOnPackEncryptedResult.drop(handle: handle)
+            return RustBuffer()
+        case 1: return try! invokeSuccess(cb, args)
+        case 2: return try! invokeError(cb, args)
+
+        // This should never happen, because an out of bounds method index won't
+        // ever be used. Once we can catch errors, we should return an InternalError.
+        // https://github.com/mozilla/uniffi-rs/issues/351
+        default: return RustBuffer()
         }
     }
 
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackEncryptedResult: FfiConverterCallbackInterface<OnPackEncryptedResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f269_OnPackEncryptedResult_init_callback(foreignCallbackCallbackInterfaceOnPackEncryptedResult, err)
+        ffi_didcomm_812c_OnPackEncryptedResult_init_callback(foreignCallbackCallbackInterfaceOnPackEncryptedResult, err)
     }
     return FfiConverterCallbackInterface<OnPackEncryptedResult>()
 }()
 
-
 // Declaration and FfiConverters for OnPackPlaintextResult Callback Interface
 
-public protocol OnPackPlaintextResult : AnyObject {
-    func success(result: String )
-    func error(err: ErrorKind, msg: String )
-    
+public protocol OnPackPlaintextResult: AnyObject {
+    func success(result: String)
+    func error(err: ErrorKind, msg: String)
 }
 
 // The ForeignCallback that is passed to Rust.
-fileprivate let foreignCallbackCallbackInterfaceOnPackPlaintextResult : ForeignCallback =
+private let foreignCallbackCallbackInterfaceOnPackPlaintextResult: ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer) -> RustBuffer in
         func invokeSuccess(_ swiftCallbackInterface: OnPackPlaintextResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.success(
-                    result: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.success(
+                result: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeError(_ swiftCallbackInterface: OnPackPlaintextResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
+        func invokeError(_ swiftCallbackInterface: OnPackPlaintextResult, _ args: RustBuffer) throws -> RustBuffer {
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader),
-                    msg: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.error(
+                err: try ErrorKind.read(from: reader),
+                msg: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
 
         let cb = try! ffiConverterCallbackInterfaceOnPackPlaintextResult.lift(handle)
         switch method {
-            case IDX_CALLBACK_FREE:
-                ffiConverterCallbackInterfaceOnPackPlaintextResult.drop(handle: handle)
-                return RustBuffer()
-            case 1: return try! invokeSuccess(cb, args)
-            case 2: return try! invokeError(cb, args)
-            
-            // This should never happen, because an out of bounds method index won't
-            // ever be used. Once we can catch errors, we should return an InternalError.
-            // https://github.com/mozilla/uniffi-rs/issues/351
-            default: return RustBuffer()
+        case IDX_CALLBACK_FREE:
+            ffiConverterCallbackInterfaceOnPackPlaintextResult.drop(handle: handle)
+            return RustBuffer()
+        case 1: return try! invokeSuccess(cb, args)
+        case 2: return try! invokeError(cb, args)
+
+        // This should never happen, because an out of bounds method index won't
+        // ever be used. Once we can catch errors, we should return an InternalError.
+        // https://github.com/mozilla/uniffi-rs/issues/351
+        default: return RustBuffer()
         }
     }
 
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnPackPlaintextResult: FfiConverterCallbackInterface<OnPackPlaintextResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f269_OnPackPlaintextResult_init_callback(foreignCallbackCallbackInterfaceOnPackPlaintextResult, err)
+        ffi_didcomm_812c_OnPackPlaintextResult_init_callback(foreignCallbackCallbackInterfaceOnPackPlaintextResult, err)
     }
     return FfiConverterCallbackInterface<OnPackPlaintextResult>()
 }()
 
-
 // Declaration and FfiConverters for OnUnpackResult Callback Interface
 
-public protocol OnUnpackResult : AnyObject {
-    func success(result: Message, metadata: UnpackMetadata )
-    func error(err: ErrorKind, msg: String )
-    
+public protocol OnUnpackResult: AnyObject {
+    func success(result: Message, metadata: UnpackMetadata)
+    func error(err: ErrorKind, msg: String)
 }
 
 // The ForeignCallback that is passed to Rust.
-fileprivate let foreignCallbackCallbackInterfaceOnUnpackResult : ForeignCallback =
+private let foreignCallbackCallbackInterfaceOnUnpackResult: ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer) -> RustBuffer in
         func invokeSuccess(_ swiftCallbackInterface: OnUnpackResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.success(
-                    result: try Message.read(from: reader),
-                    metadata: try UnpackMetadata.read(from: reader)
-                    )
+            swiftCallbackInterface.success(
+                result: try Message.read(from: reader),
+                metadata: try UnpackMetadata.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeError(_ swiftCallbackInterface: OnUnpackResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
+        func invokeError(_ swiftCallbackInterface: OnUnpackResult, _ args: RustBuffer) throws -> RustBuffer {
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader),
-                    msg: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.error(
+                err: try ErrorKind.read(from: reader),
+                msg: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
 
         let cb = try! ffiConverterCallbackInterfaceOnUnpackResult.lift(handle)
         switch method {
-            case IDX_CALLBACK_FREE:
-                ffiConverterCallbackInterfaceOnUnpackResult.drop(handle: handle)
-                return RustBuffer()
-            case 1: return try! invokeSuccess(cb, args)
-            case 2: return try! invokeError(cb, args)
-            
-            // This should never happen, because an out of bounds method index won't
-            // ever be used. Once we can catch errors, we should return an InternalError.
-            // https://github.com/mozilla/uniffi-rs/issues/351
-            default: return RustBuffer()
+        case IDX_CALLBACK_FREE:
+            ffiConverterCallbackInterfaceOnUnpackResult.drop(handle: handle)
+            return RustBuffer()
+        case 1: return try! invokeSuccess(cb, args)
+        case 2: return try! invokeError(cb, args)
+
+        // This should never happen, because an out of bounds method index won't
+        // ever be used. Once we can catch errors, we should return an InternalError.
+        // https://github.com/mozilla/uniffi-rs/issues/351
+        default: return RustBuffer()
         }
     }
 
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnUnpackResult: FfiConverterCallbackInterface<OnUnpackResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f269_OnUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnUnpackResult, err)
+        ffi_didcomm_812c_OnUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnUnpackResult, err)
     }
     return FfiConverterCallbackInterface<OnUnpackResult>()
 }()
 
-
 // Declaration and FfiConverters for OnFromPriorPackResult Callback Interface
 
-public protocol OnFromPriorPackResult : AnyObject {
-    func success(frompriorjwt: String, kid: String )
-    func error(err: ErrorKind, msg: String )
-    
+public protocol OnFromPriorPackResult: AnyObject {
+    func success(frompriorjwt: String, kid: String)
+    func error(err: ErrorKind, msg: String)
 }
 
 // The ForeignCallback that is passed to Rust.
-fileprivate let foreignCallbackCallbackInterfaceOnFromPriorPackResult : ForeignCallback =
+private let foreignCallbackCallbackInterfaceOnFromPriorPackResult: ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer) -> RustBuffer in
         func invokeSuccess(_ swiftCallbackInterface: OnFromPriorPackResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.success(
-                    frompriorjwt: try String.read(from: reader),
-                    kid: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.success(
+                frompriorjwt: try String.read(from: reader),
+                kid: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeError(_ swiftCallbackInterface: OnFromPriorPackResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
+        func invokeError(_ swiftCallbackInterface: OnFromPriorPackResult, _ args: RustBuffer) throws -> RustBuffer {
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader),
-                    msg: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.error(
+                err: try ErrorKind.read(from: reader),
+                msg: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
 
         let cb = try! ffiConverterCallbackInterfaceOnFromPriorPackResult.lift(handle)
         switch method {
-            case IDX_CALLBACK_FREE:
-                ffiConverterCallbackInterfaceOnFromPriorPackResult.drop(handle: handle)
-                return RustBuffer()
-            case 1: return try! invokeSuccess(cb, args)
-            case 2: return try! invokeError(cb, args)
-            
-            // This should never happen, because an out of bounds method index won't
-            // ever be used. Once we can catch errors, we should return an InternalError.
-            // https://github.com/mozilla/uniffi-rs/issues/351
-            default: return RustBuffer()
+        case IDX_CALLBACK_FREE:
+            ffiConverterCallbackInterfaceOnFromPriorPackResult.drop(handle: handle)
+            return RustBuffer()
+        case 1: return try! invokeSuccess(cb, args)
+        case 2: return try! invokeError(cb, args)
+
+        // This should never happen, because an out of bounds method index won't
+        // ever be used. Once we can catch errors, we should return an InternalError.
+        // https://github.com/mozilla/uniffi-rs/issues/351
+        default: return RustBuffer()
         }
     }
 
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnFromPriorPackResult: FfiConverterCallbackInterface<OnFromPriorPackResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f269_OnFromPriorPackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorPackResult, err)
+        ffi_didcomm_812c_OnFromPriorPackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorPackResult, err)
     }
     return FfiConverterCallbackInterface<OnFromPriorPackResult>()
 }()
 
-
 // Declaration and FfiConverters for OnFromPriorUnpackResult Callback Interface
 
-public protocol OnFromPriorUnpackResult : AnyObject {
-    func success(fromprior: FromPrior, kid: String )
-    func error(err: ErrorKind, msg: String )
-    
+public protocol OnFromPriorUnpackResult: AnyObject {
+    func success(fromprior: FromPrior, kid: String)
+    func error(err: ErrorKind, msg: String)
 }
 
 // The ForeignCallback that is passed to Rust.
-fileprivate let foreignCallbackCallbackInterfaceOnFromPriorUnpackResult : ForeignCallback =
+private let foreignCallbackCallbackInterfaceOnFromPriorUnpackResult: ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer) -> RustBuffer in
         func invokeSuccess(_ swiftCallbackInterface: OnFromPriorUnpackResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.success(
-                    fromprior: try FromPrior.read(from: reader),
-                    kid: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.success(
+                fromprior: try FromPrior.read(from: reader),
+                kid: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeError(_ swiftCallbackInterface: OnFromPriorUnpackResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
+        func invokeError(_ swiftCallbackInterface: OnFromPriorUnpackResult, _ args: RustBuffer) throws -> RustBuffer {
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader),
-                    msg: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.error(
+                err: try ErrorKind.read(from: reader),
+                msg: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
 
         let cb = try! ffiConverterCallbackInterfaceOnFromPriorUnpackResult.lift(handle)
         switch method {
-            case IDX_CALLBACK_FREE:
-                ffiConverterCallbackInterfaceOnFromPriorUnpackResult.drop(handle: handle)
-                return RustBuffer()
-            case 1: return try! invokeSuccess(cb, args)
-            case 2: return try! invokeError(cb, args)
-            
-            // This should never happen, because an out of bounds method index won't
-            // ever be used. Once we can catch errors, we should return an InternalError.
-            // https://github.com/mozilla/uniffi-rs/issues/351
-            default: return RustBuffer()
+        case IDX_CALLBACK_FREE:
+            ffiConverterCallbackInterfaceOnFromPriorUnpackResult.drop(handle: handle)
+            return RustBuffer()
+        case 1: return try! invokeSuccess(cb, args)
+        case 2: return try! invokeError(cb, args)
+
+        // This should never happen, because an out of bounds method index won't
+        // ever be used. Once we can catch errors, we should return an InternalError.
+        // https://github.com/mozilla/uniffi-rs/issues/351
+        default: return RustBuffer()
         }
     }
 
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnFromPriorUnpackResult: FfiConverterCallbackInterface<OnFromPriorUnpackResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f269_OnFromPriorUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorUnpackResult, err)
+        ffi_didcomm_812c_OnFromPriorUnpackResult_init_callback(foreignCallbackCallbackInterfaceOnFromPriorUnpackResult, err)
     }
     return FfiConverterCallbackInterface<OnFromPriorUnpackResult>()
 }()
 
-
 // Declaration and FfiConverters for OnWrapInForwardResult Callback Interface
 
-public protocol OnWrapInForwardResult : AnyObject {
-    func success(result: String )
-    func error(err: ErrorKind, msg: String )
-    
+public protocol OnWrapInForwardResult: AnyObject {
+    func success(result: String)
+    func error(err: ErrorKind, msg: String)
 }
 
 // The ForeignCallback that is passed to Rust.
-fileprivate let foreignCallbackCallbackInterfaceOnWrapInForwardResult : ForeignCallback =
+private let foreignCallbackCallbackInterfaceOnWrapInForwardResult: ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer) -> RustBuffer in
         func invokeSuccess(_ swiftCallbackInterface: OnWrapInForwardResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.success(
-                    result: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.success(
+                result: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeError(_ swiftCallbackInterface: OnWrapInForwardResult, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
+        func invokeError(_ swiftCallbackInterface: OnWrapInForwardResult, _ args: RustBuffer) throws -> RustBuffer {
+            defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-              swiftCallbackInterface.error(
-                    err: try ErrorKind.read(from: reader),
-                    msg: try String.read(from: reader)
-                    )
+            swiftCallbackInterface.error(
+                err: try ErrorKind.read(from: reader),
+                msg: try String.read(from: reader)
+            )
             return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    
+            // TODO: catch errors and report them back to Rust.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+        }
 
         let cb = try! ffiConverterCallbackInterfaceOnWrapInForwardResult.lift(handle)
         switch method {
-            case IDX_CALLBACK_FREE:
-                ffiConverterCallbackInterfaceOnWrapInForwardResult.drop(handle: handle)
-                return RustBuffer()
-            case 1: return try! invokeSuccess(cb, args)
-            case 2: return try! invokeError(cb, args)
-            
-            // This should never happen, because an out of bounds method index won't
-            // ever be used. Once we can catch errors, we should return an InternalError.
-            // https://github.com/mozilla/uniffi-rs/issues/351
-            default: return RustBuffer()
+        case IDX_CALLBACK_FREE:
+            ffiConverterCallbackInterfaceOnWrapInForwardResult.drop(handle: handle)
+            return RustBuffer()
+        case 1: return try! invokeSuccess(cb, args)
+        case 2: return try! invokeError(cb, args)
+
+        // This should never happen, because an out of bounds method index won't
+        // ever be used. Once we can catch errors, we should return an InternalError.
+        // https://github.com/mozilla/uniffi-rs/issues/351
+        default: return RustBuffer()
         }
     }
 
 // The ffiConverter which transforms the Callbacks in to Handles to pass to Rust.
 private let ffiConverterCallbackInterfaceOnWrapInForwardResult: FfiConverterCallbackInterface<OnWrapInForwardResult> = {
     try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-            ffi_didcomm_f269_OnWrapInForwardResult_init_callback(foreignCallbackCallbackInterfaceOnWrapInForwardResult, err)
+        ffi_didcomm_812c_OnWrapInForwardResult_init_callback(foreignCallbackCallbackInterfaceOnWrapInForwardResult, err)
     }
     return FfiConverterCallbackInterface<OnWrapInForwardResult>()
 }()
+
 extension UInt64: Primitive, ViaFfi {
     fileprivate static func read(from buf: Reader) throws -> Self {
-        return try self.lift(buf.readInt())
+        return try lift(buf.readInt())
     }
 
     fileprivate func write(into buf: Writer) {
-        buf.writeInt(self.lower())
+        buf.writeInt(lower())
     }
 }
+
 extension Bool: ViaFfi {
     fileprivate typealias FfiType = Int8
 
     fileprivate static func read(from buf: Reader) throws -> Self {
-        return try self.lift(buf.readInt())
+        return try lift(buf.readInt())
     }
 
     fileprivate func write(into buf: Writer) {
-        buf.writeInt(self.lower())
+        buf.writeInt(lower())
     }
 
     fileprivate static func lift(_ v: FfiType) throws -> Self {
@@ -3459,6 +3157,7 @@ extension Bool: ViaFfi {
         return self ? 1 : 0
     }
 }
+
 extension String: ViaFfi {
     fileprivate typealias FfiType = RustBuffer
 
@@ -3474,7 +3173,7 @@ extension String: ViaFfi {
     }
 
     fileprivate func lower() -> FfiType {
-        return self.utf8CString.withUnsafeBufferPointer { ptr in
+        return utf8CString.withUnsafeBufferPointer { ptr in
             // The swift string gives us int8_t, we want uint8_t.
             ptr.withMemoryRebound(to: UInt8.self) { ptr in
                 // The swift string gives us a trailing null byte, we don't want it.
@@ -3490,11 +3189,12 @@ extension String: ViaFfi {
     }
 
     fileprivate func write(into buf: Writer) {
-        let len = Int32(self.utf8.count)
+        let len = Int32(utf8.count)
         buf.writeInt(len)
-        buf.writeBytes(self.utf8)
+        buf.writeBytes(utf8)
     }
 }
+
 // Helper code for DidComm class is found in ObjectTemplate.swift
 // Helper code for ExampleDidResolver class is found in ObjectTemplate.swift
 // Helper code for ExampleSecretsResolver class is found in ObjectTemplate.swift
@@ -3530,7 +3230,7 @@ extension String: ViaFfi {
 // Helper code for VerificationMethodType enum is found in EnumTemplate.swift
 // Helper code for ErrorKind error is found in ErrorTemplate.swift
 
-fileprivate enum FfiConverterOptionUInt64: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionUInt64: FfiConverterUsingByteBuffer {
     typealias SwiftType = UInt64?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3546,7 +3246,7 @@ fileprivate enum FfiConverterOptionUInt64: FfiConverterUsingByteBuffer {
     }
 }
 
-fileprivate enum FfiConverterOptionString: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionString: FfiConverterUsingByteBuffer {
     typealias SwiftType = String?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3562,7 +3262,7 @@ fileprivate enum FfiConverterOptionString: FfiConverterUsingByteBuffer {
     }
 }
 
-fileprivate enum FfiConverterOptionRecordDidDoc: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionRecordDidDoc: FfiConverterUsingByteBuffer {
     typealias SwiftType = DidDoc?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3578,7 +3278,7 @@ fileprivate enum FfiConverterOptionRecordDidDoc: FfiConverterUsingByteBuffer {
     }
 }
 
-fileprivate enum FfiConverterOptionRecordFromPrior: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionRecordFromPrior: FfiConverterUsingByteBuffer {
     typealias SwiftType = FromPrior?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3594,7 +3294,7 @@ fileprivate enum FfiConverterOptionRecordFromPrior: FfiConverterUsingByteBuffer 
     }
 }
 
-fileprivate enum FfiConverterOptionRecordMessagingServiceMetadata: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionRecordMessagingServiceMetadata: FfiConverterUsingByteBuffer {
     typealias SwiftType = MessagingServiceMetadata?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3610,7 +3310,7 @@ fileprivate enum FfiConverterOptionRecordMessagingServiceMetadata: FfiConverterU
     }
 }
 
-fileprivate enum FfiConverterOptionRecordSecret: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionRecordSecret: FfiConverterUsingByteBuffer {
     typealias SwiftType = Secret?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3626,7 +3326,7 @@ fileprivate enum FfiConverterOptionRecordSecret: FfiConverterUsingByteBuffer {
     }
 }
 
-fileprivate enum FfiConverterOptionEnumAnonCryptAlg: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionEnumAnonCryptAlg: FfiConverterUsingByteBuffer {
     typealias SwiftType = AnonCryptAlg?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3642,7 +3342,7 @@ fileprivate enum FfiConverterOptionEnumAnonCryptAlg: FfiConverterUsingByteBuffer
     }
 }
 
-fileprivate enum FfiConverterOptionEnumAuthCryptAlg: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionEnumAuthCryptAlg: FfiConverterUsingByteBuffer {
     typealias SwiftType = AuthCryptAlg?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3658,7 +3358,7 @@ fileprivate enum FfiConverterOptionEnumAuthCryptAlg: FfiConverterUsingByteBuffer
     }
 }
 
-fileprivate enum FfiConverterOptionEnumSignAlg: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionEnumSignAlg: FfiConverterUsingByteBuffer {
     typealias SwiftType = SignAlg?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3674,7 +3374,7 @@ fileprivate enum FfiConverterOptionEnumSignAlg: FfiConverterUsingByteBuffer {
     }
 }
 
-fileprivate enum FfiConverterOptionSequenceString: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionSequenceString: FfiConverterUsingByteBuffer {
     typealias SwiftType = [String]?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3690,7 +3390,7 @@ fileprivate enum FfiConverterOptionSequenceString: FfiConverterUsingByteBuffer {
     }
 }
 
-fileprivate enum FfiConverterOptionSequenceRecordAttachment: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionSequenceRecordAttachment: FfiConverterUsingByteBuffer {
     typealias SwiftType = [Attachment]?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3706,7 +3406,7 @@ fileprivate enum FfiConverterOptionSequenceRecordAttachment: FfiConverterUsingBy
     }
 }
 
-fileprivate enum FfiConverterOptionDictionaryJsonValue: FfiConverterUsingByteBuffer {
+private enum FfiConverterOptionDictionaryJsonValue: FfiConverterUsingByteBuffer {
     typealias SwiftType = [String: String]?
 
     static func write(_ value: SwiftType, into buf: Writer) {
@@ -3722,11 +3422,11 @@ fileprivate enum FfiConverterOptionDictionaryJsonValue: FfiConverterUsingByteBuf
     }
 }
 
-fileprivate enum FfiConverterSequenceString: FfiConverterUsingByteBuffer {
+private enum FfiConverterSequenceString: FfiConverterUsingByteBuffer {
     typealias SwiftType = [String]
 
     static func write(_ value: SwiftType, into buf: Writer) {
-        FfiConverterSequence.write(value, into: buf) { (item, buf) in
+        FfiConverterSequence.write(value, into: buf) { item, buf in
             item.write(into: buf)
         }
     }
@@ -3738,11 +3438,11 @@ fileprivate enum FfiConverterSequenceString: FfiConverterUsingByteBuffer {
     }
 }
 
-fileprivate enum FfiConverterSequenceRecordAttachment: FfiConverterUsingByteBuffer {
+private enum FfiConverterSequenceRecordAttachment: FfiConverterUsingByteBuffer {
     typealias SwiftType = [Attachment]
 
     static func write(_ value: SwiftType, into buf: Writer) {
-        FfiConverterSequence.write(value, into: buf) { (item, buf) in
+        FfiConverterSequence.write(value, into: buf) { item, buf in
             item.write(into: buf)
         }
     }
@@ -3754,11 +3454,11 @@ fileprivate enum FfiConverterSequenceRecordAttachment: FfiConverterUsingByteBuff
     }
 }
 
-fileprivate enum FfiConverterSequenceRecordDidDoc: FfiConverterUsingByteBuffer {
+private enum FfiConverterSequenceRecordDidDoc: FfiConverterUsingByteBuffer {
     typealias SwiftType = [DidDoc]
 
     static func write(_ value: SwiftType, into buf: Writer) {
-        FfiConverterSequence.write(value, into: buf) { (item, buf) in
+        FfiConverterSequence.write(value, into: buf) { item, buf in
             item.write(into: buf)
         }
     }
@@ -3770,11 +3470,11 @@ fileprivate enum FfiConverterSequenceRecordDidDoc: FfiConverterUsingByteBuffer {
     }
 }
 
-fileprivate enum FfiConverterSequenceRecordSecret: FfiConverterUsingByteBuffer {
+private enum FfiConverterSequenceRecordSecret: FfiConverterUsingByteBuffer {
     typealias SwiftType = [Secret]
 
     static func write(_ value: SwiftType, into buf: Writer) {
-        FfiConverterSequence.write(value, into: buf) { (item, buf) in
+        FfiConverterSequence.write(value, into: buf) { item, buf in
             item.write(into: buf)
         }
     }
@@ -3786,11 +3486,11 @@ fileprivate enum FfiConverterSequenceRecordSecret: FfiConverterUsingByteBuffer {
     }
 }
 
-fileprivate enum FfiConverterSequenceRecordService: FfiConverterUsingByteBuffer {
+private enum FfiConverterSequenceRecordService: FfiConverterUsingByteBuffer {
     typealias SwiftType = [Service]
 
     static func write(_ value: SwiftType, into buf: Writer) {
-        FfiConverterSequence.write(value, into: buf) { (item, buf) in
+        FfiConverterSequence.write(value, into: buf) { item, buf in
             item.write(into: buf)
         }
     }
@@ -3802,11 +3502,11 @@ fileprivate enum FfiConverterSequenceRecordService: FfiConverterUsingByteBuffer 
     }
 }
 
-fileprivate enum FfiConverterSequenceRecordVerificationMethod: FfiConverterUsingByteBuffer {
+private enum FfiConverterSequenceRecordVerificationMethod: FfiConverterUsingByteBuffer {
     typealias SwiftType = [VerificationMethod]
 
     static func write(_ value: SwiftType, into buf: Writer) {
-        FfiConverterSequence.write(value, into: buf) { (item, buf) in
+        FfiConverterSequence.write(value, into: buf) { item, buf in
             item.write(into: buf)
         }
     }
@@ -3818,11 +3518,11 @@ fileprivate enum FfiConverterSequenceRecordVerificationMethod: FfiConverterUsing
     }
 }
 
-fileprivate enum FfiConverterDictionaryJsonValue: FfiConverterUsingByteBuffer {
+private enum FfiConverterDictionaryJsonValue: FfiConverterUsingByteBuffer {
     typealias SwiftType = [String: String]
 
     static func write(_ value: SwiftType, into buf: Writer) {
-        FfiConverterDictionary.write(value, into: buf) { (key, value, buf) in
+        FfiConverterDictionary.write(value, into: buf) { key, value, buf in
             key.write(into: buf)
             value.write(into: buf)
         }
@@ -3831,11 +3531,10 @@ fileprivate enum FfiConverterDictionaryJsonValue: FfiConverterUsingByteBuffer {
     static func read(from buf: Reader) throws -> SwiftType {
         try FfiConverterDictionary.read(from: buf) { buf in
             (try String.read(from: buf),
-            try String.read(from: buf))
+             try String.read(from: buf))
         }
     }
 }
-
 
 /**
  * Top level initializers and tear down methods.
@@ -3847,8 +3546,6 @@ public enum DidcommLifecycle {
      * Initialize the FFI and Rust library. This should be only called once per application.
      */
     func initialize() {
-        
         // No initialization code needed
-        
     }
 }

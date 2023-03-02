@@ -32,36 +32,41 @@ pub(crate) fn did_or_url(did_or_url: &str) -> (&str, Option<&str>) {
 impl AsKnownKeyPair for VerificationMethod {
     fn key_alg(&self) -> KnownKeyAlg {
         match (&self.type_, &self.verification_material) {
-            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::JWK { ref value }) => {
-                match (value["kty"].as_str(), value["crv"].as_str()) {
-                    (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => KnownKeyAlg::P256,
-                    (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
-                        KnownKeyAlg::K256
-                    }
-                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
-                        KnownKeyAlg::Ed25519
-                    }
-                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
-                        KnownKeyAlg::X25519
-                    }
-                    _ => KnownKeyAlg::Unsupported,
-                }
-            }
+            (
+                VerificationMethodType::JsonWebKey2020,
+                VerificationMaterial::JWK {
+                    public_key_jwk: ref value,
+                },
+            ) => match (value["kty"].as_str(), value["crv"].as_str()) {
+                (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => KnownKeyAlg::P256,
+                (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => KnownKeyAlg::K256,
+                (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => KnownKeyAlg::Ed25519,
+                (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => KnownKeyAlg::X25519,
+                _ => KnownKeyAlg::Unsupported,
+            },
             (
                 VerificationMethodType::X25519KeyAgreementKey2019,
-                VerificationMaterial::Base58 { value: _ },
+                VerificationMaterial::Base58 {
+                    public_key_base58: _,
+                },
             ) => KnownKeyAlg::X25519,
             (
                 VerificationMethodType::Ed25519VerificationKey2018,
-                VerificationMaterial::Base58 { value: _ },
+                VerificationMaterial::Base58 {
+                    public_key_base58: _,
+                },
             ) => KnownKeyAlg::Ed25519,
             (
                 VerificationMethodType::X25519KeyAgreementKey2020,
-                VerificationMaterial::Multibase { value: _ },
+                VerificationMaterial::Multibase {
+                    public_key_multibase: _,
+                },
             ) => KnownKeyAlg::X25519,
             (
                 VerificationMethodType::Ed25519VerificationKey2020,
-                VerificationMaterial::Multibase { value: _ },
+                VerificationMaterial::Multibase {
+                    public_key_multibase: _,
+                },
             ) => KnownKeyAlg::Ed25519,
             _ => KnownKeyAlg::Unsupported,
         }
@@ -69,38 +74,43 @@ impl AsKnownKeyPair for VerificationMethod {
 
     fn as_key_pair(&self) -> Result<KnownKeyPair> {
         match (&self.type_, &self.verification_material) {
-            (VerificationMethodType::JsonWebKey2020, VerificationMaterial::JWK { ref value }) => {
-                match (value["kty"].as_str(), value["crv"].as_str()) {
-                    (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
-                        P256KeyPair::from_jwk_value(value)
-                            .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(KnownKeyPair::P256)
-                    }
-                    (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
-                        K256KeyPair::from_jwk_value(value)
-                            .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(KnownKeyPair::K256)
-                    }
-                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
-                        Ed25519KeyPair::from_jwk_value(value)
-                            .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(KnownKeyPair::Ed25519)
-                    }
-                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
-                        X25519KeyPair::from_jwk_value(value)
-                            .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(KnownKeyPair::X25519)
-                    }
-                    _ => Err(err_msg(
-                        ErrorKind::Unsupported,
-                        "Unsupported key type or curve",
-                    )),
+            (
+                VerificationMethodType::JsonWebKey2020,
+                VerificationMaterial::JWK {
+                    public_key_jwk: ref value,
+                },
+            ) => match (value["kty"].as_str(), value["crv"].as_str()) {
+                (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
+                    P256KeyPair::from_jwk_value(value)
+                        .kind(ErrorKind::Malformed, "Unable parse jwk")
+                        .map(KnownKeyPair::P256)
                 }
-            }
+                (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
+                    K256KeyPair::from_jwk_value(value)
+                        .kind(ErrorKind::Malformed, "Unable parse jwk")
+                        .map(KnownKeyPair::K256)
+                }
+                (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
+                    Ed25519KeyPair::from_jwk_value(value)
+                        .kind(ErrorKind::Malformed, "Unable parse jwk")
+                        .map(KnownKeyPair::Ed25519)
+                }
+                (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
+                    X25519KeyPair::from_jwk_value(value)
+                        .kind(ErrorKind::Malformed, "Unable parse jwk")
+                        .map(KnownKeyPair::X25519)
+                }
+                _ => Err(err_msg(
+                    ErrorKind::Unsupported,
+                    "Unsupported key type or curve",
+                )),
+            },
 
             (
                 VerificationMethodType::X25519KeyAgreementKey2019,
-                VerificationMaterial::Base58 { ref value },
+                VerificationMaterial::Base58 {
+                    public_key_base58: ref value,
+                },
             ) => {
                 let decoded_value = bs58::decode(value)
                     .into_vec()
@@ -124,7 +134,9 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::Ed25519VerificationKey2018,
-                VerificationMaterial::Base58 { ref value },
+                VerificationMaterial::Base58 {
+                    public_key_base58: ref value,
+                },
             ) => {
                 let decoded_value = bs58::decode(value)
                     .into_vec()
@@ -148,7 +160,9 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::X25519KeyAgreementKey2020,
-                VerificationMaterial::Multibase { ref value },
+                VerificationMaterial::Multibase {
+                    public_key_multibase: ref value,
+                },
             ) => {
                 if !value.starts_with('z') {
                     Err(err_msg(
@@ -186,7 +200,9 @@ impl AsKnownKeyPair for VerificationMethod {
 
             (
                 VerificationMethodType::Ed25519VerificationKey2020,
-                VerificationMaterial::Multibase { ref value },
+                VerificationMaterial::Multibase {
+                    public_key_multibase: ref value,
+                },
             ) => {
                 if !value.starts_with('z') {
                     Err(err_msg(
@@ -232,69 +248,86 @@ impl AsKnownKeyPair for VerificationMethod {
 impl AsKnownKeyPair for Secret {
     fn key_alg(&self) -> KnownKeyAlg {
         match (&self.type_, &self.secret_material) {
-            (SecretType::JsonWebKey2020, SecretMaterial::JWK { ref value }) => {
-                match (value["kty"].as_str(), value["crv"].as_str()) {
-                    (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => KnownKeyAlg::P256,
-                    (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
-                        KnownKeyAlg::K256
-                    }
-                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
-                        KnownKeyAlg::Ed25519
-                    }
-                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
-                        KnownKeyAlg::X25519
-                    }
-                    _ => KnownKeyAlg::Unsupported,
-                }
-            }
-            (SecretType::X25519KeyAgreementKey2019, SecretMaterial::Base58 { value: _ }) => {
-                KnownKeyAlg::X25519
-            }
-            (SecretType::Ed25519VerificationKey2018, SecretMaterial::Base58 { value: _ }) => {
-                KnownKeyAlg::Ed25519
-            }
-            (SecretType::X25519KeyAgreementKey2020, SecretMaterial::Multibase { value: _ }) => {
-                KnownKeyAlg::X25519
-            }
-            (SecretType::Ed25519VerificationKey2020, SecretMaterial::Multibase { value: _ }) => {
-                KnownKeyAlg::Ed25519
-            }
+            (
+                SecretType::JsonWebKey2020,
+                SecretMaterial::JWK {
+                    private_key_jwk: ref value,
+                },
+            ) => match (value["kty"].as_str(), value["crv"].as_str()) {
+                (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => KnownKeyAlg::P256,
+                (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => KnownKeyAlg::K256,
+                (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => KnownKeyAlg::Ed25519,
+                (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => KnownKeyAlg::X25519,
+                _ => KnownKeyAlg::Unsupported,
+            },
+            (
+                SecretType::X25519KeyAgreementKey2019,
+                SecretMaterial::Base58 {
+                    private_key_base58: _,
+                },
+            ) => KnownKeyAlg::X25519,
+            (
+                SecretType::Ed25519VerificationKey2018,
+                SecretMaterial::Base58 {
+                    private_key_base58: _,
+                },
+            ) => KnownKeyAlg::Ed25519,
+            (
+                SecretType::X25519KeyAgreementKey2020,
+                SecretMaterial::Multibase {
+                    private_key_multibase: _,
+                },
+            ) => KnownKeyAlg::X25519,
+            (
+                SecretType::Ed25519VerificationKey2020,
+                SecretMaterial::Multibase {
+                    private_key_multibase: _,
+                },
+            ) => KnownKeyAlg::Ed25519,
             _ => KnownKeyAlg::Unsupported,
         }
     }
 
     fn as_key_pair(&self) -> Result<KnownKeyPair> {
         match (&self.type_, &self.secret_material) {
-            (SecretType::JsonWebKey2020, SecretMaterial::JWK { ref value }) => {
-                match (value["kty"].as_str(), value["crv"].as_str()) {
-                    (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
-                        P256KeyPair::from_jwk_value(value)
-                            .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(KnownKeyPair::P256)
-                    }
-                    (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
-                        K256KeyPair::from_jwk_value(value)
-                            .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(KnownKeyPair::K256)
-                    }
-                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
-                        Ed25519KeyPair::from_jwk_value(value)
-                            .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(KnownKeyPair::Ed25519)
-                    }
-                    (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
-                        X25519KeyPair::from_jwk_value(value)
-                            .kind(ErrorKind::Malformed, "Unable parse jwk")
-                            .map(KnownKeyPair::X25519)
-                    }
-                    _ => Err(err_msg(
-                        ErrorKind::Unsupported,
-                        "Unsupported key type or curve",
-                    )),
+            (
+                SecretType::JsonWebKey2020,
+                SecretMaterial::JWK {
+                    private_key_jwk: ref value,
+                },
+            ) => match (value["kty"].as_str(), value["crv"].as_str()) {
+                (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
+                    P256KeyPair::from_jwk_value(value)
+                        .kind(ErrorKind::Malformed, "Unable parse jwk")
+                        .map(KnownKeyPair::P256)
                 }
-            }
+                (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
+                    K256KeyPair::from_jwk_value(value)
+                        .kind(ErrorKind::Malformed, "Unable parse jwk")
+                        .map(KnownKeyPair::K256)
+                }
+                (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
+                    Ed25519KeyPair::from_jwk_value(value)
+                        .kind(ErrorKind::Malformed, "Unable parse jwk")
+                        .map(KnownKeyPair::Ed25519)
+                }
+                (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
+                    X25519KeyPair::from_jwk_value(value)
+                        .kind(ErrorKind::Malformed, "Unable parse jwk")
+                        .map(KnownKeyPair::X25519)
+                }
+                _ => Err(err_msg(
+                    ErrorKind::Unsupported,
+                    "Unsupported key type or curve",
+                )),
+            },
 
-            (SecretType::X25519KeyAgreementKey2019, SecretMaterial::Base58 { ref value }) => {
+            (
+                SecretType::X25519KeyAgreementKey2019,
+                SecretMaterial::Base58 {
+                    private_key_base58: ref value,
+                },
+            ) => {
                 let decoded_value = bs58::decode(value)
                     .into_vec()
                     .to_didcomm("Wrong base58 value in secret material")?;
@@ -322,7 +355,12 @@ impl AsKnownKeyPair for Secret {
                     .map(KnownKeyPair::X25519)
             }
 
-            (SecretType::Ed25519VerificationKey2018, SecretMaterial::Base58 { ref value }) => {
+            (
+                SecretType::Ed25519VerificationKey2018,
+                SecretMaterial::Base58 {
+                    private_key_base58: ref value,
+                },
+            ) => {
                 let decoded_value = bs58::decode(value)
                     .into_vec()
                     .to_didcomm("Wrong base58 value in secret material")?;
@@ -343,7 +381,12 @@ impl AsKnownKeyPair for Secret {
                     .map(KnownKeyPair::Ed25519)
             }
 
-            (SecretType::X25519KeyAgreementKey2020, SecretMaterial::Multibase { ref value }) => {
+            (
+                SecretType::X25519KeyAgreementKey2020,
+                SecretMaterial::Multibase {
+                    private_key_multibase: ref value,
+                },
+            ) => {
                 if !value.starts_with('z') {
                     Err(err_msg(
                         ErrorKind::IllegalArgument,
@@ -388,7 +431,12 @@ impl AsKnownKeyPair for Secret {
                     .map(KnownKeyPair::X25519)
             }
 
-            (SecretType::Ed25519VerificationKey2020, SecretMaterial::Multibase { ref value }) => {
+            (
+                SecretType::Ed25519VerificationKey2020,
+                SecretMaterial::Multibase {
+                    private_key_multibase: ref value,
+                },
+            ) => {
                 if !value.starts_with('z') {
                     Err(err_msg(
                         ErrorKind::IllegalArgument,
@@ -487,7 +535,7 @@ mod tests {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: SecretType::X25519KeyAgreementKey2019,
             secret_material: (SecretMaterial::Base58 {
-                value: "CMhHdN419VCSfbGxt6PEAEy72tJxYHTGHuCSH6BW9oi3".to_string(),
+                private_key_base58: "CMhHdN419VCSfbGxt6PEAEy72tJxYHTGHuCSH6BW9oi3".to_string(),
             }),
         }
         .as_key_pair()
@@ -510,7 +558,7 @@ mod tests {
             id: "did:example:eve#key-ed25519-1".to_string(),
             type_: SecretType::Ed25519VerificationKey2018,
             secret_material: (SecretMaterial::Base58 {
-                value: "2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqATnLmZDx7Seu6NqTuFKkxuHNT27GcoxVZQCkWJhNvaUQ".to_string()
+                private_key_base58: "2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqATnLmZDx7Seu6NqTuFKkxuHNT27GcoxVZQCkWJhNvaUQ".to_string()
             }),
         }
         .as_key_pair()
@@ -533,7 +581,8 @@ mod tests {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: SecretType::X25519KeyAgreementKey2020,
             secret_material: (SecretMaterial::Multibase {
-                value: "z3wei8fqKMwJsyTpqDQDWZ9ytPC716YyNDZL6kewQ9qtKrTD".to_string(),
+                private_key_multibase: "z3wei8fqKMwJsyTpqDQDWZ9ytPC716YyNDZL6kewQ9qtKrTD"
+                    .to_string(),
             }),
         }
         .as_key_pair()
@@ -556,7 +605,7 @@ mod tests {
             id: "did:example:eve#key-ed25519-1".to_string(),
             type_: SecretType::Ed25519VerificationKey2020,
             secret_material: (SecretMaterial::Multibase {
-                value: "zrv2DyJwnoQWzS74nPkHHdM7NYH27BRNFBG9To7Fca9YzWhfBVa9Mek52H9bJexjdNqxML1F3TGCpjLNkCwwgQDvd5J".to_string()
+                private_key_multibase: "zrv2DyJwnoQWzS74nPkHHdM7NYH27BRNFBG9To7Fca9YzWhfBVa9Mek52H9bJexjdNqxML1F3TGCpjLNkCwwgQDvd5J".to_string()
             }),
         }
         .as_key_pair()
@@ -580,7 +629,7 @@ mod tests {
             type_: VerificationMethodType::X25519KeyAgreementKey2019,
             controller: "did:example:eve#key-x25519-1".to_string(),
             verification_material: (VerificationMaterial::Base58 {
-                value: "JhNWeSVLMYccCk7iopQW4guaSJTojqpMEELgSLhKwRr".to_string(),
+                public_key_base58: "JhNWeSVLMYccCk7iopQW4guaSJTojqpMEELgSLhKwRr".to_string(),
             }),
         }
         .as_key_pair()
@@ -603,7 +652,7 @@ mod tests {
             type_: VerificationMethodType::Ed25519VerificationKey2018,
             controller: "did:example:eve#key-ed25519-1".to_string(),
             verification_material: (VerificationMaterial::Base58 {
-                value: "ByHnpUCFb1vAfh9CFZ8ZkmUZguURW8nSw889hy6rD8L7".to_string(),
+                public_key_base58: "ByHnpUCFb1vAfh9CFZ8ZkmUZguURW8nSw889hy6rD8L7".to_string(),
             }),
         }
         .as_key_pair()
@@ -626,7 +675,8 @@ mod tests {
             type_: VerificationMethodType::X25519KeyAgreementKey2020,
             controller: "did:example:eve#key-x25519-1".to_string(),
             verification_material: (VerificationMaterial::Multibase {
-                value: "z6LSbysY2xFMRpGMhb7tFTLMpeuPRaqaWM1yECx2AtzE3KCc".to_string(),
+                public_key_multibase: "z6LSbysY2xFMRpGMhb7tFTLMpeuPRaqaWM1yECx2AtzE3KCc"
+                    .to_string(),
             }),
         }
         .as_key_pair()
@@ -649,7 +699,8 @@ mod tests {
             type_: VerificationMethodType::Ed25519VerificationKey2020,
             controller: "did:example:eve#key-ed25519-1".to_string(),
             verification_material: (VerificationMaterial::Multibase {
-                value: "z6MkqRYqQiSgvZQdnBytw86Qbs2ZWUkGv22od935YF4s8M7V".to_string(),
+                public_key_multibase: "z6MkqRYqQiSgvZQdnBytw86Qbs2ZWUkGv22od935YF4s8M7V"
+                    .to_string(),
             }),
         }
         .as_key_pair()
@@ -691,13 +742,13 @@ mod tests {
 
     #[test]
     fn deserialization_for_base58_key_representation_works() {
-        let expected_serialzied = r#"{"id":"did:example:eve#key-x25519-1","secret_material":{"format":"Base58","value":"2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqFyjLPWt7rv5kL3UPeG3e4B9Sy4H2Q2zAuWcP2RNtgJ4t"},"type":"X25519KeyAgreementKey2019"}"#;
+        let expected_serialzied = r#"{"id":"did:example:eve#key-x25519-1","privateKeyBase58":"2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqFyjLPWt7rv5kL3UPeG3e4B9Sy4H2Q2zAuWcP2RNtgJ4t","type":"X25519KeyAgreementKey2019"}"#;
         let base58key = "2b5J8uecvwAo9HUGge5NKQ7HoRNKUKCjZ7Fr4mDgWkwqFyjLPWt7rv5kL3UPeG3e4B9Sy4H2Q2zAuWcP2RNtgJ4t";
         let actual_key = Secret {
             id: "did:example:eve#key-x25519-1".to_string(),
             type_: SecretType::X25519KeyAgreementKey2019,
             secret_material: SecretMaterial::Base58 {
-                value: base58key.to_string(),
+                private_key_base58: base58key.to_string(),
             },
         };
 
@@ -707,7 +758,9 @@ mod tests {
         let deserialized: Secret = serde_json::from_str(&serialized).unwrap();
         assert_eq!(format!("{:?}", deserialized), format!("{:?}", actual_key));
         match deserialized.secret_material {
-            SecretMaterial::Base58 { value } => assert_eq!(value, base58key),
+            SecretMaterial::Base58 {
+                private_key_base58: value,
+            } => assert_eq!(value, base58key),
             _ => assert!(false),
         }
     }

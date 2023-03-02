@@ -17,9 +17,11 @@ type Secret = {
     type: SecretType,
 
     /**
-     * Value of the secret (private key)
+     * Possible value of the secret (private key)
      */
-    secret_material: SecretMaterial,
+    privateKeyJwk?: any,
+    privateKeyMultibase?: string,
+    privateKeyBase58?: string,
 }
 "#;
 
@@ -31,23 +33,4 @@ const SECRET_TYPE_TS: &'static str = r#"
 type SecretType =
     "JsonWebKey2020" | "X25519KeyAgreementKey2019" 
     | "Ed25519VerificationKey2018" | "EcdsaSecp256k1VerificationKey2019" | string
-"#;
-
-#[wasm_bindgen(typescript_custom_section)]
-const SECRET_MATERIAL_FORMAT_TS: &'static str = r#"
-/**
- * The representation format of secret material
- */
-type SecretMaterialFormat = "JWK" | "Multibase" | "Base58" | "Hex" | "Other" | string
-"#;
-
-#[wasm_bindgen(typescript_custom_section)]
-const SECRET_MATERIAL_TS: &'static str = r#"
-/**
- * Represents secret crypto material.
- */
-type SecretMaterial = {
-    format: SecretMaterialFormat,
-    value: any,
-}
 "#;

@@ -34,7 +34,7 @@ jobs:
       already_in_npm_nodejs: ${{ steps.check_in_npm.outputs.already_in_npm_nodejs != '' }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Get current version
         id: current_version
@@ -42,7 +42,7 @@ jobs:
           version="$(cargo -q metadata --no-deps \
             | jq -r '.packages[] | select(.name == "${{ env.PKG_NAME }}") | .version')"
           echo "$version"
-          echo "::set-output name=current_version::$version"
+          echo "current_version=$version" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Get release info
@@ -50,26 +50,26 @@ jobs:
         run: |
           release_info="$(curl -s https://api.github.com/repos/${{ github.repository }}/releases \
               | jq '.[] | select(.name == "v${{ steps.current_version.outputs.current_version }}")')"
-          echo "::set-output name=release_info::$release_info"
+          echo "release_info=$release_info" >> $GITHUB_OUTPUT
           echo "$release_info"
 
           asset_crate_url="$(echo "$release_info" \
               | jq -r '.assets[] | select(.name | match("^${{ env.PKG_NAME }}.*\\.crate$")) | .browser_download_url')"
-          echo "::set-output name=asset_crate_url::$asset_crate_url"
+          echo "asset_crate_url=$asset_crate_url" >> $GITHUB_OUTPUT
           echo "$asset_crate_url"
 
           asset_npm_pkg_bundler_url="$(echo "$release_info" \
               | jq -r '.assets[] | select(.name | match("^${{ env.PKG_NAME }}-${{ steps.current_version.outputs.current_version }}\\.tgz$")) | .browser_download_url')"
-          echo "::set-output name=asset_npm_pkg_bundler_url::$asset_npm_pkg_bundler_url"
+          echo "asset_npm_pkg_bundler_url=$asset_npm_pkg_bundler_url" >> $GITHUB_OUTPUT
           echo "$asset_npm_pkg_bundler_url"
 
           asset_npm_pkg_nodejs_url="$(echo "$release_info" \
               | jq -r '.assets[] | select(.name | match("^${{ env.PKG_NAME_NODEJS }}-${{ steps.current_version.outputs.current_version }}\\.tgz$")) | .browser_download_url')"
-          echo "::set-output name=asset_npm_pkg_nodejs_url::$asset_npm_pkg_nodejs_url"
+          echo "asset_npm_pkg_nodejs_url=$asset_npm_pkg_nodejs_url" >> $GITHUB_OUTPUT
           echo "$asset_npm_pkg_nodejs_url"
 
           upload_url="$(echo "$release_info" | jq -r '.upload_url')"
-          echo "::set-output name=upload_url::$upload_url"
+          echo "upload_url=$upload_url" >> $GITHUB_OUTPUT
           echo "$upload_url"
         shell: bash
 
@@ -79,7 +79,7 @@ jobs:
           out="$(curl -s https://crates.io/api/v1/crates/${{ env.PKG_NAME }} | jq -r '.versions[] | .num' \
             | grep '^${{ steps.current_version.outputs.current_version }}$')"
           echo "in crates.io check: $out"
-          echo "::set-output name=already_in_crates_io::$out"
+          echo "already_in_crates_io=$out" >> $GITHUB_OUTPUT
         shell: bash {0}  # to opt-out of default fail-fast behavior
 
       - name: check if already deployed to npm
@@ -88,12 +88,12 @@ jobs:
           out="$(npm view ${{ env.PKG_NAME }}@${{ steps.current_version.outputs.current_version }} --json 2>/dev/null \
             | jq -r '.versions | select (.!=null)')"
           echo "in npm check for ${{ env.PKG_NAME }} : $out"
-          echo "::set-output name=already_in_npm_bundler::$out"
+          echo "already_in_npm_bundler=$out" >> $GITHUB_OUTPUT
 
           out="$(npm view ${{ env.PKG_NAME_NODEJS }}@${{ steps.current_version.outputs.current_version }} --json 2>/dev/null \
             | jq -r '.versions | select (.!=null)')"
           echo "in npm check for ${{ env.PKG_NAME_NODEJS }}: $out"
-          echo "::set-output name=already_in_npm_nodejs::$out"
+          echo "already_in_npm_nodejs=$out" >> $GITHUB_OUTPUT
         shell: bash {0}  # to opt-out of default fail-fast behavior
 
 
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: checks
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set rustup profile & toolchain
         run: |
@@ -130,9 +130,9 @@ jobs:
         if: ${{ !(needs.checks.outputs.asset_crate_url && needs.checks.outputs.asset_npm_pkg_bundler_url && needs.checks.outputs.asset_npm_pkg_nodejs_url) }}
         run: |
           if [[ -n "${{ needs.checks.outputs.upload_url }}" ]]; then
-            echo "::set-output name=value::${{ needs.checks.outputs.upload_url }}"
+            echo "value=${{ needs.checks.outputs.upload_url }}" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=value::${{ steps.create_release.outputs.upload_url }}"
+            echo "value=${{ steps.create_release.outputs.upload_url }}" >> $GITHUB_OUTPUT
           fi
 
       - name: package and verify (crate)
@@ -148,7 +148,7 @@ jobs:
           cargo package --list
 
           asset_name="$(find target/package -name '*.crate' -printf '%f')"
-          echo "::set-output name=asset_name::$asset_name"
+          echo "asset_name=$asset_name" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: upload to GitHub (crate)
@@ -169,7 +169,7 @@ jobs:
           # build, install (verify) and pack
           make -C wasm build install pack
           asset_name="$(find wasm/pkg -name '*.tgz' -printf '%f')"
-          echo "::set-output name=asset_name::$asset_name"
+          echo "asset_name=$asset_name" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: upload to GitHub (npm bundler)
@@ -190,7 +190,7 @@ jobs:
           # build, install (verify) and pack
           WASM_TARGET=nodejs PKG_NAME=${{ env.PKG_NAME_NODEJS }} make -C wasm build install pack
           asset_name="$(find wasm/pkg -name '*.tgz' -printf '%f')"
-          echo "::set-output name=asset_name::$asset_name"
+          echo "asset_name=$asset_name" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: upload to GitHub (npm nodejs)
@@ -238,7 +238,7 @@ jobs:
     if: github.ref != 'refs/heads/stable' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set rustup profile & toolchain
         run: |

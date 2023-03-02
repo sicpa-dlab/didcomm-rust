@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use anoncrypt::_try_unpack_anoncrypt;
 use authcrypt::_try_unpack_authcrypt;
-use sign::_try_unapck_sign;
+use sign::_try_unpack_sign;
 
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg, SignAlg},
@@ -109,7 +109,7 @@ impl Message {
                 .await?;
         let msg = authcrypted.as_deref().unwrap_or(msg);
 
-        let signed = _try_unapck_sign(msg, did_resolver, options, &mut metadata).await?;
+        let signed = _try_unpack_sign(msg, did_resolver, options, &mut metadata).await?;
         let msg = signed.as_deref().unwrap_or(msg);
 
         let msg = _try_unpack_plaintext(msg, did_resolver, &mut metadata)
@@ -238,7 +238,7 @@ async fn has_key_agreement_secret<'dr, 'sr>(
                 .resolve(did)
                 .await?
                 .ok_or_else(|| err_msg(ErrorKind::DIDNotResolved, "Next DID doc not found"))?;
-            did_doc.key_agreements
+            did_doc.key_agreement
         }
     };
 
@@ -646,7 +646,7 @@ mod test {
                 pack_metadata.messaging_service.as_ref(),
                 Some(&MessagingServiceMetadata {
                     id: BOB_SERVICE.id.clone(),
-                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.service_endpoint.clone(),
+                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.uri.clone(),
                 })
             );
 
@@ -771,7 +771,7 @@ mod test {
                 pack_metadata.messaging_service.as_ref(),
                 Some(&MessagingServiceMetadata {
                     id: BOB_SERVICE.id.clone(),
-                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.service_endpoint.clone(),
+                    service_endpoint: BOB_DID_COMM_MESSAGING_SERVICE.uri.clone(),
                 })
             );
 

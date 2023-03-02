@@ -1,6 +1,6 @@
 [package]
 name = 'didcomm-js'
-version = '0.3.4'
+version = '0.4.0'
 authors = ['Vyacheslav Gudkov <vyacheslav.gudkov@dsr-corporation.com>']
 edition = '2018'
 description = 'WASM based javascript wrapper for DIDComm'
