@@ -5,13 +5,18 @@ use std::collections::HashMap;
 use super::Attachment;
 use crate::error::{err_msg, ErrorKind, Result, ToResult};
 
+fn default_typ() -> String {
+    "application/didcomm-plain+json".to_string()
+}
+
 /// Wrapper for plain message. Provides helpers for message building and packing/unpacking.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct Message {
     /// Message id. Must be unique to the sender.
     pub id: String,
 
-    /// Must be "application/didcomm-plain+json"
+    /// Optional, if present it must be "application/didcomm-plain+json"
+    #[serde(default = "default_typ")]
     pub typ: String,
 
     /// Message type attribute value MUST be a valid Message Type URI,
