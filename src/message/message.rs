@@ -5,10 +5,6 @@ use std::collections::HashMap;
 use super::Attachment;
 use crate::error::{err_msg, ErrorKind, Result, ToResult};
 
-fn default_typ() -> String {
-    "application/didcomm-plain+json".to_string()
-}
-
 /// Wrapper for plain message. Provides helpers for message building and packing/unpacking.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct Message {
@@ -79,6 +75,10 @@ pub struct Message {
 }
 
 const PLAINTEXT_TYP: &str = "application/didcomm-plain+json";
+
+fn default_typ() -> String {
+    PLAINTEXT_TYP.to_string()
+}
 
 impl Message {
     pub fn build(id: String, type_: String, body: Value) -> MessageBuilder {
