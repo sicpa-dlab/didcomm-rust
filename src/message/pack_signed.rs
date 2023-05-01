@@ -218,7 +218,7 @@ mod tests {
         )
         .await;
 
-        async fn _pack_signed_works<Key: KeySigVerify + FromJwkValue, 'dr, 'sr>(
+        async fn _pack_signed_works<'dr, 'sr, Key: KeySigVerify + FromJwkValue>(
             did_resolver: &'dr (dyn DIDResolver + 'dr),
             secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
             message: &Message,
