@@ -11,7 +11,8 @@ pub struct Message {
     /// Message id. Must be unique to the sender.
     pub id: String,
 
-    /// Must be "application/didcomm-plain+json"
+    /// Optional, if present it must be "application/didcomm-plain+json"
+    #[serde(default = "default_typ")]
     pub typ: String,
 
     /// Message type attribute value MUST be a valid Message Type URI,
@@ -74,6 +75,10 @@ pub struct Message {
 }
 
 const PLAINTEXT_TYP: &str = "application/didcomm-plain+json";
+
+fn default_typ() -> String {
+    PLAINTEXT_TYP.to_string()
+}
 
 impl Message {
     pub fn build(id: String, type_: String, body: Value) -> MessageBuilder {
