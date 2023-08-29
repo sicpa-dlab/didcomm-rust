@@ -6,6 +6,7 @@ use askar_crypto::{
     },
     kdf::ecdh_1pu::Ecdh1PU,
 };
+use tokio::runtime::Handle;
 
 use crate::jwe::envelope::JWE;
 use crate::{
@@ -154,7 +155,23 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     Ecdh1PU<'_, X25519KeyPair>,
                     X25519KeyPair,
                     AesKey<A256Kw>,
-                >(Some((from_kid, from_key)), (to_kid, to_key))?
+                >(Some((from_kid, from_key)), (to_kid, |ephem_key: &X25519KeyPair,
+                                                        send_key: Option<&X25519KeyPair>,
+                                                        recip_kid: &str,
+                                                        alg: &[u8],
+                                                        apu: &[u8],
+                                                        apv: &[u8],
+                                                        cc_tag: &[u8]| {
+                    let send_key = send_key.ok_or_else(|| {
+                        err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
+                    })?;
+
+                    Handle::current().block_on(
+                        secrets_resolver.derive_aes_key_from_x25519_using_edch1pu_receive(
+                            ephem_key, send_key, recip_kid, alg, apu, apv, cc_tag, true,
+                        ),
+                    )
+                }))?
             }
             (
                 KnownKeyPair::P256(ref from_key),
@@ -168,7 +185,23 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     Ecdh1PU<'_, P256KeyPair>,
                     P256KeyPair,
                     AesKey<A256Kw>,
-                >(Some((from_kid, from_key)), (to_kid, to_key))?
+                >(Some((from_kid, from_key)), (to_kid, |ephem_key: &P256KeyPair,
+                                                        send_key: Option<&P256KeyPair>,
+                                                        recip_kid: &str,
+                                                        alg: &[u8],
+                                                        apu: &[u8],
+                                                        apv: &[u8],
+                                                        cc_tag: &[u8]| {
+                    let send_key = send_key.ok_or_else(|| {
+                        err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
+                    })?;
+
+                    Handle::current().block_on(
+                        secrets_resolver.derive_aes_key_from_p256_using_edch1pu_receive(
+                            ephem_key, send_key, recip_kid, alg, apu, apv, cc_tag, true,
+                        ),
+                    )
+                }))?
             }
             (KnownKeyPair::X25519(_), KnownKeyPair::P256(_), _) => Err(err_msg(
                 ErrorKind::Malformed,

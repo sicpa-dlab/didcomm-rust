@@ -1,13 +1,3 @@
-use askar_crypto::{
-    alg::{
-        aes::{A256CbcHs512, A256Gcm, A256Kw, AesKey},
-        chacha20::{Chacha20Key, XC20P},
-        p256::P256KeyPair,
-        x25519::X25519KeyPair,
-    },
-    kdf::ecdh_es::EcdhEs,
-};
-
 use crate::{
     algorithms::AnonCryptAlg,
     error::{err_msg, ErrorKind, Result, ResultExt},
@@ -19,6 +9,16 @@ use crate::{
     },
     UnpackMetadata, UnpackOptions,
 };
+use askar_crypto::{
+    alg::{
+        aes::{A256CbcHs512, A256Gcm, A256Kw, AesKey},
+        chacha20::{Chacha20Key, XC20P},
+        p256::P256KeyPair,
+        x25519::X25519KeyPair,
+    },
+    kdf::ecdh_es::EcdhEs,
+};
+use tokio::runtime::Handle;
 
 pub(crate) async fn _try_unpack_anoncrypt<'sr>(
     msg: &str,
@@ -101,7 +101,19 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         EcdhEs<'_, X25519KeyPair>,
                         X25519KeyPair,
                         AesKey<A256Kw>,
-                    >(None, (to_kid, to_key))?
+                    >(None, (to_kid, |ephem_key: &X25519KeyPair,
+                                      send_key: Option<&X25519KeyPair>,
+                                      recip_kid: &str,
+                                      alg: &[u8],
+                                      apu: &[u8],
+                                      apv: &[u8],
+                                      cc_tag: &[u8]| {
+                    Handle::current().block_on(
+                        secrets_resolver.derive_aes_key_from_x25519_using_edches(
+                            ephem_key, recip_kid, alg, apu, apv, true,
+                        ),
+                    )
+                }))?
             }
             (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::Xc20P) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::Xc20pEcdhEsA256kw);
@@ -111,7 +123,19 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         EcdhEs<'_, X25519KeyPair>,
                         X25519KeyPair,
                         AesKey<A256Kw>,
-                    >(None, (to_kid, to_key))?
+                    >(None, (to_kid, |ephem_key: &X25519KeyPair,
+                                      send_key: Option<&X25519KeyPair>,
+                                      recip_kid: &str,
+                                      alg: &[u8],
+                                      apu: &[u8],
+                                      apv: &[u8],
+                                      cc_tag: &[u8]| {
+                    Handle::current().block_on(
+                        secrets_resolver.derive_aes_key_from_x25519_using_edches(
+                            ephem_key, recip_kid, alg, apu, apv, true,
+                        ),
+                    )
+                }))?
             }
             (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::A256Gcm) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256gcmEcdhEsA256kw);
@@ -121,7 +145,19 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         EcdhEs<'_, X25519KeyPair>,
                         X25519KeyPair,
                         AesKey<A256Kw>,
-                    >(None, (to_kid, to_key))?
+                    >(None, (to_kid, |ephem_key: &X25519KeyPair,
+                                      send_key: Option<&X25519KeyPair>,
+                                      recip_kid: &str,
+                                      alg: &[u8],
+                                      apu: &[u8],
+                                      apv: &[u8],
+                                      cc_tag: &[u8]| {
+                    Handle::current().block_on(
+                        secrets_resolver.derive_aes_key_from_x25519_using_edches(
+                            ephem_key, recip_kid, alg, apu, apv, true,
+                        ),
+                    )
+                }))?
             }
             (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::A256cbcHs512) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256cbcHs512EcdhEsA256kw);
@@ -131,7 +167,19 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         EcdhEs<'_, P256KeyPair>,
                         P256KeyPair,
                         AesKey<A256Kw>,
-                    >(None, (to_kid, to_key))?
+                    >(None, (to_kid, |ephem_key: &P256KeyPair,
+                                      send_key: Option<&P256KeyPair>,
+                                      recip_kid: &str,
+                                      alg: &[u8],
+                                      apu: &[u8],
+                                      apv: &[u8],
+                                      cc_tag: &[u8]| {
+                    Handle::current().block_on(
+                        secrets_resolver.derive_aes_key_from_p256_using_edches(
+                            ephem_key, recip_kid, alg, apu, apv, true,
+                        ),
+                    )
+                }))?
             }
             (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::Xc20P) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::Xc20pEcdhEsA256kw);
@@ -141,7 +189,19 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         EcdhEs<'_, P256KeyPair>,
                         P256KeyPair,
                         AesKey<A256Kw>,
-                    >(None, (to_kid, to_key))?
+                    >(None, (to_kid, |ephem_key: &P256KeyPair,
+                                      send_key: Option<&P256KeyPair>,
+                                      recip_kid: &str,
+                                      alg: &[u8],
+                                      apu: &[u8],
+                                      apv: &[u8],
+                                      cc_tag: &[u8]| {
+                    Handle::current().block_on(
+                        secrets_resolver.derive_aes_key_from_p256_using_edches(
+                            ephem_key, recip_kid, alg, apu, apv, true,
+                        ),
+                    )
+                }))?
             }
             (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::A256Gcm) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256gcmEcdhEsA256kw);
@@ -151,7 +211,19 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         EcdhEs<'_, P256KeyPair>,
                         P256KeyPair,
                         AesKey<A256Kw>,
-                    >(None, (to_kid, to_key))?
+                    >(None, (to_kid, |ephem_key: &P256KeyPair,
+                                      send_key: Option<&P256KeyPair>,
+                                      recip_kid: &str,
+                                      alg: &[u8],
+                                      apu: &[u8],
+                                      apv: &[u8],
+                                      cc_tag: &[u8]| {
+                    Handle::current().block_on(
+                        secrets_resolver.derive_aes_key_from_p256_using_edches(
+                            ephem_key, recip_kid, alg, apu, apv, true,
+                        ),
+                    )
+                }))?
             }
             _ => Err(err_msg(
                 ErrorKind::Unsupported,

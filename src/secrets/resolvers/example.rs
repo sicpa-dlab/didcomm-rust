@@ -2,6 +2,7 @@ use askar_crypto::alg::aes::{A256Kw, AesKey};
 use askar_crypto::alg::p256::P256KeyPair;
 use askar_crypto::alg::x25519::X25519KeyPair;
 use askar_crypto::kdf::ecdh_1pu::Ecdh1PU;
+use askar_crypto::kdf::ecdh_es::EcdhEs;
 use async_trait::async_trait;
 
 use crate::utils::crypto::{AsKnownKeyPair, JoseKDF};
@@ -85,6 +86,102 @@ impl SecretsResolver for ExampleSecretsResolver {
             apu,
             apv,
             cc_tag,
+            receive,
+        )
+    }
+
+    async fn derive_aes_key_from_x25519_using_edch1pu_receive(
+        &self,
+        ephem_key: &X25519KeyPair,
+        send_key: &X25519KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>> {
+        let key = self.get_secret(recip_kid).await?.expect("Secret not found");
+
+        Ecdh1PU::derive_key(
+            ephem_key,
+            Some(send_key),
+            &key.as_x25519()?,
+            alg,
+            apu,
+            apv,
+            cc_tag,
+            receive,
+        )
+    }
+
+    async fn derive_aes_key_from_p256_using_edch1pu_receive(
+        &self,
+        ephem_key: &P256KeyPair,
+        send_key: &P256KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>> {
+        let key = self.get_secret(recip_kid).await?.expect("Secret not found");
+
+        Ecdh1PU::derive_key(
+            ephem_key,
+            Some(send_key),
+            &key.as_p256()?,
+            alg,
+            apu,
+            apv,
+            cc_tag,
+            receive,
+        )
+    }
+
+    async fn derive_aes_key_from_x25519_using_edches(
+        &self,
+        ephem_key: &X25519KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>> {
+        let key = self.get_secret(recip_kid).await?.expect("Secret not found");
+
+        EcdhEs::derive_key(
+            ephem_key,
+            None,
+            &key.as_x25519()?,
+            alg,
+            apu,
+            apv,
+            &[],
+            receive,
+        )
+    }
+
+    async fn derive_aes_key_from_p256_using_edches(
+        &self,
+        ephem_key: &P256KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>> {
+        let key = self.get_secret(recip_kid).await?.expect("Secret not found");
+
+        Ecdh1PU::derive_key(
+            ephem_key,
+            None,
+            &key.as_p256()?,
+            alg,
+            apu,
+            apv,
+            &[],
             receive,
         )
     }

@@ -2880,8 +2880,18 @@ mod tests {
                 _ => panic!("Unexpected verification method"),
             };
 
+            let derive_func = |ephem_key: &KE,
+                               sender_key: Option<&KE>,
+                               recip_kid: &str,
+                               alg: &[u8],
+                               apu: &[u8],
+                               apv: &[u8],
+                               cc_tag: &[u8]| {
+                KDF::derive_key(ephem_key, sender_key, &to_key, alg, apu, apv, cc_tag, true)
+            };
+
             let msg = msg
-                .decrypt::<CE, KDF, KE, KW>(Some((from_kid, &from_key)), (to_kid, &to_key))
+                .decrypt::<CE, KDF, KE, KW>(Some((from_kid, &from_key)), (to_kid, derive_func))
                 .expect("Unable decrypt msg");
 
             common_msg = if let Some(ref res) = common_msg {
@@ -2940,8 +2950,18 @@ mod tests {
                 _ => panic!("Unexpected verification method"),
             };
 
+            let derive_func = |ephem_key: &KE,
+                               sender_key: Option<&KE>,
+                               recip_kid: &str,
+                               alg: &[u8],
+                               apu: &[u8],
+                               apv: &[u8],
+                               cc_tag: &[u8]| {
+                KDF::derive_key(ephem_key, sender_key, &to_key, alg, apu, apv, cc_tag, true)
+            };
+
             let msg = msg
-                .decrypt::<CE, KDF, KE, KW>(None, (to_kid, &to_key))
+                .decrypt::<CE, KDF, KE, KW>(None, (to_kid, derive_func))
                 .expect("Unable decrypt msg");
 
             common_msg = if let Some(ref res) = common_msg {

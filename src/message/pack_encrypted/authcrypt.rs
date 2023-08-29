@@ -18,7 +18,7 @@ use askar_crypto::{
     },
     kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs},
 };
-use tokio::runtime::Runtime;
+use tokio::runtime::Handle;
 
 pub(crate) async fn authcrypt<'dr, 'sr>(
     to: &str,
@@ -197,7 +197,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                                 err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
                             })?;
 
-                            Runtime::new().unwrap().block_on(
+                            Handle::current().block_on(
                                 secrets_resolver.derive_aes_key_from_x25519_using_edch1pu(
                                     ephem_key, send_kid, recip_key, alg, apu, apv, cc_tag, false,
                                 ),
@@ -322,7 +322,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                                 err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
                             })?;
 
-                            Runtime::new().unwrap().block_on(
+                            Handle::current().block_on(
                                 secrets_resolver.derive_aes_key_from_p256_using_edch1pu(
                                     ephem_key, send_kid, recip_key, alg, apu, apv, cc_tag, false,
                                 ),

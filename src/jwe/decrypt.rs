@@ -16,7 +16,10 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
     pub(crate) fn decrypt<CE, KDF, KE, KW>(
         &self,
         sender: Option<(&str, &KE)>,
-        recipient: (&str, &KE),
+        recipient: (
+            &str,
+            impl Fn(&KE, Option<&KE>, &str, &[u8], &[u8], &[u8], &[u8]) -> Result<KW>,
+        ),
     ) -> Result<Vec<u8>>
     where
         CE: KeyAeadInPlace + KeySecretBytes,
@@ -29,7 +32,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
             None => (None, None),
         };
 
-        let (kid, key) = recipient;
+        let (kid, derive_func) = recipient;
 
         if skid.map(str::as_bytes) != self.apu.as_deref() {
             Err(err_msg(ErrorKind::InvalidState, "Wrong skid used"))?
@@ -53,15 +56,14 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
         let tag = base64::decode_config(self.jwe.tag, base64::URL_SAFE_NO_PAD)
             .kind(ErrorKind::Malformed, "Unable decode tag")?;
 
-        let kw = KDF::derive_key(
+        let kw = derive_func(
             &epk,
             skey,
-            &key,
+            kid,
             self.protected.alg.as_str().as_bytes(),
             self.apu.as_deref().unwrap_or(&[]),
             &self.apv,
             &tag,
-            true,
         )
         .kind(ErrorKind::InvalidState, "Unable derive kw")?;
 
@@ -975,10 +977,26 @@ mod tests {
         let _sender = sender.map(|(kid, k)| (kid, KE::from_jwk(k).expect("Unable from_jwk")));
         let sender = _sender.as_ref().map(|(kid, k)| (*kid, k));
 
-        let recipient = (
-            recipient.0,
-            &KE::from_jwk(recipient.1).expect("Unable from_jwk"),
-        );
+        let derive_func = |ephem_key: &KE,
+                           sender_key: Option<&KE>,
+                           recip_kid: &str,
+                           alg: &[u8],
+                           apu: &[u8],
+                           apv: &[u8],
+                           cc_tag: &[u8]| {
+            KDF::derive_key(
+                ephem_key,
+                sender_key,
+                &KE::from_jwk(recipient.1).expect("Unable from_jwk"),
+                alg,
+                apu,
+                apv,
+                cc_tag,
+                true,
+            )
+        };
+
+        let recipient = (recipient.0, derive_func);
 
         let mut buf = vec![];
         let msg = jwe::parse(&msg, &mut buf).expect("Unable parse");

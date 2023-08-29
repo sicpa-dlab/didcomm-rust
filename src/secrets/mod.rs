@@ -62,6 +62,50 @@ pub trait SecretsResolver: Sync {
         cc_tag: &[u8],
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
+
+    async fn derive_aes_key_from_x25519_using_edch1pu_receive(
+        &self,
+        ephem_key: &X25519KeyPair,
+        send_key: &X25519KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
+
+    async fn derive_aes_key_from_p256_using_edch1pu_receive(
+        &self,
+        ephem_key: &P256KeyPair,
+        send_key: &P256KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
+
+    async fn derive_aes_key_from_x25519_using_edches(
+        &self,
+        ephem_key: &X25519KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
+
+    async fn derive_aes_key_from_p256_using_edches(
+        &self,
+        ephem_key: &P256KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
 }
 
 /// Interface for secrets resolver.
@@ -113,6 +157,50 @@ pub trait SecretsResolver {
         apu: &[u8],
         apv: &[u8],
         cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
+
+    async fn derive_aes_key_from_x25519_using_edch1pu_receive(
+        &self,
+        ephem_key: &X25519KeyPair,
+        send_key: &X25519KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
+
+    async fn derive_aes_key_from_p256_using_edch1pu_receive(
+        &self,
+        ephem_key: &P256KeyPair,
+        send_key: &P256KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
+
+    async fn derive_aes_key_from_x25519_using_edches(
+        &self,
+        ephem_key: &X25519KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
+
+    async fn derive_aes_key_from_p256_using_edches(
+        &self,
+        ephem_key: &P256KeyPair,
+        recip_kid: &str,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 }

@@ -456,7 +456,30 @@ mod tests {
                     .expect("recipient not found.");
 
                 let plaintext_ = msg
-                    .decrypt::<CE, KDF, KE, KW>(alice_pub, *bob_edge_priv)
+                    .decrypt::<CE, KDF, KE, KW>(
+                        alice_pub,
+                        (
+                            bob_edge_priv.0,
+                            |ephem_key: &KE,
+                             sender_key: Option<&KE>,
+                             recip_kid: &str,
+                             alg: &[u8],
+                             apu: &[u8],
+                             apv: &[u8],
+                             cc_tag: &[u8]| {
+                                KDF::derive_key(
+                                    ephem_key,
+                                    sender_key,
+                                    &bob_edge_priv.1,
+                                    alg,
+                                    apu,
+                                    apv,
+                                    cc_tag,
+                                    true,
+                                )
+                            },
+                        ),
+                    )
                     .expect("unable decrypt.");
 
                 assert_eq!(plaintext_, plaintext.as_bytes());
