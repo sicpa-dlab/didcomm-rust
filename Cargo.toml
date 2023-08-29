@@ -65,6 +65,7 @@ version = '1.9'
 features = [
     'rt',
     'macros',
+    'rt-multi-thread'
 ]
 
 [dev-dependencies.getrandom]

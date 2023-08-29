@@ -1,13 +1,3 @@
-use askar_crypto::{
-    alg::{
-        aes::{A256CbcHs512, A256Gcm, A256Kw, AesKey},
-        chacha20::{Chacha20Key, XC20P},
-        p256::P256KeyPair,
-        x25519::X25519KeyPair,
-    },
-    kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs},
-};
-
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg},
     did::DIDResolver,
@@ -19,6 +9,16 @@ use crate::{
         did::did_or_url,
     },
 };
+use askar_crypto::{
+    alg::{
+        aes::{A256CbcHs512, A256Gcm, A256Kw, AesKey},
+        chacha20::{Chacha20Key, XC20P},
+        p256::P256KeyPair,
+        x25519::X25519KeyPair,
+    },
+    kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs},
+};
+use tokio::runtime::Runtime;
 
 pub(crate) async fn authcrypt<'dr, 'sr>(
     to: &str,
@@ -154,13 +154,6 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
             )
         })?;
 
-    // Resolve secret for found sender key
-    let from_priv_key = secrets_resolver
-        .get_secret(&from_key.id)
-        .await
-        .context("Unable resolve sender secret")?
-        .ok_or_else(|| err_msg(ErrorKind::InvalidState, "Sender secret not found"))?;
-
     let key_alg = from_key.key_alg();
 
     // Keep only recipient keys compatible with sender key
@@ -191,7 +184,26 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     msg,
                     jwe::Algorithm::Ecdh1puA256kw,
                     jwe::EncAlgorithm::A256cbcHs512,
-                    Some((&from_key.id, &from_priv_key.as_x25519()?)),
+                    Some((
+                        &from_key.id,
+                        |ephem_key: &X25519KeyPair,
+                         send_kid: Option<&str>,
+                         recip_key: &X25519KeyPair,
+                         alg: &[u8],
+                         apu: &[u8],
+                         apv: &[u8],
+                         cc_tag: &[u8]| {
+                            let send_kid = send_kid.ok_or_else(|| {
+                                err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
+                            })?;
+
+                            Runtime::new().unwrap().block_on(
+                                secrets_resolver.derive_aes_key_from_x25519_using_edch1pu(
+                                    ephem_key, send_kid, recip_key, alg, apu, apv, cc_tag, false,
+                                ),
+                            )
+                        },
+                    )),
                     &to_keys,
                 )
                 .context("Unable produce authcrypt envelope")?,
@@ -208,7 +220,18 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
                         jwe::EncAlgorithm::A256cbcHs512,
-                        None,
+                        None::<(
+                            &str,
+                            &fn(
+                                &X25519KeyPair,
+                                Option<&str>,
+                                &X25519KeyPair,
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                            ) -> Result<AesKey<A256Kw>>,
+                        )>,
                         &to_keys,
                     )
                     .context("Unable produce authcrypt envelope")?,
@@ -221,7 +244,18 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
                         jwe::EncAlgorithm::Xc20P,
-                        None,
+                        None::<(
+                            &str,
+                            &fn(
+                                &X25519KeyPair,
+                                Option<&str>,
+                                &X25519KeyPair,
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                            ) -> Result<AesKey<A256Kw>>,
+                        )>,
                         &to_keys,
                     )
                     .context("Unable produce authcrypt envelope")?,
@@ -234,7 +268,18 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
                         jwe::EncAlgorithm::A256Gcm,
-                        None,
+                        None::<(
+                            &str,
+                            &fn(
+                                &X25519KeyPair,
+                                Option<&str>,
+                                &X25519KeyPair,
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                            ) -> Result<AesKey<A256Kw>>,
+                        )>,
                         &to_keys,
                     )
                     .context("Unable produce authcrypt envelope")?,
@@ -264,7 +309,26 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     msg,
                     jwe::Algorithm::Ecdh1puA256kw,
                     jwe::EncAlgorithm::A256cbcHs512,
-                    Some((&from_key.id, &from_priv_key.as_p256()?)),
+                    Some((
+                        &from_key.id,
+                        &move |ephem_key: &P256KeyPair,
+                               send_kid: Option<&str>,
+                               recip_key: &P256KeyPair,
+                               alg: &[u8],
+                               apu: &[u8],
+                               apv: &[u8],
+                               cc_tag: &[u8]| {
+                            let send_kid = send_kid.ok_or_else(|| {
+                                err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
+                            })?;
+
+                            Runtime::new().unwrap().block_on(
+                                secrets_resolver.derive_aes_key_from_p256_using_edch1pu(
+                                    ephem_key, send_kid, recip_key, alg, apu, apv, cc_tag, false,
+                                ),
+                            )
+                        },
+                    )),
                     &to_keys,
                 )
                 .context("Unable produce authcrypt envelope")?,
@@ -281,7 +345,18 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
                         jwe::EncAlgorithm::A256cbcHs512,
-                        None,
+                        None::<(
+                            &str,
+                            &fn(
+                                &P256KeyPair,
+                                Option<&str>,
+                                &P256KeyPair,
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                            ) -> Result<AesKey<A256Kw>>,
+                        )>,
                         &to_keys,
                     )
                     .context("Unable produce authcrypt envelope")?,
@@ -294,7 +369,18 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
                         jwe::EncAlgorithm::Xc20P,
-                        None,
+                        None::<(
+                            &str,
+                            &fn(
+                                &P256KeyPair,
+                                Option<&str>,
+                                &P256KeyPair,
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                            ) -> Result<AesKey<A256Kw>>,
+                        )>,
                         &to_keys,
                     )
                     .context("Unable produce authcrypt envelope")?,
@@ -307,7 +393,18 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
                         jwe::EncAlgorithm::A256Gcm,
-                        None,
+                        None::<(
+                            &str,
+                            &fn(
+                                &P256KeyPair,
+                                Option<&str>,
+                                &P256KeyPair,
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                                &[u8],
+                            ) -> Result<AesKey<A256Kw>>,
+                        )>,
                         &to_keys,
                     )
                     .context("Unable produce authcrypt envelope")?,

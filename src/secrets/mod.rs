@@ -2,6 +2,9 @@
 
 pub mod resolvers;
 
+use askar_crypto::alg::aes::{A256Kw, AesKey};
+use askar_crypto::alg::p256::P256KeyPair;
+use askar_crypto::alg::x25519::X25519KeyPair;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -35,6 +38,30 @@ pub trait SecretsResolver: Sync {
     /// # Returns
     /// possible empty list of all secrets that have one of the given IDs.
     async fn find_secrets<'a>(&self, secret_ids: &'a [&'a str]) -> Result<Vec<&'a str>>;
+
+    async fn derive_aes_key_from_x25519_using_edch1pu(
+        &self,
+        ephem_key: &X25519KeyPair,
+        send_kid: &str,
+        recip_key: &X25519KeyPair,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
+
+    async fn derive_aes_key_from_p256_using_edch1pu(
+        &self,
+        ephem_key: &P256KeyPair,
+        send_kid: &str,
+        recip_key: &P256KeyPair,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
 }
 
 /// Interface for secrets resolver.
@@ -64,6 +91,30 @@ pub trait SecretsResolver {
     /// # Returns
     /// possible empty list of all secrets that have one of the given IDs.
     async fn find_secrets<'a>(&self, secret_ids: &'a [&'a str]) -> Result<Vec<&'a str>>;
+
+    async fn derive_aes_key_from_x25519_using_edch1pu(
+        &self,
+        ephem_key: &X25519KeyPair,
+        send_kid: &str,
+        recip_key: &X25519KeyPair,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
+
+    async fn derive_aes_key_from_p256_using_edch1pu(
+        &self,
+        ephem_key: &P256KeyPair,
+        send_kid: &str,
+        recip_key: &P256KeyPair,
+        alg: &[u8],
+        apu: &[u8],
+        apv: &[u8],
+        cc_tag: &[u8],
+        receive: bool,
+    ) -> Result<AesKey<A256Kw>>;
 }
 
 /// Represents secret.

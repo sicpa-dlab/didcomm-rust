@@ -20,8 +20,11 @@ pub(crate) fn encrypt<CE, KDF, KE, KW>(
     plaintext: &[u8],
     alg: Algorithm,
     enc: EncAlgorithm,
-    sender: Option<(&str, &KE)>, // (skid, sender key)
-    recipients: &[(&str, &KE)],  // (kid, recipient key)
+    sender: Option<(
+        &str,
+        impl Fn(&KE, Option<&str>, &KE, &[u8], &[u8], &[u8], &[u8]) -> Result<KW>,
+    )>, // (skid, sender key)
+    recipients: &[(&str, &KE)], // (kid, recipient key)
 ) -> Result<String>
 where
     CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes,
@@ -29,8 +32,8 @@ where
     KE: KeyExchange + KeyGen + ToJwkValue,
     KW: KeyWrap + FromKeyDerivation,
 {
-    let (skid, skey) = match sender {
-        Some((skid, skey)) => (Some(skid), Some(skey)),
+    let (skid, derive_func) = match sender {
+        Some((skid, f)) => (Some(skid), Some(f)),
         None => (None, None),
     };
 
@@ -95,16 +98,27 @@ where
         let mut encrypted_keys: Vec<(&str, String)> = Vec::with_capacity(recipients.len());
 
         for (kid, key) in recipients {
-            let kw = KDF::derive_key(
-                &epk,
-                skey,
-                &key,
-                alg.as_str().as_bytes(),
-                skid.as_ref().map(|s| s.as_bytes()).unwrap_or(&[]),
-                apv.as_slice(),
-                &tag_raw,
-                false,
-            )
+            let kw = match derive_func {
+                None => KDF::derive_key(
+                    &epk,
+                    None,
+                    &key,
+                    alg.as_str().as_bytes(),
+                    skid.as_ref().map(|s| s.as_bytes()).unwrap_or(&[]),
+                    apv.as_slice(),
+                    &tag_raw,
+                    false,
+                ),
+                Some(ref derive_func) => derive_func(
+                    &epk,
+                    skid,
+                    &key,
+                    alg.as_str().as_bytes(),
+                    skid.as_ref().map(|s| s.as_bytes()).unwrap_or(&[]),
+                    apv.as_slice(),
+                    &tag_raw,
+                ),
+            }
             .kind(ErrorKind::InvalidState, "Unable derive kw")?; //TODO Check this test and move to decrypt
 
             let encrypted_key = kw
@@ -154,8 +168,9 @@ mod tests {
         repr::{KeyGen, KeyPublicBytes, KeySecretBytes, ToPublicBytes, ToSecretBytes},
     };
 
+    use crate::error::err_msg;
     use crate::{
-        error::ErrorKind,
+        error::{ErrorKind, Result},
         jwe::{
             self,
             envelope::{Algorithm, EncAlgorithm},
@@ -391,7 +406,36 @@ mod tests {
                 plaintext.as_bytes(),
                 alg.clone(),
                 enc_alg.clone(),
-                alice_priv,
+                alice_priv.map(|(kid, key)| {
+                    (
+                        kid,
+                        move |ephem_key: &KE,
+                              send_kid: Option<&str>,
+                              recip_key: &KE,
+                              alg: &[u8],
+                              apu: &[u8],
+                              apv: &[u8],
+                              cc_tag: &[u8]| {
+                            if send_kid == Some(kid) {
+                                KDF::derive_key(
+                                    ephem_key,
+                                    Some(&key),
+                                    recip_key,
+                                    alg,
+                                    apu,
+                                    apv,
+                                    cc_tag,
+                                    false,
+                                )
+                            } else {
+                                Err(err_msg(
+                                    ErrorKind::InvalidState,
+                                    "No sender key for requested kid",
+                                ))
+                            }
+                        },
+                    )
+                }),
                 &bob_pub,
             )
             .expect("Unable encrypt");
@@ -435,7 +479,18 @@ mod tests {
             plaintext.as_bytes(),
             Algorithm::Ecdh1puA256kw,
             EncAlgorithm::A256cbcHs512,
-            None,
+            None::<(
+                &str,
+                &fn(
+                    &X25519KeyPair,
+                    Option<&str>,
+                    &X25519KeyPair,
+                    &[u8],
+                    &[u8],
+                    &[u8],
+                    &[u8],
+                ) -> Result<AesKey<A256Kw>>,
+            )>,
             &[(bob_kid, &bob_pkey)],
         );
 

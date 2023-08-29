@@ -110,7 +110,18 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
                     jwe::EncAlgorithm::A256cbcHs512,
-                    None,
+                    None::<(
+                        &str,
+                        fn(
+                            &X25519KeyPair,
+                            Option<&str>,
+                            &X25519KeyPair,
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                        ) -> Result<AesKey<A256Kw>>,
+                    )>,
                     &to_keys,
                 )
                 .context("Unable produce anoncrypt envelope")?,
@@ -123,7 +134,18 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
                     jwe::EncAlgorithm::Xc20P,
-                    None,
+                    None::<(
+                        &str,
+                        fn(
+                            &X25519KeyPair,
+                            Option<&str>,
+                            &X25519KeyPair,
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                        ) -> Result<AesKey<A256Kw>>,
+                    )>,
                     &to_keys,
                 )
                 .context("Unable produce anoncrypt envelope")?,
@@ -136,7 +158,18 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
                     jwe::EncAlgorithm::A256Gcm,
-                    None,
+                    None::<(
+                        &str,
+                        fn(
+                            &X25519KeyPair,
+                            Option<&str>,
+                            &X25519KeyPair,
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                        ) -> Result<AesKey<A256Kw>>,
+                    )>,
                     &to_keys,
                 )
                 .context("Unable produce anoncrypt envelope")?,
@@ -163,7 +196,18 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
                     jwe::EncAlgorithm::A256cbcHs512,
-                    None,
+                    None::<(
+                        &str,
+                        fn(
+                            &P256KeyPair,
+                            Option<&str>,
+                            &P256KeyPair,
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                        ) -> Result<AesKey<A256Kw>>,
+                    )>,
                     &to_keys,
                 )
                 .context("Unable produce anoncrypt envelope")?,
@@ -176,7 +220,18 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
                     jwe::EncAlgorithm::Xc20P,
-                    None,
+                    None::<(
+                        &str,
+                        fn(
+                            &P256KeyPair,
+                            Option<&str>,
+                            &P256KeyPair,
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                        ) -> Result<AesKey<A256Kw>>,
+                    )>,
                     &to_keys,
                 )
                 .context("Unable produce anoncrypt envelope")?,
@@ -189,7 +244,18 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
                     jwe::EncAlgorithm::A256Gcm,
-                    None,
+                    None::<(
+                        &str,
+                        fn(
+                            &P256KeyPair,
+                            Option<&str>,
+                            &P256KeyPair,
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                            &[u8],
+                        ) -> Result<AesKey<A256Kw>>,
+                    )>,
                     &to_keys,
                 )
                 .context("Unable produce anoncrypt envelope")?,
