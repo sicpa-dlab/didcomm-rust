@@ -4,6 +4,7 @@ use askar_crypto::{
     kdf::{FromKeyDerivation, KeyExchange},
     repr::{KeyGen, KeySecretBytes},
 };
+use std::future::Future;
 
 use crate::{
     error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
@@ -13,19 +14,21 @@ use crate::{
 };
 
 impl<'a, 'b> ParsedJWE<'a, 'b> {
-    pub(crate) fn decrypt<CE, KDF, KE, KW>(
-        &self,
-        sender: Option<(&str, &KE)>,
+    pub(crate) async fn decrypt<CE, KDF, KE, KW, FUT>(
+        &'a self,
+        sender: Option<(&str, &'a KE)>,
         recipient: (
-            &str,
-            impl Fn(&KE, Option<&KE>, &str, &[u8], &[u8], &[u8], &[u8]) -> Result<KW>,
+            &'a str,
+            impl Fn(KE, Option<&'a KE>, &'a str, &'a [u8], &'a [u8], &'a [u8], Vec<u8>) -> FUT,
         ),
     ) -> Result<Vec<u8>>
     where
+        'b: 'a,
         CE: KeyAeadInPlace + KeySecretBytes,
         KDF: JoseKDF<KE, KW>,
         KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
         KW: KeyWrap + FromKeyDerivation,
+        FUT: Future<Output = Result<KW>>,
     {
         let (skid, skey) = match sender {
             Some((skid, skey)) => (Some(skid), Some(skey)),
@@ -57,14 +60,15 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
             .kind(ErrorKind::Malformed, "Unable decode tag")?;
 
         let kw = derive_func(
-            &epk,
+            epk,
             skey,
             kid,
             self.protected.alg.as_str().as_bytes(),
             self.apu.as_deref().unwrap_or(&[]),
             &self.apv,
-            &tag,
+            tag.clone(),
         )
+        .await
         .kind(ErrorKind::InvalidState, "Unable derive kw")?;
 
         let cek: CE = kw

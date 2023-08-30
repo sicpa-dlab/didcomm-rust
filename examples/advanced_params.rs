@@ -13,7 +13,7 @@ use didcomm::{
     secrets::resolvers::ExampleSecretsResolver,
     Message, PackEncryptedOptions, UnpackOptions,
 };
-use serde_json::json;
+use serde_json::{json, Number, Value};
 use std::collections::HashMap;
 use std::iter::FromIterator;
 use test_vectors::{
@@ -33,6 +33,8 @@ async fn main() {
     .to(BOB_DID.to_owned())
     .created_time(1516269022)
     .expires_time(1516385931)
+    .header("bla1".parse().unwrap(), Value::Bool(false))
+    .header("bla2".parse().unwrap(), Value::Number(Number::from(12)))
     .finalize();
 
     // --- Packing encrypted and authenticated message ---

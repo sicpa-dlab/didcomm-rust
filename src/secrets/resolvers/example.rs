@@ -142,7 +142,7 @@ impl SecretsResolver for ExampleSecretsResolver {
 
     async fn derive_aes_key_from_x25519_using_edches(
         &self,
-        ephem_key: &X25519KeyPair,
+        ephem_key: X25519KeyPair,
         recip_kid: &str,
         alg: &[u8],
         apu: &[u8],
@@ -152,7 +152,7 @@ impl SecretsResolver for ExampleSecretsResolver {
         let key = self.get_secret(recip_kid).await?.expect("Secret not found");
 
         EcdhEs::derive_key(
-            ephem_key,
+            &ephem_key,
             None,
             &key.as_x25519()?,
             alg,
@@ -165,7 +165,7 @@ impl SecretsResolver for ExampleSecretsResolver {
 
     async fn derive_aes_key_from_p256_using_edches(
         &self,
-        ephem_key: &P256KeyPair,
+        ephem_key: P256KeyPair,
         recip_kid: &str,
         alg: &[u8],
         apu: &[u8],
@@ -175,7 +175,7 @@ impl SecretsResolver for ExampleSecretsResolver {
         let key = self.get_secret(recip_kid).await?.expect("Secret not found");
 
         Ecdh1PU::derive_key(
-            ephem_key,
+            &ephem_key,
             None,
             &key.as_p256()?,
             alg,

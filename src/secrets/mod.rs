@@ -89,7 +89,7 @@ pub trait SecretsResolver: Sync {
 
     async fn derive_aes_key_from_x25519_using_edches(
         &self,
-        ephem_key: &X25519KeyPair,
+        ephem_key: X25519KeyPair,
         recip_kid: &str,
         alg: &[u8],
         apu: &[u8],
@@ -99,7 +99,7 @@ pub trait SecretsResolver: Sync {
 
     async fn derive_aes_key_from_p256_using_edches(
         &self,
-        ephem_key: &P256KeyPair,
+        ephem_key: P256KeyPair,
         recip_kid: &str,
         alg: &[u8],
         apu: &[u8],
@@ -186,7 +186,7 @@ pub trait SecretsResolver {
 
     async fn derive_aes_key_from_x25519_using_edches(
         &self,
-        ephem_key: &X25519KeyPair,
+        ephem_key: X25519KeyPair,
         recip_kid: &str,
         alg: &[u8],
         apu: &[u8],
@@ -196,7 +196,7 @@ pub trait SecretsResolver {
 
     async fn derive_aes_key_from_p256_using_edches(
         &self,
-        ephem_key: &P256KeyPair,
+        ephem_key: P256KeyPair,
         recip_kid: &str,
         alg: &[u8],
         apu: &[u8],
