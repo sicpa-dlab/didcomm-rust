@@ -5,9 +5,9 @@ use askar_crypto::{
     random,
     repr::{KeyGen, ToSecretBytes},
 };
-use std::borrow::Cow;
-
 use sha2::{Digest, Sha256};
+use std::borrow::Cow;
+use std::future::Future;
 
 use crate::{
     error::{ErrorKind, Result, ResultExt},
@@ -16,21 +16,22 @@ use crate::{
     utils::crypto::{JoseKDF, KeyWrap},
 };
 
-pub(crate) fn encrypt<CE, KDF, KE, KW>(
+pub(crate) async fn encrypt<CE, KDF, KE, KW, FUT>(
     plaintext: &[u8],
     alg: Algorithm,
     enc: EncAlgorithm,
     sender: Option<(
         &str,
-        impl Fn(&KE, Option<&str>, &KE, &[u8], &[u8], &[u8], &[u8]) -> Result<KW>,
-    )>, // (skid, sender key)
+        impl Fn(KE, Option<String>, KE, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) -> FUT,
+    )>, // (skid, derive func)
     recipients: &[(&str, &KE)], // (kid, recipient key)
 ) -> Result<String>
 where
     CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes,
     KDF: JoseKDF<KE, KW>,
-    KE: KeyExchange + KeyGen + ToJwkValue,
+    KE: KeyExchange + KeyGen + ToJwkValue + Clone,
     KW: KeyWrap + FromKeyDerivation,
+    FUT: Future<Output = Result<KW>>,
 {
     let (skid, derive_func) = match sender {
         Some((skid, f)) => (Some(skid), Some(f)),
@@ -109,15 +110,21 @@ where
                     &tag_raw,
                     false,
                 ),
-                Some(ref derive_func) => derive_func(
-                    &epk,
-                    skid,
-                    &key,
-                    alg.as_str().as_bytes(),
-                    skid.as_ref().map(|s| s.as_bytes()).unwrap_or(&[]),
-                    apv.as_slice(),
-                    &tag_raw,
-                ),
+                Some(ref derive_func) => {
+                    derive_func(
+                        epk.clone(),
+                        skid.map(|x| x.to_string()),
+                        key.clone().clone(),
+                        alg.as_str().as_bytes().to_owned(),
+                        skid.as_ref()
+                            .map(|s| s.as_bytes())
+                            .unwrap_or(&[])
+                            .to_owned(),
+                        apv.as_slice().to_owned(),
+                        tag_raw.to_owned(),
+                    )
+                    .await
+                }
             }
             .kind(ErrorKind::InvalidState, "Unable derive kw")?; //TODO Check this test and move to decrypt
 
@@ -169,6 +176,7 @@ mod tests {
     };
 
     use crate::error::err_msg;
+    use crate::utils::DummyFuture;
     use crate::{
         error::{ErrorKind, Result},
         jwe::{
@@ -180,8 +188,8 @@ mod tests {
         utils::crypto::{JoseKDF, KeyWrap},
     };
 
-    #[test]
-    fn encrypt_works() {
+    #[tokio::test]
+    async fn encrypt_works() {
         _encrypt_works::<
             AesKey<A256CbcHs512>,
             Ecdh1PU<'_, X25519KeyPair>,
@@ -192,7 +200,8 @@ mod tests {
             &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
             Algorithm::Ecdh1puA256kw,
             EncAlgorithm::A256cbcHs512,
-        );
+        )
+        .await;
 
         _encrypt_works::<
             AesKey<A256CbcHs512>,
@@ -208,14 +217,15 @@ mod tests {
             ],
             Algorithm::Ecdh1puA256kw,
             EncAlgorithm::A256cbcHs512,
-        );
+        )
+        .await;
 
         _encrypt_works::<AesKey<A256CbcHs512>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             Some((ALICE_KID_P256_1, ALICE_KEY_P256_1, ALICE_PKEY_P256_1)),
             &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
             Algorithm::Ecdh1puA256kw,
             EncAlgorithm::A256cbcHs512,
-        );
+        ).await;
 
         _encrypt_works::<AesKey<A256CbcHs512>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             Some((ALICE_KID_P256_1, ALICE_KEY_P256_1, ALICE_PKEY_P256_1)),
@@ -225,7 +235,7 @@ mod tests {
             ],
             Algorithm::Ecdh1puA256kw,
             EncAlgorithm::A256cbcHs512,
-        );
+        ).await;
 
         _encrypt_works::<
             AesKey<A256CbcHs512>,
@@ -237,7 +247,8 @@ mod tests {
             &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::A256cbcHs512,
-        );
+        )
+        .await;
 
         _encrypt_works::<
             AesKey<A256CbcHs512>,
@@ -253,14 +264,15 @@ mod tests {
             ],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::A256cbcHs512,
-        );
+        )
+        .await;
 
         _encrypt_works::<AesKey<A256CbcHs512>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::A256cbcHs512,
-        );
+        ).await;
 
         _encrypt_works::<AesKey<A256CbcHs512>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
@@ -270,14 +282,14 @@ mod tests {
             ],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::A256cbcHs512,
-        );
+        ).await;
 
         _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
             None,
             &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::A256Gcm,
-        );
+        ).await;
 
         _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
             None,
@@ -288,14 +300,15 @@ mod tests {
             ],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::A256Gcm,
-        );
+        ).await;
 
         _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::A256Gcm,
-        );
+        )
+        .await;
 
         _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
@@ -305,7 +318,8 @@ mod tests {
             ],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::A256Gcm,
-        );
+        )
+        .await;
 
         _encrypt_works::<
             Chacha20Key<XC20P>,
@@ -317,7 +331,8 @@ mod tests {
             &[(BOB_KID_X25519_1, BOB_KEY_X25519_1, BOB_PKEY_X25519_1)],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::Xc20P,
-        );
+        )
+        .await;
 
         _encrypt_works::<
             Chacha20Key<XC20P>,
@@ -333,14 +348,16 @@ mod tests {
             ],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::Xc20P,
-        );
+        )
+        .await;
 
         _encrypt_works::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             &[(BOB_KID_P256_1, BOB_KEY_P256_1, BOB_PKEY_P256_1)],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::Xc20P,
-        );
+        )
+        .await;
 
         _encrypt_works::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
@@ -350,7 +367,8 @@ mod tests {
             ],
             Algorithm::EcdhEsA256kw,
             EncAlgorithm::Xc20P,
-        );
+        )
+        .await;
 
         _encrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
@@ -360,10 +378,11 @@ mod tests {
             ],
             Algorithm::Other("otherAlg".to_owned()),
             EncAlgorithm::A256Gcm,
-        );
+        )
+        .await;
         /// TODO: P-384 and P-521 support after solving https://github.com/hyperledger/aries-askar/issues/10
 
-        fn _encrypt_works<CE, KDF, KE, KW>(
+        async fn _encrypt_works<CE, KDF, KE, KW>(
             alice: Option<(&str, &str, &str)>,
             bob: &[(&str, &str, &str)],
             alg: Algorithm,
@@ -371,7 +390,13 @@ mod tests {
         ) where
             CE: KeyAeadInPlace + KeyAeadMeta + KeyGen + ToSecretBytes + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + ToPublicBytes + KeyPublicBytes,
+            KE: KeyExchange
+                + KeyGen
+                + ToJwkValue
+                + FromJwkValue
+                + ToPublicBytes
+                + KeyPublicBytes
+                + Clone,
             KW: KeyWrap + FromKeyDerivation,
         {
             let alice = alice.map(|a| {
@@ -402,42 +427,45 @@ mod tests {
 
             let plaintext = "Some plaintext.";
 
-            let msg = jwe::encrypt::<CE, KDF, KE, KW>(
+            let msg = jwe::encrypt::<CE, KDF, KE, KW, _>(
                 plaintext.as_bytes(),
                 alg.clone(),
                 enc_alg.clone(),
                 alice_priv.map(|(kid, key)| {
                     (
                         kid,
-                        move |ephem_key: &KE,
-                              send_kid: Option<&str>,
-                              recip_key: &KE,
-                              alg: &[u8],
-                              apu: &[u8],
-                              apv: &[u8],
-                              cc_tag: &[u8]| {
-                            if send_kid == Some(kid) {
-                                KDF::derive_key(
-                                    ephem_key,
-                                    Some(&key),
-                                    recip_key,
-                                    alg,
-                                    apu,
-                                    apv,
-                                    cc_tag,
-                                    false,
-                                )
-                            } else {
-                                Err(err_msg(
-                                    ErrorKind::InvalidState,
-                                    "No sender key for requested kid",
-                                ))
+                        move |ephem_key: KE,
+                              send_kid: Option<String>,
+                              recip_key: KE,
+                              alg: Vec<u8>,
+                              apu: Vec<u8>,
+                              apv: Vec<u8>,
+                              cc_tag: Vec<u8>| {
+                            async move {
+                                if send_kid.map(|x| x.as_str() == kid).unwrap_or(false) {
+                                    KDF::derive_key(
+                                        &ephem_key,
+                                        Some(&key),
+                                        &recip_key,
+                                        &alg,
+                                        &apu,
+                                        &apv,
+                                        &cc_tag,
+                                        false,
+                                    )
+                                } else {
+                                    Err(err_msg(
+                                        ErrorKind::InvalidState,
+                                        "No sender key for requested kid",
+                                    ))
+                                }
                             }
                         },
                     )
                 }),
                 &bob_pub,
             )
+            .await
             .expect("Unable encrypt");
 
             let mut buf = vec![];
@@ -456,30 +484,33 @@ mod tests {
                     .expect("recipient not found.");
 
                 let plaintext_ = msg
-                    .decrypt::<CE, KDF, KE, KW>(
+                    .decrypt::<CE, KDF, KE, KW, _>(
                         alice_pub,
                         (
                             bob_edge_priv.0,
-                            |ephem_key: &KE,
-                             sender_key: Option<&KE>,
+                            |ephem_key: KE,
+                             sender_key: Option<KE>,
                              recip_kid: &str,
-                             alg: &[u8],
-                             apu: &[u8],
-                             apv: &[u8],
-                             cc_tag: &[u8]| {
-                                KDF::derive_key(
-                                    ephem_key,
-                                    sender_key,
-                                    &bob_edge_priv.1,
-                                    alg,
-                                    apu,
-                                    apv,
-                                    cc_tag,
-                                    true,
-                                )
+                             alg: Vec<u8>,
+                             apu: Vec<u8>,
+                             apv: Vec<u8>,
+                             cc_tag: Vec<u8>| {
+                                async move {
+                                    KDF::derive_key(
+                                        &ephem_key,
+                                        sender_key.as_ref(),
+                                        &bob_edge_priv.1,
+                                        &alg,
+                                        &apu,
+                                        &apv,
+                                        &cc_tag,
+                                        true,
+                                    )
+                                }
                             },
                         ),
                     )
+                    .await
                     .expect("unable decrypt.");
 
                 assert_eq!(plaintext_, plaintext.as_bytes());
@@ -487,8 +518,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn encrypt_works_no_sender() {
+    #[tokio::test]
+    async fn encrypt_works_no_sender() {
         let bob_kid = BOB_KID_X25519_1;
         let bob_pkey = X25519KeyPair::from_jwk(BOB_PKEY_X25519_1).expect("unable from_jwk");
         let plaintext = "Some plaintext.";
@@ -498,6 +529,7 @@ mod tests {
             Ecdh1PU<'_, X25519KeyPair>,
             X25519KeyPair,
             AesKey<A256Kw>,
+            _,
         >(
             plaintext.as_bytes(),
             Algorithm::Ecdh1puA256kw,
@@ -505,17 +537,18 @@ mod tests {
             None::<(
                 &str,
                 &fn(
-                    &X25519KeyPair,
-                    Option<&str>,
-                    &X25519KeyPair,
-                    &[u8],
-                    &[u8],
-                    &[u8],
-                    &[u8],
-                ) -> Result<AesKey<A256Kw>>,
+                    X25519KeyPair,
+                    Option<String>,
+                    X25519KeyPair,
+                    Vec<u8>,
+                    Vec<u8>,
+                    Vec<u8>,
+                    Vec<u8>,
+                ) -> DummyFuture<Result<AesKey<A256Kw>>>,
             )>,
             &[(bob_kid, &bob_pkey)],
-        );
+        )
+        .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::InvalidState);

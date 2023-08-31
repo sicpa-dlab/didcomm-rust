@@ -8,6 +8,7 @@ use askar_crypto::{
     kdf::ecdh_es::EcdhEs,
 };
 
+use crate::utils::DummyFuture;
 use crate::{
     algorithms::AnonCryptAlg,
     did::DIDResolver,
@@ -106,6 +107,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     EcdhEs<'_, X25519KeyPair>,
                     X25519KeyPair,
                     AesKey<A256Kw>,
+                    _,
                 >(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
@@ -113,23 +115,25 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            &X25519KeyPair,
-                            Option<&str>,
-                            &X25519KeyPair,
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                        ) -> Result<AesKey<A256Kw>>,
+                            X25519KeyPair,
+                            Option<String>,
+                            X25519KeyPair,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                        ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                     )>,
                     &to_keys,
                 )
+                .await
                 .context("Unable produce anoncrypt envelope")?,
                 AnonCryptAlg::Xc20pEcdhEsA256kw => jwe::encrypt::<
                     Chacha20Key<XC20P>,
                     EcdhEs<'_, X25519KeyPair>,
                     X25519KeyPair,
                     AesKey<A256Kw>,
+                    _,
                 >(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
@@ -137,23 +141,25 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            &X25519KeyPair,
-                            Option<&str>,
-                            &X25519KeyPair,
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                        ) -> Result<AesKey<A256Kw>>,
+                            X25519KeyPair,
+                            Option<String>,
+                            X25519KeyPair,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                        ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                     )>,
                     &to_keys,
                 )
+                .await
                 .context("Unable produce anoncrypt envelope")?,
                 AnonCryptAlg::A256gcmEcdhEsA256kw => jwe::encrypt::<
                     AesKey<A256Gcm>,
                     EcdhEs<'_, X25519KeyPair>,
                     X25519KeyPair,
                     AesKey<A256Kw>,
+                    _,
                 >(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
@@ -161,17 +167,18 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            &X25519KeyPair,
-                            Option<&str>,
-                            &X25519KeyPair,
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                        ) -> Result<AesKey<A256Kw>>,
+                            X25519KeyPair,
+                            Option<String>,
+                            X25519KeyPair,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                        ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                     )>,
                     &to_keys,
                 )
+                .await
                 .context("Unable produce anoncrypt envelope")?,
             }
         }
@@ -192,6 +199,7 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     EcdhEs<'_, P256KeyPair>,
                     P256KeyPair,
                     AesKey<A256Kw>,
+                    _,
                 >(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
@@ -199,23 +207,25 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            &P256KeyPair,
-                            Option<&str>,
-                            &P256KeyPair,
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                        ) -> Result<AesKey<A256Kw>>,
+                            P256KeyPair,
+                            Option<String>,
+                            P256KeyPair,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                        ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                     )>,
                     &to_keys,
                 )
+                .await
                 .context("Unable produce anoncrypt envelope")?,
                 AnonCryptAlg::Xc20pEcdhEsA256kw => jwe::encrypt::<
                     Chacha20Key<XC20P>,
                     EcdhEs<'_, P256KeyPair>,
                     P256KeyPair,
                     AesKey<A256Kw>,
+                    _,
                 >(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
@@ -223,23 +233,25 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            &P256KeyPair,
-                            Option<&str>,
-                            &P256KeyPair,
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                        ) -> Result<AesKey<A256Kw>>,
+                            P256KeyPair,
+                            Option<String>,
+                            P256KeyPair,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                        ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                     )>,
                     &to_keys,
                 )
+                .await
                 .context("Unable produce anoncrypt envelope")?,
                 AnonCryptAlg::A256gcmEcdhEsA256kw => jwe::encrypt::<
                     AesKey<A256Gcm>,
                     EcdhEs<'_, P256KeyPair>,
                     P256KeyPair,
                     AesKey<A256Kw>,
+                    _,
                 >(
                     msg,
                     jwe::Algorithm::EcdhEsA256kw,
@@ -247,17 +259,18 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            &P256KeyPair,
-                            Option<&str>,
-                            &P256KeyPair,
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                            &[u8],
-                        ) -> Result<AesKey<A256Kw>>,
+                            P256KeyPair,
+                            Option<String>,
+                            P256KeyPair,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                            Vec<u8>,
+                        ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                     )>,
                     &to_keys,
                 )
+                .await
                 .context("Unable produce anoncrypt envelope")?,
             }
         }

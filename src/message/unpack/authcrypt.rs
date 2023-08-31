@@ -157,11 +157,11 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     AesKey<A256Kw>,
                     _
                 >(Some((from_kid, from_key)), (to_kid, |ephem_key: X25519KeyPair,
-                                                        send_key: Option<&X25519KeyPair>,
+                                                        send_key: Option<X25519KeyPair>,
                                                         recip_kid: &str,
-                                                        alg: &[u8],
-                                                        apu: &[u8],
-                                                        apv: &[u8],
+                                                        alg: Vec<u8>,
+                                                        apu: Vec<u8>,
+                                                        apv: Vec<u8>,
                                                         cc_tag: Vec<u8>| {
                     async move {
                         let send_key = send_key.ok_or_else(|| {
@@ -169,7 +169,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                         })?;
 
                         secrets_resolver.derive_aes_key_from_x25519_using_edch1pu_receive(
-                            &ephem_key, send_key, recip_kid, alg, apu, apv, &cc_tag, true,
+                            ephem_key, send_key, recip_kid, alg, apu, apv, cc_tag, true,
                         ).await
                     }
                 })).await?
@@ -188,22 +188,20 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     AesKey<A256Kw>,
                     _
                 >(Some((from_kid, from_key)), (to_kid, |ephem_key: P256KeyPair,
-                                                        send_key: Option<&P256KeyPair>,
+                                                        send_key: Option<P256KeyPair>,
                                                         recip_kid: &str,
-                                                        alg: &[u8],
-                                                        apu: &[u8],
-                                                        apv: &[u8],
+                                                        alg: Vec<u8>,
+                                                        apu: Vec<u8>,
+                                                        apv: Vec<u8>,
                                                         cc_tag: Vec<u8>| {
                     async move {
                         let send_key = send_key.ok_or_else(|| {
                             err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
                         })?;
 
-                        Handle::current().block_on(
                             secrets_resolver.derive_aes_key_from_p256_using_edch1pu_receive(
-                                &ephem_key, send_key, recip_kid, alg, apu, apv, &cc_tag, true,
-                            ),
-                        )
+                                ephem_key, send_key, recip_kid, alg, apu, apv, cc_tag, true,
+                            ).await
                     }
                 })).await?
             }

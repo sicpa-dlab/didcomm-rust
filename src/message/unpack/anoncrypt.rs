@@ -103,11 +103,11 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         _
                     >(None, (to_kid,
                              |ephem_key: X25519KeyPair,
-                              send_key: Option<&X25519KeyPair>,
+                              send_key: Option<X25519KeyPair>,
                               recip_kid: &str,
-                              alg: &[u8],
-                              apu: &[u8],
-                              apv: &[u8],
+                              alg: Vec<u8>,
+                              apu: Vec<u8>,
+                              apv: Vec<u8>,
                               _cc_tag: Vec<u8>| {
                         secrets_resolver.derive_aes_key_from_x25519_using_edches(
                             ephem_key, recip_kid, alg, apu, apv, true,
@@ -124,11 +124,11 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         AesKey<A256Kw>,
                         _
                     >(None, (to_kid, |ephem_key: X25519KeyPair,
-                                      send_key: Option<&X25519KeyPair>,
+                                      send_key: Option<X25519KeyPair>,
                                       recip_kid: &str,
-                                      alg: &[u8],
-                                      apu: &[u8],
-                                      apv: &[u8],
+                                      alg: Vec<u8>,
+                                      apu: Vec<u8>,
+                                      apv: Vec<u8>,
                                       cc_tag: Vec<u8>| {
                         secrets_resolver.derive_aes_key_from_x25519_using_edches(
                             ephem_key, recip_kid, alg, apu, apv, true,
@@ -145,11 +145,11 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         AesKey<A256Kw>,
                         _
                     >(None, (to_kid, |ephem_key: X25519KeyPair,
-                                      send_key: Option<&X25519KeyPair>,
+                                      send_key: Option<X25519KeyPair>,
                                       recip_kid: &str,
-                                      alg: &[u8],
-                                      apu: &[u8],
-                                      apv: &[u8],
+                                      alg: Vec<u8>,
+                                      apu: Vec<u8>,
+                                      apv: Vec<u8>,
                                       cc_tag: Vec<u8>| {
                         secrets_resolver.derive_aes_key_from_x25519_using_edches(
                             ephem_key, recip_kid, alg, apu, apv, true,
@@ -166,11 +166,11 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         AesKey<A256Kw>,
                         _
                     >(None, (to_kid, |ephem_key: P256KeyPair,
-                                      send_key: Option<&P256KeyPair>,
+                                      send_key: Option<P256KeyPair>,
                                       recip_kid: &str,
-                                      alg: &[u8],
-                                      apu: &[u8],
-                                      apv: &[u8],
+                                      alg: Vec<u8>,
+                                      apu: Vec<u8>,
+                                      apv: Vec<u8>,
                                       _cc_tag: Vec<u8>| {
                         secrets_resolver.derive_aes_key_from_p256_using_edches(
                             ephem_key, recip_kid, alg, apu, apv, true,
@@ -187,11 +187,11 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         AesKey<A256Kw>,
                         _
                     >(None, (to_kid, |ephem_key: P256KeyPair,
-                                      send_key: Option<&P256KeyPair>,
+                                      send_key: Option<P256KeyPair>,
                                       recip_kid: &str,
-                                      alg: &[u8],
-                                      apu: &[u8],
-                                      apv: &[u8],
+                                      alg: Vec<u8>,
+                                      apu: Vec<u8>,
+                                      apv: Vec<u8>,
                                       _cc_tag: Vec<u8>| {
                         secrets_resolver.derive_aes_key_from_p256_using_edches(
                             ephem_key, recip_kid, alg, apu, apv, true,
@@ -208,11 +208,11 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         AesKey<A256Kw>,
                         _
                     >(None, (to_kid, |ephem_key: P256KeyPair,
-                                      send_key: Option<&P256KeyPair>,
+                                      send_key: Option<P256KeyPair>,
                                       recip_kid: &str,
-                                      alg: &[u8],
-                                      apu: &[u8],
-                                      apv: &[u8],
+                                      alg: Vec<u8>,
+                                      apu: Vec<u8>,
+                                      apv: Vec<u8>,
                                       _cc_tag: Vec<u8>| {
                         secrets_resolver.derive_aes_key_from_p256_using_edches(
                             ephem_key, recip_kid, alg, apu, apv, true,

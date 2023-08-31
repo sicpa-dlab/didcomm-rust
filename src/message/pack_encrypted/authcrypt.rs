@@ -1,3 +1,4 @@
+use crate::utils::DummyFuture;
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg},
     did::DIDResolver,
@@ -18,7 +19,6 @@ use askar_crypto::{
     },
     kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs},
 };
-use tokio::runtime::Handle;
 
 pub(crate) async fn authcrypt<'dr, 'sr>(
     to: &str,
@@ -180,32 +180,37 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     Ecdh1PU<'_, X25519KeyPair>,
                     X25519KeyPair,
                     AesKey<A256Kw>,
+                    _,
                 >(
                     msg,
                     jwe::Algorithm::Ecdh1puA256kw,
                     jwe::EncAlgorithm::A256cbcHs512,
                     Some((
                         &from_key.id,
-                        |ephem_key: &X25519KeyPair,
-                         send_kid: Option<&str>,
-                         recip_key: &X25519KeyPair,
-                         alg: &[u8],
-                         apu: &[u8],
-                         apv: &[u8],
-                         cc_tag: &[u8]| {
-                            let send_kid = send_kid.ok_or_else(|| {
-                                err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
-                            })?;
+                        |ephem_key: X25519KeyPair,
+                         send_kid: Option<String>,
+                         recip_key: X25519KeyPair,
+                         alg: Vec<u8>,
+                         apu: Vec<u8>,
+                         apv: Vec<u8>,
+                         cc_tag: Vec<u8>| {
+                            async move {
+                                let send_kid = send_kid.ok_or_else(|| {
+                                    err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
+                                })?;
 
-                            Handle::current().block_on(
-                                secrets_resolver.derive_aes_key_from_x25519_using_edch1pu(
-                                    ephem_key, send_kid, recip_key, alg, apu, apv, cc_tag, false,
-                                ),
-                            )
+                                secrets_resolver
+                                    .derive_aes_key_from_x25519_using_edch1pu(
+                                        ephem_key, send_kid, recip_key, alg, apu, apv, cc_tag,
+                                        false,
+                                    )
+                                    .await
+                            }
                         },
                     )),
                     &to_keys,
                 )
+                .await
                 .context("Unable produce authcrypt envelope")?,
             };
 
@@ -216,6 +221,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         EcdhEs<'_, X25519KeyPair>,
                         X25519KeyPair,
                         AesKey<A256Kw>,
+                        _,
                     >(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
@@ -223,23 +229,25 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                &X25519KeyPair,
-                                Option<&str>,
-                                &X25519KeyPair,
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                            ) -> Result<AesKey<A256Kw>>,
+                                X25519KeyPair,
+                                Option<String>,
+                                X25519KeyPair,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                            ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                         )>,
                         &to_keys,
                     )
+                    .await
                     .context("Unable produce authcrypt envelope")?,
                     AnonCryptAlg::Xc20pEcdhEsA256kw => jwe::encrypt::<
                         Chacha20Key<XC20P>,
                         EcdhEs<'_, X25519KeyPair>,
                         X25519KeyPair,
                         AesKey<A256Kw>,
+                        _,
                     >(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
@@ -247,23 +255,25 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                &X25519KeyPair,
-                                Option<&str>,
-                                &X25519KeyPair,
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                            ) -> Result<AesKey<A256Kw>>,
+                                X25519KeyPair,
+                                Option<String>,
+                                X25519KeyPair,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                            ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                         )>,
                         &to_keys,
                     )
+                    .await
                     .context("Unable produce authcrypt envelope")?,
                     AnonCryptAlg::A256gcmEcdhEsA256kw => jwe::encrypt::<
                         AesKey<A256Gcm>,
                         EcdhEs<'_, X25519KeyPair>,
                         X25519KeyPair,
                         AesKey<A256Kw>,
+                        _,
                     >(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
@@ -271,17 +281,18 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                &X25519KeyPair,
-                                Option<&str>,
-                                &X25519KeyPair,
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                            ) -> Result<AesKey<A256Kw>>,
+                                X25519KeyPair,
+                                Option<String>,
+                                X25519KeyPair,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                            ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                         )>,
                         &to_keys,
                     )
+                    .await
                     .context("Unable produce authcrypt envelope")?,
                 }
             } else {
@@ -305,32 +316,37 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     Ecdh1PU<'_, P256KeyPair>,
                     P256KeyPair,
                     AesKey<A256Kw>,
+                    _,
                 >(
                     msg,
                     jwe::Algorithm::Ecdh1puA256kw,
                     jwe::EncAlgorithm::A256cbcHs512,
                     Some((
                         &from_key.id,
-                        &move |ephem_key: &P256KeyPair,
-                               send_kid: Option<&str>,
-                               recip_key: &P256KeyPair,
-                               alg: &[u8],
-                               apu: &[u8],
-                               apv: &[u8],
-                               cc_tag: &[u8]| {
-                            let send_kid = send_kid.ok_or_else(|| {
-                                err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
-                            })?;
+                        &move |ephem_key: P256KeyPair,
+                               send_kid: Option<String>,
+                               recip_key: P256KeyPair,
+                               alg: Vec<u8>,
+                               apu: Vec<u8>,
+                               apv: Vec<u8>,
+                               cc_tag: Vec<u8>| {
+                            async move {
+                                let send_kid = send_kid.ok_or_else(|| {
+                                    err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
+                                })?;
 
-                            Handle::current().block_on(
-                                secrets_resolver.derive_aes_key_from_p256_using_edch1pu(
-                                    ephem_key, send_kid, recip_key, alg, apu, apv, cc_tag, false,
-                                ),
-                            )
+                                secrets_resolver
+                                    .derive_aes_key_from_p256_using_edch1pu(
+                                        ephem_key, send_kid, recip_key, alg, apu, apv, cc_tag,
+                                        false,
+                                    )
+                                    .await
+                            }
                         },
                     )),
                     &to_keys,
                 )
+                .await
                 .context("Unable produce authcrypt envelope")?,
             };
 
@@ -341,6 +357,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         EcdhEs<'_, P256KeyPair>,
                         P256KeyPair,
                         AesKey<A256Kw>,
+                        _,
                     >(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
@@ -348,23 +365,25 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                &P256KeyPair,
-                                Option<&str>,
-                                &P256KeyPair,
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                            ) -> Result<AesKey<A256Kw>>,
+                                P256KeyPair,
+                                Option<String>,
+                                P256KeyPair,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                            ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                         )>,
                         &to_keys,
                     )
+                    .await
                     .context("Unable produce authcrypt envelope")?,
                     AnonCryptAlg::Xc20pEcdhEsA256kw => jwe::encrypt::<
                         Chacha20Key<XC20P>,
                         EcdhEs<'_, P256KeyPair>,
                         P256KeyPair,
                         AesKey<A256Kw>,
+                        _,
                     >(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
@@ -372,23 +391,25 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                &P256KeyPair,
-                                Option<&str>,
-                                &P256KeyPair,
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                            ) -> Result<AesKey<A256Kw>>,
+                                P256KeyPair,
+                                Option<String>,
+                                P256KeyPair,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                            ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                         )>,
                         &to_keys,
                     )
+                    .await
                     .context("Unable produce authcrypt envelope")?,
                     AnonCryptAlg::A256gcmEcdhEsA256kw => jwe::encrypt::<
                         AesKey<A256Gcm>,
                         EcdhEs<'_, P256KeyPair>,
                         P256KeyPair,
                         AesKey<A256Kw>,
+                        _,
                     >(
                         msg.as_bytes(),
                         jwe::Algorithm::EcdhEsA256kw,
@@ -396,17 +417,18 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                &P256KeyPair,
-                                Option<&str>,
-                                &P256KeyPair,
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                                &[u8],
-                            ) -> Result<AesKey<A256Kw>>,
+                                P256KeyPair,
+                                Option<String>,
+                                P256KeyPair,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                                Vec<u8>,
+                            ) -> DummyFuture<Result<AesKey<A256Kw>>>,
                         )>,
                         &to_keys,
                     )
+                    .await
                     .context("Unable produce authcrypt envelope")?,
                 }
             } else {

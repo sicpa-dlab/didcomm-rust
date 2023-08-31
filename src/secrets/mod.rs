@@ -41,37 +41,37 @@ pub trait SecretsResolver: Sync {
 
     async fn derive_aes_key_from_x25519_using_edch1pu(
         &self,
-        ephem_key: &X25519KeyPair,
-        send_kid: &str,
-        recip_key: &X25519KeyPair,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
-        cc_tag: &[u8],
+        ephem_key: X25519KeyPair,
+        send_kid: String,
+        recip_key: X25519KeyPair,
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
+        cc_tag: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
     async fn derive_aes_key_from_p256_using_edch1pu(
         &self,
-        ephem_key: &P256KeyPair,
-        send_kid: &str,
-        recip_key: &P256KeyPair,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
-        cc_tag: &[u8],
+        ephem_key: P256KeyPair,
+        send_kid: String,
+        recip_key: P256KeyPair,
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
+        cc_tag: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
     async fn derive_aes_key_from_x25519_using_edch1pu_receive(
         &self,
-        ephem_key: &X25519KeyPair,
-        send_key: &X25519KeyPair,
+        ephem_key: X25519KeyPair,
+        send_key: X25519KeyPair,
         recip_kid: &str,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
-        cc_tag: &[u8],
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
+        cc_tag: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
@@ -80,10 +80,10 @@ pub trait SecretsResolver: Sync {
         ephem_key: &P256KeyPair,
         send_key: &P256KeyPair,
         recip_kid: &str,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
-        cc_tag: &[u8],
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
+        cc_tag: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
@@ -91,9 +91,9 @@ pub trait SecretsResolver: Sync {
         &self,
         ephem_key: X25519KeyPair,
         recip_kid: &str,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
@@ -101,9 +101,9 @@ pub trait SecretsResolver: Sync {
         &self,
         ephem_key: P256KeyPair,
         recip_kid: &str,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 }
@@ -138,49 +138,49 @@ pub trait SecretsResolver {
 
     async fn derive_aes_key_from_x25519_using_edch1pu(
         &self,
-        ephem_key: &X25519KeyPair,
-        send_kid: &str,
-        recip_key: &X25519KeyPair,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
-        cc_tag: &[u8],
+        ephem_key: X25519KeyPair,
+        send_kid: String,
+        recip_key: X25519KeyPair,
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
+        cc_tag: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
     async fn derive_aes_key_from_p256_using_edch1pu(
         &self,
-        ephem_key: &P256KeyPair,
-        send_kid: &str,
-        recip_key: &P256KeyPair,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
-        cc_tag: &[u8],
+        ephem_key: P256KeyPair,
+        send_kid: String,
+        recip_key: P256KeyPair,
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
+        cc_tag: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
     async fn derive_aes_key_from_x25519_using_edch1pu_receive(
         &self,
-        ephem_key: &X25519KeyPair,
-        send_key: &X25519KeyPair,
+        ephem_key: X25519KeyPair,
+        send_key: X25519KeyPair,
         recip_kid: &str,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
-        cc_tag: &[u8],
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
+        cc_tag: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
     async fn derive_aes_key_from_p256_using_edch1pu_receive(
         &self,
-        ephem_key: &P256KeyPair,
-        send_key: &P256KeyPair,
+        ephem_key: P256KeyPair,
+        send_key: P256KeyPair,
         recip_kid: &str,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
-        cc_tag: &[u8],
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
+        cc_tag: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
@@ -188,9 +188,9 @@ pub trait SecretsResolver {
         &self,
         ephem_key: X25519KeyPair,
         recip_kid: &str,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
@@ -198,9 +198,9 @@ pub trait SecretsResolver {
         &self,
         ephem_key: P256KeyPair,
         recip_kid: &str,
-        alg: &[u8],
-        apu: &[u8],
-        apv: &[u8],
+        alg: Vec<u8>,
+        apu: Vec<u8>,
+        apv: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 }

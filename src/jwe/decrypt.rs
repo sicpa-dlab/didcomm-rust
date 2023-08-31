@@ -19,14 +19,14 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
         sender: Option<(&str, &'a KE)>,
         recipient: (
             &'a str,
-            impl Fn(KE, Option<&'a KE>, &'a str, &'a [u8], &'a [u8], &'a [u8], Vec<u8>) -> FUT,
+            impl FnOnce(KE, Option<KE>, &'a str, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) -> FUT,
         ),
     ) -> Result<Vec<u8>>
     where
         'b: 'a,
         CE: KeyAeadInPlace + KeySecretBytes,
         KDF: JoseKDF<KE, KW>,
-        KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+        KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
         KW: KeyWrap + FromKeyDerivation,
         FUT: Future<Output = Result<KW>>,
     {
@@ -61,11 +61,11 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
 
         let kw = derive_func(
             epk,
-            skey,
+            skey.cloned(),
             kid,
-            self.protected.alg.as_str().as_bytes(),
-            self.apu.as_deref().unwrap_or(&[]),
-            &self.apv,
+            self.protected.alg.as_str().as_bytes().to_vec(),
+            self.apu.as_deref().unwrap_or(&[]).to_vec(),
+            self.apv.to_vec(),
             tag.clone(),
         )
         .await
@@ -117,8 +117,8 @@ mod tests {
         utils::crypto::{JoseKDF, KeyWrap},
     };
 
-    #[test]
-    fn decrypt_works() {
+    #[tokio::test]
+    async fn decrypt_works() {
         // from RFC: https://tools.ietf.org/html/draft-madden-jose-ecdh-1pu-04#appendix-B
         _decrypt_works::<
             AesKey<A256CbcHs512>,
@@ -130,7 +130,8 @@ mod tests {
             (BOB_KID_ECDH_1PU_APP_B, BOB_KEY_ECDH_1PU_APP_B),
             MSG_ECDH_1PU_APP_B,
             PAYLOAD_ECDH_1PU_APP_B,
-        );
+        )
+        .await;
 
         // from RFC: https://tools.ietf.org/html/draft-madden-jose-ecdh-1pu-04#appendix-B
         _decrypt_works::<
@@ -143,7 +144,8 @@ mod tests {
             (CHARLIE_KID_ECDH_1PU_APP_B, CHARLIE_KEY_ECDH_1PU_APP_B),
             MSG_ECDH_1PU_APP_B,
             PAYLOAD_ECDH_1PU_APP_B,
-        );
+        )
+        .await;
 
         _decrypt_works::<
             Chacha20Key<XC20P>,
@@ -155,7 +157,8 @@ mod tests {
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_XC20P,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<
             Chacha20Key<XC20P>,
@@ -167,7 +170,8 @@ mod tests {
             (BOB_KID_X25519_2, BOB_KEY_X25519_2),
             MSG_ANONCRYPT_X25519_XC20P,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<
             Chacha20Key<XC20P>,
@@ -179,7 +183,8 @@ mod tests {
             (BOB_KID_X25519_3, BOB_KEY_X25519_3),
             MSG_ANONCRYPT_X25519_XC20P,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<
             AesKey<A256CbcHs512>,
@@ -191,7 +196,8 @@ mod tests {
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_A256CBC,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<
             AesKey<A256CbcHs512>,
@@ -203,63 +209,68 @@ mod tests {
             (BOB_KID_X25519_2, BOB_KEY_X25519_2),
             MSG_ANONCRYPT_X25519_A256CBC,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_A256GSM,
             PAYLOAD,
-        );
+        ).await;
 
         _decrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, X25519KeyPair>, X25519KeyPair, AesKey<A256Kw>>(
             None,
             (BOB_KID_X25519_2, BOB_KEY_X25519_2),
             MSG_ANONCRYPT_X25519_A256GSM,
             PAYLOAD,
-        );
+        ).await;
 
         _decrypt_works::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_ANONCRYPT_P256_XC20P,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             (BOB_KID_P256_2, BOB_KEY_P256_2),
             MSG_ANONCRYPT_P256_XC20P,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<AesKey<A256CbcHs512>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_ANONCRYPT_P256_A256CBC,
             PAYLOAD,
-        );
+        ).await;
 
         _decrypt_works::<AesKey<A256CbcHs512>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             (BOB_KID_P256_2, BOB_KEY_P256_2),
             MSG_ANONCRYPT_P256_A256CBC,
             PAYLOAD,
-        );
+        ).await;
 
         _decrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_ANONCRYPT_P256_A256GSM,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<AesKey<A256Gcm>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             None,
             (BOB_KID_P256_2, BOB_KEY_P256_2),
             MSG_ANONCRYPT_P256_A256GSM,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<
             AesKey<A256CbcHs512>,
@@ -271,7 +282,8 @@ mod tests {
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_AUTHCRYPT_X25519_A256CBC,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<
             AesKey<A256CbcHs512>,
@@ -283,25 +295,26 @@ mod tests {
             (BOB_KID_X25519_2, BOB_KEY_X25519_2),
             MSG_AUTHCRYPT_X25519_A256CBC,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _decrypt_works::<AesKey<A256CbcHs512>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             Some((ALICE_KID_P256_1, ALICE_PKEY_P256_1)),
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_AUTHCRYPT_P256_A256CBC,
             PAYLOAD,
-        );
+        ).await;
 
         _decrypt_works::<AesKey<A256CbcHs512>, Ecdh1PU<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
             Some((ALICE_KID_P256_1, ALICE_PKEY_P256_1)),
             (BOB_KID_P256_2, BOB_KEY_P256_2),
             MSG_AUTHCRYPT_P256_A256CBC,
             PAYLOAD,
-        );
+        ).await;
 
         /// TODO: P-384 and P-521 support after solving https://github.com/hyperledger/aries-askar/issues/10
 
-        fn _decrypt_works<CE, KDF, KE, KW>(
+        async fn _decrypt_works<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
             recipient: (&str, &str),
             msg: &str,
@@ -309,17 +322,17 @@ mod tests {
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
         {
-            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg);
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg).await;
             let res = res.expect("res is err");
             assert_eq!(res, payload.as_bytes());
         }
     }
 
-    #[test]
-    fn decrypt_works_authcrypt_different_skid() {
+    #[tokio::test]
+    async fn decrypt_works_authcrypt_different_skid() {
         let res = _decrypt::<
             AesKey<A256CbcHs512>,
             Ecdh1PU<'_, P256KeyPair>,
@@ -329,15 +342,16 @@ mod tests {
             Some((ALICE_KID_X25519_1, ALICE_PKEY_P256_1)),
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_AUTHCRYPT_P256_A256CBC,
-        );
+        )
+        .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::InvalidState);
         assert_eq!(format!("{}", err), "Invalid state: Wrong skid used");
     }
 
-    #[test]
-    fn decrypt_works_authcrypt_no_skid() {
+    #[tokio::test]
+    async fn decrypt_works_authcrypt_no_skid() {
         let res = _decrypt::<
             AesKey<A256CbcHs512>,
             Ecdh1PU<'_, P256KeyPair>,
@@ -347,29 +361,31 @@ mod tests {
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_AUTHCRYPT_P256_A256CBC,
-        );
+        )
+        .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::InvalidState);
         assert_eq!(format!("{}", err), "Invalid state: Wrong skid used");
     }
 
-    #[test]
-    fn decrypt_works_anoncrypt_skid_present() {
+    #[tokio::test]
+    async fn decrypt_works_anoncrypt_skid_present() {
         let res =
             _decrypt::<AesKey<A256CbcHs512>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
                 Some((ALICE_KID_P256_1, ALICE_PKEY_P256_1)),
                 (BOB_KID_P256_1, BOB_KEY_P256_1),
                 MSG_ANONCRYPT_P256_A256CBC,
-            );
+            )
+            .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::InvalidState);
         assert_eq!(format!("{}", err), "Invalid state: Wrong skid used");
     }
 
-    #[test]
-    fn decrypt_works_recipient_not_found() {
+    #[tokio::test]
+    async fn decrypt_works_recipient_not_found() {
         let res = _decrypt::<
             AesKey<A256CbcHs512>,
             Ecdh1PU<'_, P256KeyPair>,
@@ -379,15 +395,16 @@ mod tests {
             Some((ALICE_KID_P256_1, ALICE_PKEY_P256_1)),
             (BOB_KID_X25519_1, BOB_KEY_P256_1),
             MSG_AUTHCRYPT_P256_A256CBC,
-        );
+        )
+        .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::InvalidState);
         assert_eq!(format!("{}", err), "Invalid state: Recipient not found");
     }
 
-    #[test]
-    fn decrypt_works_undecodable_encrypted_key() {
+    #[tokio::test]
+    async fn decrypt_works_undecodable_encrypted_key() {
         let res = _decrypt::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
@@ -397,7 +414,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_XC20P_UNDECODABLE_EC,
-        );
+        )
+        .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -407,8 +425,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn decrypt_works_undecodable_tag() {
+    #[tokio::test]
+    async fn decrypt_works_undecodable_tag() {
         let res = _decrypt::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
@@ -418,7 +436,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_XC20P_UNDECODABLE_TAG,
-        );
+        )
+        .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -429,8 +448,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn decrypt_works_undecodable_iv() {
+    #[tokio::test]
+    async fn decrypt_works_undecodable_iv() {
         let res = _decrypt::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
@@ -440,7 +459,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_XC20P_UNDECODABLE_IV,
-        );
+        )
+        .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -451,8 +471,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn decrypt_works_undecodable_ciphertext() {
+    #[tokio::test]
+    async fn decrypt_works_undecodable_ciphertext() {
         let res = _decrypt::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
@@ -462,7 +482,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_XC20P_UNDECODABLE_CIPHERTEXT,
-        );
+        )
+        .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -473,12 +494,12 @@ mod tests {
         );
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore = "https://github.com/hyperledger/aries-askar/issues/28"]
     // There is no  key type or curve checking for FromJwk implementations in askar crypto
     // Most probably it can't open invalid curve attack vectors as invalid points should be
     // found by rust crypto, but still looks dangerous.
-    fn decrypt_works_epk_different_curve() {
+    async fn decrypt_works_epk_different_curve() {
         let res = _decrypt::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
@@ -488,7 +509,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_XC20P_EPK_DIFFERENT_CURVE,
-        );
+        )
+        .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -498,14 +520,15 @@ mod tests {
         );
     }
 
-    #[test]
-    fn decrypt_works_epk_wrong_point() {
+    #[tokio::test]
+    async fn decrypt_works_epk_wrong_point() {
         let res =
             _decrypt::<Chacha20Key<XC20P>, EcdhEs<'_, P256KeyPair>, P256KeyPair, AesKey<A256Kw>>(
                 None,
                 (BOB_KID_P256_1, BOB_KEY_P256_1),
                 MSG_ANONCRYPT_P256_XC20P_EPK_WRONG_POINT,
-            );
+            )
+            .await;
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -516,8 +539,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn decrypt_works_different_recipient_key() {
+    #[tokio::test]
+    async fn decrypt_works_different_recipient_key() {
         _decrypt_works_different_recipient_key::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
@@ -527,7 +550,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_2),
             MSG_ANONCRYPT_X25519_XC20P,
-        );
+        )
+        .await;
 
         _decrypt_works_different_recipient_key::<
             AesKey<A256CbcHs512>,
@@ -538,7 +562,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_2),
             MSG_ANONCRYPT_X25519_A256CBC,
-        );
+        )
+        .await;
 
         _decrypt_works_different_recipient_key::<
             AesKey<A256Gcm>,
@@ -549,7 +574,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_2),
             MSG_ANONCRYPT_X25519_A256GSM,
-        );
+        )
+        .await;
 
         _decrypt_works_different_recipient_key::<
             Chacha20Key<XC20P>,
@@ -560,7 +586,8 @@ mod tests {
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_2),
             MSG_ANONCRYPT_P256_XC20P,
-        );
+        )
+        .await;
 
         _decrypt_works_different_recipient_key::<
             AesKey<A256CbcHs512>,
@@ -571,7 +598,8 @@ mod tests {
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_2),
             MSG_ANONCRYPT_P256_A256CBC,
-        );
+        )
+        .await;
 
         _decrypt_works_different_recipient_key::<
             AesKey<A256Gcm>,
@@ -582,7 +610,8 @@ mod tests {
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_2),
             MSG_ANONCRYPT_P256_A256GSM,
-        );
+        )
+        .await;
 
         _decrypt_works_different_recipient_key::<
             AesKey<A256CbcHs512>,
@@ -593,7 +622,8 @@ mod tests {
             Some((ALICE_KID_X25519_1, ALICE_PKEY_X25519_1)),
             (BOB_KID_X25519_1, BOB_KEY_X25519_2),
             MSG_AUTHCRYPT_X25519_A256CBC,
-        );
+        )
+        .await;
 
         _decrypt_works_different_recipient_key::<
             AesKey<A256CbcHs512>,
@@ -604,19 +634,20 @@ mod tests {
             Some((ALICE_KID_P256_1, ALICE_PKEY_P256_1)),
             (BOB_KID_P256_1, BOB_KEY_P256_2),
             MSG_AUTHCRYPT_P256_A256CBC,
-        );
+        )
+        .await;
 
-        fn _decrypt_works_different_recipient_key<CE, KDF, KE, KW>(
+        async fn _decrypt_works_different_recipient_key<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
             recipient: (&str, &str),
             msg: &str,
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
         {
-            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg);
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg).await;
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -628,8 +659,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn decrypt_works_changed_enc_key() {
+    #[tokio::test]
+    async fn decrypt_works_changed_enc_key() {
         _decrypt_works_changed_enc_key::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
@@ -639,7 +670,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_XC20P_CHANGED_ENC_KEY,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_enc_key::<
             AesKey<A256CbcHs512>,
@@ -650,7 +682,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_A256CBC_CHANGED_ENC_KEY,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_enc_key::<
             AesKey<A256Gcm>,
@@ -661,7 +694,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_A256GSM_CHANGED_ENC_KEY,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_enc_key::<
             Chacha20Key<XC20P>,
@@ -672,7 +706,8 @@ mod tests {
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_ANONCRYPT_P256_XC20P_CHANGED_ENC_KEY,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_enc_key::<
             AesKey<A256CbcHs512>,
@@ -683,7 +718,8 @@ mod tests {
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_ANONCRYPT_P256_A256CBC_CHANGED_ENC_KEY,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_enc_key::<
             AesKey<A256Gcm>,
@@ -694,7 +730,8 @@ mod tests {
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_ANONCRYPT_P256_A256GSM_CHANGED_ENC_KEY,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_enc_key::<
             AesKey<A256CbcHs512>,
@@ -705,7 +742,8 @@ mod tests {
             Some((ALICE_KID_X25519_1, ALICE_PKEY_X25519_1)),
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_AUTHCRYPT_X25519_A256CBC_CHANGED_ENC_KEY,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_enc_key::<
             AesKey<A256CbcHs512>,
@@ -716,19 +754,20 @@ mod tests {
             Some((ALICE_KID_P256_1, ALICE_PKEY_P256_1)),
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_AUTHCRYPT_P256_A256CBC_CHANGED_ENC_KEY,
-        );
+        )
+        .await;
 
-        fn _decrypt_works_changed_enc_key<CE, KDF, KE, KW>(
+        async fn _decrypt_works_changed_enc_key<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
             recipient: (&str, &str),
             msg: &str,
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
         {
-            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg);
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg).await;
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -740,8 +779,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn decrypt_works_changed_second_enc_key() {
+    #[tokio::test]
+    async fn decrypt_works_changed_second_enc_key() {
         decrypt_works_changed_second_enc_key::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
@@ -752,7 +791,8 @@ mod tests {
             (BOB_KID_X25519_2, BOB_KEY_X25519_2),
             MSG_ANONCRYPT_X25519_XC20P_CHANGED_ENC_KEY,
             PAYLOAD,
-        );
+        )
+        .await;
 
         decrypt_works_changed_second_enc_key::<
             AesKey<A256CbcHs512>,
@@ -764,7 +804,8 @@ mod tests {
             (BOB_KID_X25519_2, BOB_KEY_X25519_2),
             MSG_ANONCRYPT_X25519_A256CBC_CHANGED_ENC_KEY,
             PAYLOAD,
-        );
+        )
+        .await;
 
         decrypt_works_changed_second_enc_key::<
             AesKey<A256Gcm>,
@@ -776,7 +817,8 @@ mod tests {
             (BOB_KID_X25519_2, BOB_KEY_X25519_2),
             MSG_ANONCRYPT_X25519_A256GSM_CHANGED_ENC_KEY,
             PAYLOAD,
-        );
+        )
+        .await;
 
         decrypt_works_changed_second_enc_key::<
             Chacha20Key<XC20P>,
@@ -788,7 +830,8 @@ mod tests {
             (BOB_KID_P256_2, BOB_KEY_P256_2),
             MSG_ANONCRYPT_P256_XC20P_CHANGED_ENC_KEY,
             PAYLOAD,
-        );
+        )
+        .await;
 
         decrypt_works_changed_second_enc_key::<
             AesKey<A256CbcHs512>,
@@ -800,7 +843,8 @@ mod tests {
             (BOB_KID_P256_2, BOB_KEY_P256_2),
             MSG_ANONCRYPT_P256_A256CBC_CHANGED_ENC_KEY,
             PAYLOAD,
-        );
+        )
+        .await;
 
         decrypt_works_changed_second_enc_key::<
             AesKey<A256Gcm>,
@@ -812,7 +856,8 @@ mod tests {
             (BOB_KID_P256_2, BOB_KEY_P256_2),
             MSG_ANONCRYPT_P256_A256GSM_CHANGED_ENC_KEY,
             PAYLOAD,
-        );
+        )
+        .await;
 
         decrypt_works_changed_second_enc_key::<
             AesKey<A256CbcHs512>,
@@ -824,7 +869,8 @@ mod tests {
             (BOB_KID_X25519_2, BOB_KEY_X25519_2),
             MSG_AUTHCRYPT_X25519_A256CBC_CHANGED_ENC_KEY,
             PAYLOAD,
-        );
+        )
+        .await;
 
         decrypt_works_changed_second_enc_key::<
             AesKey<A256CbcHs512>,
@@ -836,9 +882,10 @@ mod tests {
             (BOB_KID_P256_2, BOB_KEY_P256_2),
             MSG_AUTHCRYPT_P256_A256CBC_CHANGED_ENC_KEY,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        fn decrypt_works_changed_second_enc_key<CE, KDF, KE, KW>(
+        async fn decrypt_works_changed_second_enc_key<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
             recipient: (&str, &str),
             msg: &str,
@@ -846,17 +893,17 @@ mod tests {
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
         {
-            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg);
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg).await;
             let res = res.expect("res is err");
             assert_eq!(&res, payload.as_bytes());
         }
     }
 
-    #[test]
-    fn decrypt_works_changed_ciphertext() {
+    #[tokio::test]
+    async fn decrypt_works_changed_ciphertext() {
         _decrypt_works_changed_ciphertext::<
             Chacha20Key<XC20P>,
             EcdhEs<'_, X25519KeyPair>,
@@ -866,7 +913,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_XC20P_CHANGED_CIPHERTEXT,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_ciphertext::<
             AesKey<A256CbcHs512>,
@@ -877,7 +925,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_A256CBC_CHANGED_CIPHERTEXT,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_ciphertext::<
             AesKey<A256Gcm>,
@@ -888,7 +937,8 @@ mod tests {
             None,
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_ANONCRYPT_X25519_A256GSM_CHANGED_CIPHERTEXT,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_ciphertext::<
             Chacha20Key<XC20P>,
@@ -899,7 +949,8 @@ mod tests {
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_ANONCRYPT_P256_XC20P_CHANGED_CIPHERTEXT,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_ciphertext::<
             AesKey<A256CbcHs512>,
@@ -910,7 +961,8 @@ mod tests {
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_ANONCRYPT_P256_A256CBC_CHANGED_CIPHERTEXT,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_ciphertext::<
             AesKey<A256Gcm>,
@@ -921,7 +973,8 @@ mod tests {
             None,
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_ANONCRYPT_P256_A256GSM_CHANGED_CIPHERTEXT,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_ciphertext::<
             AesKey<A256CbcHs512>,
@@ -932,7 +985,8 @@ mod tests {
             Some((ALICE_KID_X25519_1, ALICE_PKEY_X25519_1)),
             (BOB_KID_X25519_1, BOB_KEY_X25519_1),
             MSG_AUTHCRYPT_X25519_A256CBC_CHANGED_CIPHERTEXT,
-        );
+        )
+        .await;
 
         _decrypt_works_changed_ciphertext::<
             AesKey<A256CbcHs512>,
@@ -943,19 +997,20 @@ mod tests {
             Some((ALICE_KID_P256_1, ALICE_PKEY_P256_1)),
             (BOB_KID_P256_1, BOB_KEY_P256_1),
             MSG_AUTHCRYPT_P256_A256CBC_CHANGED_CIPHERTEXT,
-        );
+        )
+        .await;
 
-        fn _decrypt_works_changed_ciphertext<CE, KDF, KE, KW>(
+        async fn _decrypt_works_changed_ciphertext<CE, KDF, KE, KW>(
             sender: Option<(&str, &str)>,
             recipient: (&str, &str),
             msg: &str,
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
         {
-            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg);
+            let res = _decrypt::<CE, KDF, KE, KW>(sender, recipient, msg).await;
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::Malformed);
@@ -967,7 +1022,7 @@ mod tests {
         }
     }
 
-    fn _decrypt<CE, KDF, KE, KW>(
+    async fn _decrypt<CE, KDF, KE, KW>(
         sender: Option<(&str, &str)>,
         recipient: (&str, &str),
         msg: &str,
@@ -975,29 +1030,31 @@ mod tests {
     where
         CE: KeyAeadInPlace + KeySecretBytes,
         KDF: JoseKDF<KE, KW>,
-        KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+        KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
         KW: KeyWrap + FromKeyDerivation,
     {
         let _sender = sender.map(|(kid, k)| (kid, KE::from_jwk(k).expect("Unable from_jwk")));
         let sender = _sender.as_ref().map(|(kid, k)| (*kid, k));
 
-        let derive_func = |ephem_key: &KE,
-                           sender_key: Option<&KE>,
+        let derive_func = |ephem_key: KE,
+                           sender_key: Option<KE>,
                            recip_kid: &str,
-                           alg: &[u8],
-                           apu: &[u8],
-                           apv: &[u8],
-                           cc_tag: &[u8]| {
-            KDF::derive_key(
-                ephem_key,
-                sender_key,
-                &KE::from_jwk(recipient.1).expect("Unable from_jwk"),
-                alg,
-                apu,
-                apv,
-                cc_tag,
-                true,
-            )
+                           alg: Vec<u8>,
+                           apu: Vec<u8>,
+                           apv: Vec<u8>,
+                           cc_tag: Vec<u8>| {
+            async move {
+                KDF::derive_key(
+                    &ephem_key,
+                    sender_key.as_ref(),
+                    &KE::from_jwk(recipient.1).expect("Unable from_jwk"),
+                    &alg,
+                    &apu,
+                    &apv,
+                    &cc_tag,
+                    true,
+                )
+            }
         };
 
         let recipient = (recipient.0, derive_func);
@@ -1005,7 +1062,7 @@ mod tests {
         let mut buf = vec![];
         let msg = jwe::parse(&msg, &mut buf).expect("Unable parse");
 
-        msg.decrypt::<CE, KDF, KE, KW>(sender, recipient)
+        msg.decrypt::<CE, KDF, KE, KW, _>(sender, recipient).await
     }
 
     const PAYLOAD: &str = r#"{"id":"1234567890","typ":"application/didcomm-plain+json","type":"http://example.com/protocols/lets_do_lunch/1.0/proposal","from":"did:example:alice","to":["did:example:bob"],"created_time":1516269022,"expires_time":1516385931,"body":{"messagespecificattribute":"and its value"}}"#;

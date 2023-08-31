@@ -1,10 +1,9 @@
 mod anoncrypt;
 mod authcrypt;
 
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg},
@@ -450,7 +449,7 @@ mod tests {
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
         {
             let did_resolver =
@@ -483,7 +482,7 @@ mod tests {
                 }
             );
 
-            let msg = _verify_authcrypt::<CE, KDF, KE, KW>(&msg, to_keys, from_key);
+            let msg = _verify_authcrypt::<CE, KDF, KE, KW>(&msg, to_keys, from_key).await;
             _verify_plaintext(&msg, PLAINTEXT_MSG_SIMPLE);
         }
     }
@@ -764,11 +763,11 @@ mod tests {
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
             ACE: KeyAeadInPlace + KeySecretBytes,
             AKDF: JoseKDF<AKE, AKW>,
-            AKE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            AKE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             AKW: KeyWrap + FromKeyDerivation,
         {
             let did_resolver =
@@ -804,8 +803,9 @@ mod tests {
             );
 
             let msg =
-                _verify_anoncrypt::<ACE, AKDF, AKE, AKW>(&msg, to_keys.clone(), enc_alg_anon_jwe);
-            let msg = _verify_authcrypt::<CE, KDF, KE, KW>(&msg, to_keys, from_key);
+                _verify_anoncrypt::<ACE, AKDF, AKE, AKW>(&msg, to_keys.clone(), enc_alg_anon_jwe)
+                    .await;
+            let msg = _verify_authcrypt::<CE, KDF, KE, KW>(&msg, to_keys, from_key).await;
             _verify_plaintext(&msg, PLAINTEXT_MSG_SIMPLE);
         }
     }
@@ -914,11 +914,11 @@ mod tests {
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
             ACE: KeyAeadInPlace + KeySecretBytes,
             AKDF: JoseKDF<AKE, AKW>,
-            AKE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            AKE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             AKW: KeyWrap + FromKeyDerivation,
             SK: KeySigVerify + FromJwkValue,
         {
@@ -955,8 +955,9 @@ mod tests {
             );
 
             let msg =
-                _verify_anoncrypt::<ACE, AKDF, AKE, AKW>(&msg, to_keys.clone(), enc_alg_anon_jwe);
-            let msg = _verify_authcrypt::<CE, KDF, KE, KW>(&msg, to_keys, from_key);
+                _verify_anoncrypt::<ACE, AKDF, AKE, AKW>(&msg, to_keys.clone(), enc_alg_anon_jwe)
+                    .await;
+            let msg = _verify_authcrypt::<CE, KDF, KE, KW>(&msg, to_keys, from_key).await;
             let msg = _verify_signed::<SK>(&msg, sign_by_key, sign_alg);
             _verify_plaintext(&msg, PLAINTEXT_MSG_SIMPLE);
         }
@@ -1050,7 +1051,7 @@ mod tests {
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
             SK: KeySigVerify + FromJwkValue,
         {
@@ -1084,7 +1085,7 @@ mod tests {
                 }
             );
 
-            let msg = _verify_authcrypt::<CE, KDF, KE, KW>(&msg, to_keys, from_key);
+            let msg = _verify_authcrypt::<CE, KDF, KE, KW>(&msg, to_keys, from_key).await;
             let msg = _verify_signed::<SK>(&msg, sign_by_key, sign_alg);
             _verify_plaintext(&msg, PLAINTEXT_MSG_SIMPLE);
         }
@@ -1307,7 +1308,7 @@ mod tests {
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
         {
             let did_resolver =
@@ -1341,7 +1342,7 @@ mod tests {
                 }
             );
 
-            let msg = _verify_anoncrypt::<CE, KDF, KE, KW>(&msg, to_keys, enc_alg_jwe);
+            let msg = _verify_anoncrypt::<CE, KDF, KE, KW>(&msg, to_keys, enc_alg_jwe).await;
             _verify_plaintext(&msg, PLAINTEXT_MSG_SIMPLE);
         }
     }
@@ -1473,7 +1474,7 @@ mod tests {
         ) where
             CE: KeyAeadInPlace + KeySecretBytes,
             KDF: JoseKDF<KE, KW>,
-            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+            KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
             KW: KeyWrap + FromKeyDerivation,
             SK: KeySigVerify + FromJwkValue,
         {
@@ -1508,7 +1509,7 @@ mod tests {
                 }
             );
 
-            let msg = _verify_anoncrypt::<CE, KDF, KE, KW>(&msg, to_keys, enc_alg_jwe);
+            let msg = _verify_anoncrypt::<CE, KDF, KE, KW>(&msg, to_keys, enc_alg_jwe).await;
             let msg = _verify_signed::<SK>(&msg, sign_by_key, sign_alg);
             _verify_plaintext(&msg, PLAINTEXT_MSG_SIMPLE);
         }
@@ -2828,7 +2829,7 @@ mod tests {
         assert_eq!(unpack_metadata.from_prior.as_ref(), Some(&*FROM_PRIOR_FULL));
     }
 
-    fn _verify_authcrypt<CE, KDF, KE, KW>(
+    async fn _verify_authcrypt<CE, KDF, KE, KW>(
         msg: &str,
         to_keys: Vec<&Secret>,
         from_key: &VerificationMethod,
@@ -2836,7 +2837,7 @@ mod tests {
     where
         CE: KeyAeadInPlace + KeySecretBytes,
         KDF: JoseKDF<KE, KW>,
-        KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+        KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
         KW: KeyWrap + FromKeyDerivation,
     {
         let mut buf = vec![];
@@ -2880,18 +2881,30 @@ mod tests {
                 _ => panic!("Unexpected verification method"),
             };
 
-            let derive_func = |ephem_key: &KE,
-                               sender_key: Option<&KE>,
+            let derive_func = |ephem_key: KE,
+                               sender_key: Option<KE>,
                                recip_kid: &str,
-                               alg: &[u8],
-                               apu: &[u8],
-                               apv: &[u8],
-                               cc_tag: &[u8]| {
-                KDF::derive_key(ephem_key, sender_key, &to_key, alg, apu, apv, cc_tag, true)
+                               alg: Vec<u8>,
+                               apu: Vec<u8>,
+                               apv: Vec<u8>,
+                               cc_tag: Vec<u8>| {
+                async move {
+                    KDF::derive_key(
+                        &ephem_key,
+                        sender_key.as_ref(),
+                        &to_key,
+                        &alg,
+                        &apu,
+                        &apv,
+                        &cc_tag,
+                        true,
+                    )
+                }
             };
 
             let msg = msg
-                .decrypt::<CE, KDF, KE, KW>(Some((from_kid, &from_key)), (to_kid, derive_func))
+                .decrypt::<CE, KDF, KE, KW, _>(Some((from_kid, &from_key)), (to_kid, derive_func))
+                .await
                 .expect("Unable decrypt msg");
 
             common_msg = if let Some(ref res) = common_msg {
@@ -2906,7 +2919,7 @@ mod tests {
         String::from_utf8(msg).expect("Unable from_utf8")
     }
 
-    fn _verify_anoncrypt<CE, KDF, KE, KW>(
+    async fn _verify_anoncrypt<CE, KDF, KE, KW>(
         msg: &str,
         to_keys: Vec<&Secret>,
         enc_alg: jwe::EncAlgorithm,
@@ -2914,7 +2927,7 @@ mod tests {
     where
         CE: KeyAeadInPlace + KeySecretBytes,
         KDF: JoseKDF<KE, KW>,
-        KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue,
+        KE: KeyExchange + KeyGen + ToJwkValue + FromJwkValue + Clone,
         KW: KeyWrap + FromKeyDerivation,
     {
         let mut buf = vec![];
@@ -2950,18 +2963,30 @@ mod tests {
                 _ => panic!("Unexpected verification method"),
             };
 
-            let derive_func = |ephem_key: &KE,
-                               sender_key: Option<&KE>,
+            let derive_func = |ephem_key: KE,
+                               sender_key: Option<KE>,
                                recip_kid: &str,
-                               alg: &[u8],
-                               apu: &[u8],
-                               apv: &[u8],
-                               cc_tag: &[u8]| {
-                KDF::derive_key(ephem_key, sender_key, &to_key, alg, apu, apv, cc_tag, true)
+                               alg: Vec<u8>,
+                               apu: Vec<u8>,
+                               apv: Vec<u8>,
+                               cc_tag: Vec<u8>| {
+                async move {
+                    KDF::derive_key(
+                        &ephem_key,
+                        sender_key.as_ref(),
+                        &to_key,
+                        &alg,
+                        &apu,
+                        &apv,
+                        &cc_tag,
+                        true,
+                    )
+                }
             };
 
             let msg = msg
-                .decrypt::<CE, KDF, KE, KW>(None, (to_kid, derive_func))
+                .decrypt::<CE, KDF, KE, KW, _>(None, (to_kid, derive_func))
+                .await
                 .expect("Unable decrypt msg");
 
             common_msg = if let Some(ref res) = common_msg {
