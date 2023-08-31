@@ -9,6 +9,7 @@ use crate::{
     },
     UnpackMetadata, UnpackOptions,
 };
+use askar_crypto::alg::{EcCurves, KeyAlg};
 use askar_crypto::{
     alg::{
         aes::{A256CbcHs512, A256Gcm, A256Kw, AesKey},
@@ -80,19 +81,13 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
     let mut payload: Option<Vec<u8>> = None;
 
     for to_kid in to_kids_found {
-        let to_key = secrets_resolver
-            .get_secret(to_kid)
-            .await?
-            .ok_or_else(|| {
-                err_msg(
-                    ErrorKind::InvalidState,
-                    "Recipient secret not found after existence checking",
-                )
-            })?
-            .as_key_pair()?;
+        let to_key_alg = secrets_resolver.get_key_alg(to_kid).await.kind(
+            ErrorKind::InvalidState,
+            "Recipient secret not found after existence checking",
+        )?;
 
-        let _payload = match (to_key, &parsed_jwe.protected.enc) {
-            (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::A256cbcHs512) => {
+        let _payload = match (to_key_alg, &parsed_jwe.protected.enc) {
+            (KeyAlg::X25519, jwe::EncAlgorithm::A256cbcHs512) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256cbcHs512EcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -114,7 +109,7 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         )
                 })).await?
             }
-            (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::Xc20P) => {
+            (KeyAlg::X25519, jwe::EncAlgorithm::Xc20P) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::Xc20pEcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -135,7 +130,7 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         )
                 })).await?
             }
-            (KnownKeyPair::X25519(ref to_key), jwe::EncAlgorithm::A256Gcm) => {
+            (KeyAlg::X25519, jwe::EncAlgorithm::A256Gcm) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256gcmEcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -156,7 +151,8 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         )
                 })).await?
             }
-            (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::A256cbcHs512) => {
+            // p256
+            (KeyAlg::EcCurve(EcCurves::Secp256r1), jwe::EncAlgorithm::A256cbcHs512) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256cbcHs512EcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -177,7 +173,7 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         )
                 })).await?
             }
-            (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::Xc20P) => {
+            (KeyAlg::EcCurve(EcCurves::Secp256r1), jwe::EncAlgorithm::Xc20P) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::Xc20pEcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -198,7 +194,7 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         )
                 })).await?
             }
-            (KnownKeyPair::P256(ref to_key), jwe::EncAlgorithm::A256Gcm) => {
+            (KeyAlg::EcCurve(EcCurves::Secp256r1), jwe::EncAlgorithm::A256Gcm) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256gcmEcdhEsA256kw);
 
                 parsed_jwe.decrypt::<

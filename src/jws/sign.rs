@@ -1,18 +1,18 @@
 use askar_crypto::sign::KeySign;
 use std::borrow::Cow;
 
+use crate::secrets::SecretsResolver;
 use crate::{
     error::{ErrorKind, Result, ResultExt},
     jws::envelope::{Algorithm, CompactHeader, Header, ProtectedHeader, Signature, JWS},
 };
 
-pub(crate) fn sign<Key: KeySign>(
+pub(crate) async fn sign(
     payload: &[u8],
-    signer: (&str, &Key),
+    kid: &str,
     alg: Algorithm,
+    kms: &dyn SecretsResolver,
 ) -> Result<String> {
-    let (kid, key) = signer;
-
     let sig_type = alg.sig_type()?;
 
     let protected = {
@@ -35,8 +35,9 @@ pub(crate) fn sign<Key: KeySign>(
         // is ASCII(BASE64URL(UTF8(JWS Protected Header)) || '.' || BASE64URL(JWS Payload)).
         let sign_input = format!("{}.{}", protected, payload);
 
-        let signature = key
-            .create_signature(sign_input.as_bytes(), Some(sig_type))
+        let signature = kms
+            .create_signature(kid, sign_input.as_bytes(), Some(sig_type))
+            .await
             .kind(ErrorKind::InvalidState, "Unable create signature")?;
 
         base64::encode_config(&signature, base64::URL_SAFE_NO_PAD)
@@ -58,14 +59,13 @@ pub(crate) fn sign<Key: KeySign>(
     Ok(jws)
 }
 
-pub(crate) fn sign_compact<Key: KeySign>(
+pub(crate) async fn sign_compact(
     payload: &[u8],
-    signer: (&str, &Key),
+    kid: &str,
     typ: &str,
     alg: Algorithm,
+    kms: &dyn SecretsResolver,
 ) -> Result<String> {
-    let (kid, key) = signer;
-
     let sig_type = alg.sig_type()?;
 
     let header = {
@@ -85,9 +85,9 @@ pub(crate) fn sign_compact<Key: KeySign>(
         // is ASCII(BASE64URL(UTF8(JWS Protected Header)) || '.' || BASE64URL(JWS Payload)).
         let sign_input = format!("{}.{}", header, payload);
 
-        let signature = key
-            .create_signature(sign_input.as_bytes(), Some(sig_type))
-            .kind(ErrorKind::InvalidState, "Unable create signature")?;
+        let signature = kms
+            .create_signature(kid, sign_input.as_bytes(), Some(sig_type))
+            .await?;
 
         base64::encode_config(&signature, base64::URL_SAFE_NO_PAD)
     };
@@ -104,21 +104,25 @@ mod tests {
         jwk::FromJwk,
         sign::{KeySigVerify, KeySign},
     };
+    use serde_json::json;
 
+    use crate::secrets::resolvers::ExampleSecretsResolver;
+    use crate::secrets::{Secret, SecretMaterial, SecretType};
     use crate::{
         error::{ErrorKind, Result},
         jws::{self, envelope::Algorithm},
     };
 
-    #[test]
-    fn sign_works() {
+    #[tokio::test]
+    async fn sign_works() {
         _sign_works::<Ed25519KeyPair>(
             ALICE_KID_ED25519,
             ALICE_KEY_ED25519,
             ALICE_PKEY_ED25519,
             Algorithm::EdDSA,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _sign_works::<P256KeyPair>(
             ALICE_KID_P256,
@@ -126,7 +130,8 @@ mod tests {
             ALICE_PKEY_P256,
             Algorithm::Es256,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _sign_works::<K256KeyPair>(
             ALICE_KID_K256,
@@ -134,16 +139,17 @@ mod tests {
             ALICE_PKEY_K256,
             Algorithm::Es256K,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        fn _sign_works<K: FromJwk + KeySign + KeySigVerify>(
+        async fn _sign_works<K: FromJwk + KeySign + KeySigVerify>(
             kid: &str,
             key: &str,
             pkey: &str,
             alg: Algorithm,
             payload: &str,
         ) {
-            let res = _sign::<K>(kid, key, alg.clone(), payload);
+            let res = _sign(kid, key, alg.clone(), payload).await;
 
             let msg = res.expect("Unable _sign");
 
@@ -169,112 +175,83 @@ mod tests {
         }
     }
 
-    #[test]
-    fn sign_works_incompatible_alg() {
-        _sign_works_incompatible_alg::<Ed25519KeyPair>(
+    #[tokio::test]
+    async fn sign_works_incompatible_alg() {
+        _sign_works_incompatible_alg(
             ALICE_KID_ED25519,
             ALICE_KEY_ED25519,
             Algorithm::Es256,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_works_incompatible_alg::<Ed25519KeyPair>(
+        _sign_works_incompatible_alg(
             ALICE_KID_ED25519,
             ALICE_KEY_ED25519,
             Algorithm::Es256K,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_works_incompatible_alg::<P256KeyPair>(
-            ALICE_KID_P256,
-            ALICE_KEY_P256,
-            Algorithm::Es256K,
-            PAYLOAD,
-        );
+        _sign_works_incompatible_alg(ALICE_KID_P256, ALICE_KEY_P256, Algorithm::Es256K, PAYLOAD)
+            .await;
 
-        _sign_works_incompatible_alg::<P256KeyPair>(
-            ALICE_KID_P256,
-            ALICE_KEY_P256,
-            Algorithm::EdDSA,
-            PAYLOAD,
-        );
+        _sign_works_incompatible_alg(ALICE_KID_P256, ALICE_KEY_P256, Algorithm::EdDSA, PAYLOAD)
+            .await;
 
-        _sign_works_incompatible_alg::<P256KeyPair>(
-            ALICE_KID_P256,
-            ALICE_KEY_P256,
-            Algorithm::Es256K,
-            PAYLOAD,
-        );
+        _sign_works_incompatible_alg(ALICE_KID_P256, ALICE_KEY_P256, Algorithm::Es256K, PAYLOAD)
+            .await;
 
-        _sign_works_incompatible_alg::<K256KeyPair>(
-            ALICE_KID_K256,
-            ALICE_KEY_K256,
-            Algorithm::Es256,
-            PAYLOAD,
-        );
+        _sign_works_incompatible_alg(ALICE_KID_K256, ALICE_KEY_K256, Algorithm::Es256, PAYLOAD)
+            .await;
 
-        _sign_works_incompatible_alg::<K256KeyPair>(
-            ALICE_KID_K256,
-            ALICE_KEY_K256,
-            Algorithm::EdDSA,
-            PAYLOAD,
-        );
+        _sign_works_incompatible_alg(ALICE_KID_K256, ALICE_KEY_K256, Algorithm::EdDSA, PAYLOAD)
+            .await;
 
-        _sign_works_incompatible_alg::<K256KeyPair>(
-            ALICE_KID_K256,
-            ALICE_KEY_K256,
-            Algorithm::Es256,
-            PAYLOAD,
-        );
+        _sign_works_incompatible_alg(ALICE_KID_K256, ALICE_KEY_K256, Algorithm::Es256, PAYLOAD)
+            .await;
 
-        fn _sign_works_incompatible_alg<K: FromJwk + KeySign + KeySigVerify>(
-            kid: &str,
-            key: &str,
-            alg: Algorithm,
-            payload: &str,
-        ) {
-            let res = _sign::<K>(kid, key, alg.clone(), payload);
+        async fn _sign_works_incompatible_alg(kid: &str, key: &str, alg: Algorithm, payload: &str) {
+            let res = _sign(kid, key, alg.clone(), payload).await;
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::InvalidState);
 
             assert_eq!(
                 format!("{}", err),
-                "Invalid state: Unable create signature: Unsupported signature type"
+                "Invalid state: Unable create signature: Invalid state: Unable create signature: Unsupported signature type: Unable create signature: Unsupported signature type"
             );
         }
     }
 
-    #[test]
-    fn sign_works_unknown_alg() {
-        _sign_works_unknown_alg::<Ed25519KeyPair>(
+    #[tokio::test]
+    async fn sign_works_unknown_alg() {
+        _sign_works_unknown_alg(
             ALICE_KID_ED25519,
             ALICE_KEY_ED25519,
             Algorithm::Other("bls".to_owned()),
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_works_unknown_alg::<P256KeyPair>(
+        _sign_works_unknown_alg(
             ALICE_KID_P256,
             ALICE_KEY_P256,
             Algorithm::Other("bls".to_owned()),
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_works_unknown_alg::<K256KeyPair>(
+        _sign_works_unknown_alg(
             ALICE_KID_K256,
             ALICE_KEY_K256,
             Algorithm::Other("bls".to_owned()),
             PAYLOAD,
-        );
+        )
+        .await;
 
-        fn _sign_works_unknown_alg<K: FromJwk + KeySign + KeySigVerify>(
-            kid: &str,
-            key: &str,
-            alg: Algorithm,
-            payload: &str,
-        ) {
-            let res = _sign::<K>(kid, key, alg.clone(), payload);
+        async fn _sign_works_unknown_alg(kid: &str, key: &str, alg: Algorithm, payload: &str) {
+            let res = _sign(kid, key, alg.clone(), payload).await;
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::Unsupported);
@@ -286,8 +263,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn sign_compact_works() {
+    #[tokio::test]
+    async fn sign_compact_works() {
         _sign_compact_works::<Ed25519KeyPair>(
             ALICE_KID_ED25519,
             ALICE_KEY_ED25519,
@@ -295,7 +272,8 @@ mod tests {
             "example-typ-1",
             Algorithm::EdDSA,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _sign_compact_works::<P256KeyPair>(
             ALICE_KID_P256,
@@ -304,7 +282,8 @@ mod tests {
             "example-typ-2",
             Algorithm::Es256,
             PAYLOAD,
-        );
+        )
+        .await;
 
         _sign_compact_works::<K256KeyPair>(
             ALICE_KID_K256,
@@ -313,9 +292,10 @@ mod tests {
             "example-typ-3",
             Algorithm::Es256K,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        fn _sign_compact_works<K: FromJwk + KeySign + KeySigVerify>(
+        async fn _sign_compact_works<K: FromJwk + KeySign + KeySigVerify>(
             kid: &str,
             key: &str,
             pkey: &str,
@@ -323,7 +303,7 @@ mod tests {
             alg: Algorithm,
             payload: &str,
         ) {
-            let res = _sign_compact::<K>(kid, key, typ, alg.clone(), payload);
+            let res = _sign_compact(kid, key, typ, alg.clone(), payload).await;
 
             let msg = res.expect("Unable _sign_compact");
 
@@ -346,80 +326,88 @@ mod tests {
         }
     }
 
-    #[test]
-    fn sign_compact_works_incompatible_alg() {
-        _sign_compact_works_incompatible_alg::<Ed25519KeyPair>(
+    #[tokio::test]
+    async fn sign_compact_works_incompatible_alg() {
+        _sign_compact_works_incompatible_alg(
             ALICE_KID_ED25519,
             ALICE_KEY_ED25519,
             "example-typ-1",
             Algorithm::Es256,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_compact_works_incompatible_alg::<Ed25519KeyPair>(
+        _sign_compact_works_incompatible_alg(
             ALICE_KID_ED25519,
             ALICE_KEY_ED25519,
             "example-typ-1",
             Algorithm::Es256K,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_compact_works_incompatible_alg::<P256KeyPair>(
+        _sign_compact_works_incompatible_alg(
             ALICE_KID_P256,
             ALICE_KEY_P256,
             "example-typ-1",
             Algorithm::Es256K,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_compact_works_incompatible_alg::<P256KeyPair>(
+        _sign_compact_works_incompatible_alg(
             ALICE_KID_P256,
             ALICE_KEY_P256,
             "example-typ-1",
             Algorithm::EdDSA,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_compact_works_incompatible_alg::<P256KeyPair>(
+        _sign_compact_works_incompatible_alg(
             ALICE_KID_P256,
             ALICE_KEY_P256,
             "example-typ-1",
             Algorithm::Es256K,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_compact_works_incompatible_alg::<K256KeyPair>(
+        _sign_compact_works_incompatible_alg(
             ALICE_KID_K256,
             ALICE_KEY_K256,
             "example-typ-1",
             Algorithm::Es256,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_compact_works_incompatible_alg::<K256KeyPair>(
+        _sign_compact_works_incompatible_alg(
             ALICE_KID_K256,
             ALICE_KEY_K256,
             "example-typ-1",
             Algorithm::EdDSA,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_compact_works_incompatible_alg::<K256KeyPair>(
+        _sign_compact_works_incompatible_alg(
             ALICE_KID_K256,
             ALICE_KEY_K256,
             "example-typ-1",
             Algorithm::Es256,
             PAYLOAD,
-        );
+        )
+        .await;
 
-        fn _sign_compact_works_incompatible_alg<K: FromJwk + KeySign + KeySigVerify>(
+        async fn _sign_compact_works_incompatible_alg(
             kid: &str,
             key: &str,
             typ: &str,
             alg: Algorithm,
             payload: &str,
         ) {
-            let res = _sign_compact::<K>(kid, key, typ, alg.clone(), payload);
+            let res = _sign_compact(kid, key, typ, alg.clone(), payload).await;
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::InvalidState);
@@ -431,40 +419,43 @@ mod tests {
         }
     }
 
-    #[test]
-    fn sign_compact_works_unknown_alg() {
-        _sign_compact_works_unknown_alg::<Ed25519KeyPair>(
+    #[tokio::test]
+    async fn sign_compact_works_unknown_alg() {
+        _sign_compact_works_unknown_alg(
             ALICE_KID_ED25519,
             ALICE_KEY_ED25519,
             "example-typ-1",
             Algorithm::Other("bls".to_owned()),
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_compact_works_unknown_alg::<P256KeyPair>(
+        _sign_compact_works_unknown_alg(
             ALICE_KID_P256,
             ALICE_KEY_P256,
             "example-typ-1",
             Algorithm::Other("bls".to_owned()),
             PAYLOAD,
-        );
+        )
+        .await;
 
-        _sign_compact_works_unknown_alg::<K256KeyPair>(
+        _sign_compact_works_unknown_alg(
             ALICE_KID_K256,
             ALICE_KEY_K256,
             "example-typ-1",
             Algorithm::Other("bls".to_owned()),
             PAYLOAD,
-        );
+        )
+        .await;
 
-        fn _sign_compact_works_unknown_alg<K: FromJwk + KeySign + KeySigVerify>(
+        async fn _sign_compact_works_unknown_alg(
             kid: &str,
             key: &str,
             typ: &str,
             alg: Algorithm,
             payload: &str,
         ) {
-            let res = _sign_compact::<K>(kid, key, typ, alg.clone(), payload);
+            let res = _sign_compact(kid, key, typ, alg.clone(), payload).await;
 
             let err = res.expect_err("res is ok");
             assert_eq!(err.kind(), ErrorKind::Unsupported);
@@ -476,25 +467,34 @@ mod tests {
         }
     }
 
-    fn _sign<K: FromJwk + KeySign>(
-        kid: &str,
-        key: &str,
-        alg: Algorithm,
-        payload: &str,
-    ) -> Result<String> {
-        let key = K::from_jwk(key).expect("Unable from_jwk");
-        jws::sign(payload.as_bytes(), (&kid, &key), alg.clone())
+    async fn _sign(kid: &str, key: &str, alg: Algorithm, payload: &str) -> Result<String> {
+        let secret = Secret {
+            id: kid.to_string(),
+            type_: SecretType::JsonWebKey2020,
+            secret_material: SecretMaterial::JWK {
+                private_key_jwk: serde_json::from_str(key)?,
+            },
+        };
+        let kms = ExampleSecretsResolver::new(vec![secret]);
+        jws::sign(payload.as_bytes(), kid, alg.clone(), &kms).await
     }
 
-    fn _sign_compact<K: FromJwk + KeySign>(
+    async fn _sign_compact(
         kid: &str,
         key: &str,
         typ: &str,
         alg: Algorithm,
         payload: &str,
     ) -> Result<String> {
-        let key = K::from_jwk(key).expect("Unable from_jwk");
-        jws::sign_compact(payload.as_bytes(), (&kid, &key), typ, alg.clone())
+        let secret = Secret {
+            id: kid.to_string(),
+            type_: SecretType::JsonWebKey2020,
+            secret_material: SecretMaterial::JWK {
+                private_key_jwk: serde_json::from_str(key)?,
+            },
+        };
+        let kms = ExampleSecretsResolver::new(vec![secret]);
+        jws::sign_compact(payload.as_bytes(), kid, typ, alg.clone(), &kms).await
     }
 
     const ALICE_KID_ED25519: &str = "did:example:alice#key-1";

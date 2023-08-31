@@ -4,12 +4,10 @@ use crate::{
     jws::{self, Algorithm},
     message::from_prior::JWT_TYP,
     secrets::SecretsResolver,
-    utils::{
-        crypto::{AsKnownKeyPair, KnownKeyPair},
-        did::{did_or_url, is_did},
-    },
+    utils::did::{did_or_url, is_did},
     FromPrior,
 };
+use askar_crypto::alg::{EcCurves, KeyAlg};
 
 impl FromPrior {
     /// Packs a plaintext `from_prior` value into a signed JWT.
@@ -98,42 +96,53 @@ impl FromPrior {
                 )
             })?;
 
-        let secret = secrets_resolver
-            .get_secret(kid)
-            .await
-            .context("Unable to find secret")?
-            .ok_or_else(|| {
-                err_msg(
-                    ErrorKind::SecretNotFound,
-                    "from_prior issuer secret not found",
-                )
-            })?;
+        let secret_alg = secrets_resolver.get_key_alg(kid).await.map_err(|e| {
+            err_msg(
+                ErrorKind::SecretNotFound,
+                "from_prior issuer secret not found",
+            )
+        })?;
 
-        let sign_key = secret
-            .as_key_pair()
-            .context("Unable to instantiate from_prior issuer key")?;
+        // let secret = secrets_resolver
+        //     .get_secret(kid)
+        //     .await
+        //     .context("Unable to find secret")?
+        //     .ok_or_else(|| {
+        //         err_msg(
+        //             ErrorKind::SecretNotFound,
+        //             "from_prior issuer secret not found",
+        //         )
+        //     })?;
+        //
+        // let sign_key = secret
+        //     .as_key_pair()
+        //     .context("Unable to instantiate from_prior issuer key")?;
 
-        let from_prior_jwt = match sign_key {
-            KnownKeyPair::Ed25519(ref key) => jws::sign_compact(
+        let from_prior_jwt = match secret_alg {
+            KeyAlg::Ed25519 => jws::sign_compact(
                 from_prior_str.as_bytes(),
-                (kid, key),
+                kid,
                 JWT_TYP,
                 Algorithm::EdDSA,
+                secrets_resolver,
             ),
-            KnownKeyPair::P256(ref key) => jws::sign_compact(
+            KeyAlg::EcCurve(EcCurves::Secp256r1) => jws::sign_compact(
                 from_prior_str.as_bytes(),
-                (kid, key),
+                kid,
                 JWT_TYP,
                 Algorithm::Es256,
+                secrets_resolver,
             ),
-            KnownKeyPair::K256(ref key) => jws::sign_compact(
+            KeyAlg::EcCurve(EcCurves::Secp256k1) => jws::sign_compact(
                 from_prior_str.as_bytes(),
-                (kid, key),
+                kid,
                 JWT_TYP,
                 Algorithm::Es256K,
+                secrets_resolver,
             ),
             _ => Err(err_msg(ErrorKind::Unsupported, "Unsupported signature alg"))?,
         }
+        .await
         .context("Unable to produce signature")?;
 
         Ok((from_prior_jwt, String::from(kid)))

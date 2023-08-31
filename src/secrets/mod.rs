@@ -5,6 +5,9 @@ pub mod resolvers;
 use askar_crypto::alg::aes::{A256Kw, AesKey};
 use askar_crypto::alg::p256::P256KeyPair;
 use askar_crypto::alg::x25519::X25519KeyPair;
+use askar_crypto::alg::KeyAlg;
+use askar_crypto::buffer::SecretBytes;
+use askar_crypto::sign::SignatureType;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -27,7 +30,9 @@ pub trait SecretsResolver: Sync {
     /// # Errors
     /// - IOError
     /// - InvalidState
-    async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>>;
+    // async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>>;
+
+    async fn get_key_alg(&self, secret_id: &str) -> Result<KeyAlg>;
 
     /// Find all secrets that have one of the given IDs.
     /// Return secrets only for key IDs for which a secret is present.
@@ -38,6 +43,13 @@ pub trait SecretsResolver: Sync {
     /// # Returns
     /// possible empty list of all secrets that have one of the given IDs.
     async fn find_secrets<'a>(&self, secret_ids: &'a [&'a str]) -> Result<Vec<&'a str>>;
+
+    async fn create_signature(
+        &self,
+        secret_id: &str,
+        message: &[u8],
+        sig_type: Option<SignatureType>,
+    ) -> Result<SecretBytes>;
 
     async fn derive_aes_key_from_x25519_using_edch1pu(
         &self,
@@ -124,7 +136,9 @@ pub trait SecretsResolver {
     /// # Errors
     /// - IOError
     /// - InvalidState
-    async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>>;
+    // async fn get_secret(&self, secret_id: &str) -> Result<Option<Secret>>;
+
+    async fn get_key_alg(&self, secret_id: &str) -> Result<KeyAlg>;
 
     /// Find all secrets that have one of the given IDs.
     /// Return secrets only for key IDs for which a secret is present.
@@ -135,6 +149,13 @@ pub trait SecretsResolver {
     /// # Returns
     /// possible empty list of all secrets that have one of the given IDs.
     async fn find_secrets<'a>(&self, secret_ids: &'a [&'a str]) -> Result<Vec<&'a str>>;
+
+    async fn create_signature(
+        &self,
+        secret_id: &str,
+        message: &[u8],
+        sig_type: Option<SignatureType>,
+    ) -> Result<SecretBytes>;
 
     async fn derive_aes_key_from_x25519_using_edch1pu(
         &self,

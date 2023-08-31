@@ -1,13 +1,3 @@
-use askar_crypto::{
-    alg::{
-        aes::{A256CbcHs512, A256Kw, AesKey},
-        p256::P256KeyPair,
-        x25519::X25519KeyPair,
-    },
-    kdf::ecdh_1pu::Ecdh1PU,
-};
-use tokio::runtime::Handle;
-
 use crate::jwe::envelope::JWE;
 use crate::{
     algorithms::AuthCryptAlg,
@@ -20,6 +10,15 @@ use crate::{
         did::did_or_url,
     },
     UnpackMetadata, UnpackOptions,
+};
+use askar_crypto::alg::{EcCurves, KeyAlg};
+use askar_crypto::{
+    alg::{
+        aes::{A256CbcHs512, A256Kw, AesKey},
+        p256::P256KeyPair,
+        x25519::X25519KeyPair,
+    },
+    kdf::ecdh_1pu::Ecdh1PU,
 };
 
 pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
@@ -131,21 +130,15 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     let mut payload: Option<Vec<u8>> = None;
 
     for to_kid in to_kids_found {
-        let to_key = secrets_resolver
-            .get_secret(to_kid)
-            .await?
-            .ok_or_else(|| {
-                err_msg(
-                    ErrorKind::InvalidState,
-                    "Recipient secret not found after existence checking",
-                )
-            })?
-            .as_key_pair()?;
+        let to_key_alg = secrets_resolver.get_key_alg(to_kid).await.kind(
+            ErrorKind::InvalidState,
+            "Recipient secret not found after existence checking",
+        )?;
 
-        let _payload = match (&from_key, &to_key, &parsed_jwe.protected.enc) {
+        let _payload = match (&from_key, to_key_alg, &parsed_jwe.protected.enc) {
             (
                 KnownKeyPair::X25519(ref from_key),
-                KnownKeyPair::X25519(ref to_key),
+                KeyAlg::X25519,
                 jwe::EncAlgorithm::A256cbcHs512,
             ) => {
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
@@ -176,7 +169,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
             }
             (
                 KnownKeyPair::P256(ref from_key),
-                KnownKeyPair::P256(ref to_key),
+                KeyAlg::EcCurve(EcCurves::Secp256r1),
                 jwe::EncAlgorithm::A256cbcHs512,
             ) => {
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
@@ -205,11 +198,11 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     }
                 })).await?
             }
-            (KnownKeyPair::X25519(_), KnownKeyPair::P256(_), _) => Err(err_msg(
+            (KnownKeyPair::X25519(_), KeyAlg::EcCurve(EcCurves::Secp256r1), _) => Err(err_msg(
                 ErrorKind::Malformed,
                 "Incompatible sender and recipient key agreement curves",
             ))?,
-            (KnownKeyPair::P256(_), KnownKeyPair::X25519(_), _) => Err(err_msg(
+            (KnownKeyPair::P256(_), KeyAlg::X25519, _) => Err(err_msg(
                 ErrorKind::Malformed,
                 "Incompatible sender and recipient key agreement curves",
             ))?,

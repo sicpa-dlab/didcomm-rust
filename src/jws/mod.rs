@@ -31,15 +31,21 @@ mod tests {
     use askar_crypto::{alg::ed25519::Ed25519KeyPair, jwk::FromJwk};
 
     use crate::jws::{self, Algorithm};
+    use crate::secrets::resolvers::ExampleSecretsResolver;
+    use crate::secrets::{Secret, SecretMaterial, SecretType};
 
-    #[test]
-    fn demo_works() {
+    #[tokio::test]
+    async fn demo_works() {
         // Identifier of Alice key
         let alice_kid = "did:example:alice#key-1";
 
         // Alice private key
-        let alice_key = Ed25519KeyPair::from_jwk(
-            r#"
+        let alice_secret = Secret {
+            id: alice_kid.to_string(),
+            type_: SecretType::JsonWebKey2020,
+            secret_material: SecretMaterial::JWK {
+                private_key_jwk: serde_json::from_str(
+                    r#"
             {
                 "kty":"OKP",
                 "d":"pFRUKkyzx4kHdJtFSnlPA9WzqkDT1HWV0xZ5OYZd2SY",
@@ -47,8 +53,11 @@ mod tests {
                 "x":"G-boxFB6vOZBu-wXkm-9Lh79I8nf9Z50cILaOgKKGww"
             }
             "#,
-        )
-        .expect("Unable from_jwk");
+                )
+                .expect("Unable from_jwk"),
+            },
+        };
+        let kms = ExampleSecretsResolver::new(vec![alice_secret]);
 
         // Alice public key
         let alice_pkey = Ed25519KeyPair::from_jwk(
@@ -67,12 +76,9 @@ mod tests {
 
         // Produce signed message
 
-        let msg = jws::sign(
-            payload.as_bytes(),
-            (alice_kid, &alice_key),
-            Algorithm::EdDSA,
-        )
-        .expect("unable sign");
+        let msg = jws::sign(payload.as_bytes(), alice_kid, Algorithm::EdDSA, &kms)
+            .await
+            .expect("unable sign");
 
         // Parse message
 

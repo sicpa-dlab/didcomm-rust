@@ -1,3 +1,4 @@
+use askar_crypto::alg::{EcCurves, KeyAlg};
 use serde::Serialize;
 
 use crate::{
@@ -82,30 +83,37 @@ impl Message {
             .get(0)
             .ok_or_else(|| err_msg(ErrorKind::SecretNotFound, "No signer secrets found"))?;
 
-        let secret = secrets_resolver
-            .get_secret(key_id)
+        let key_alg = secrets_resolver
+            .get_key_alg(key_id)
             .await
-            .context("Unable get secret")?
-            .ok_or_else(|| err_msg(ErrorKind::SecretNotFound, "Signer secret not found"))?;
-
-        let sign_key = secret
-            .as_key_pair()
-            .context("Unable instantiate sign key")?;
+            .context("Signer secret not found")?;
 
         let payload = self.pack_plaintext(did_resolver).await?;
 
-        let msg = match sign_key {
-            KnownKeyPair::Ed25519(ref key) => {
-                jws::sign(payload.as_bytes(), (key_id, key), Algorithm::EdDSA)
-            }
-            KnownKeyPair::P256(ref key) => {
-                jws::sign(payload.as_bytes(), (key_id, key), Algorithm::Es256)
-            }
-            KnownKeyPair::K256(ref key) => {
-                jws::sign(payload.as_bytes(), (key_id, key), Algorithm::Es256K)
-            }
+        let msg = match key_alg {
+            KeyAlg::Ed25519 => jws::sign(
+                payload.as_bytes(),
+                key_id,
+                Algorithm::EdDSA,
+                secrets_resolver,
+            ),
+            // p256
+            KeyAlg::EcCurve(EcCurves::Secp256r1) => jws::sign(
+                payload.as_bytes(),
+                key_id,
+                Algorithm::Es256,
+                secrets_resolver,
+            ),
+            // k256
+            KeyAlg::EcCurve(EcCurves::Secp256k1) => jws::sign(
+                payload.as_bytes(),
+                key_id,
+                Algorithm::Es256K,
+                secrets_resolver,
+            ),
             _ => Err(err_msg(ErrorKind::Unsupported, "Unsupported signature alg"))?,
         }
+        .await
         .context("Unable produce signatire")?;
 
         let metadata = PackSignedMetadata {
@@ -416,11 +424,12 @@ mod tests {
             .await;
 
         let err = res.expect_err("res is ok");
+        println!("{:?}", err);
         assert_eq!(err.kind(), ErrorKind::Unsupported);
 
         assert_eq!(
             format!("{}", err),
-            "Unsupported crypto or method: Unable instantiate sign key: Unsupported key type or curve"
+            "Unsupported crypto or method: Signer secret not found: Unsupported key type or curve"
         );
     }
 
