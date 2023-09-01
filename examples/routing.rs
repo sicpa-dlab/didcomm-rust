@@ -10,7 +10,7 @@ use didcomm::{
     algorithms::AnonCryptAlg,
     did::resolvers::ExampleDIDResolver,
     protocols::routing::{try_parse_forward, wrap_in_forward},
-    secrets::resolvers::ExampleSecretsResolver,
+    secrets::resolvers::ExampleKMS,
     Message, PackEncryptedOptions, UnpackOptions,
 };
 use serde_json::json;
@@ -55,7 +55,7 @@ async fn single_mediator() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
     let (msg, metadata) = msg
         .pack_encrypted(
@@ -81,7 +81,7 @@ async fn single_mediator() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -111,7 +111,7 @@ async fn single_mediator() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -146,7 +146,7 @@ async fn multiple_mediators_with_alternative_endpoints() {
         MEDIATOR3_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
     let (msg, metadata) = msg
         .pack_encrypted(
@@ -174,7 +174,7 @@ async fn multiple_mediators_with_alternative_endpoints() {
         MEDIATOR3_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR3_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(MEDIATOR3_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -206,7 +206,7 @@ async fn multiple_mediators_with_alternative_endpoints() {
         MEDIATOR3_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR2_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(MEDIATOR2_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -238,7 +238,7 @@ async fn multiple_mediators_with_alternative_endpoints() {
         MEDIATOR3_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -270,7 +270,7 @@ async fn multiple_mediators_with_alternative_endpoints() {
         MEDIATOR3_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(CHARLIE_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(CHARLIE_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -306,7 +306,7 @@ async fn re_wrapping_for_final_recipient() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
     let (msg, metadata) = msg
         .pack_encrypted(
@@ -332,7 +332,7 @@ async fn re_wrapping_for_final_recipient() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -380,7 +380,7 @@ async fn re_wrapping_for_final_recipient() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -414,7 +414,7 @@ async fn re_wrapping_for_mediator_unknown_to_sender() {
         MEDIATOR2_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
     let (msg, metadata) = msg
         .pack_encrypted(
@@ -441,7 +441,7 @@ async fn re_wrapping_for_mediator_unknown_to_sender() {
         MEDIATOR2_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -490,7 +490,7 @@ async fn re_wrapping_for_mediator_unknown_to_sender() {
         MEDIATOR2_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR2_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(MEDIATOR2_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -520,7 +520,7 @@ async fn re_wrapping_for_mediator_unknown_to_sender() {
         MEDIATOR2_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,

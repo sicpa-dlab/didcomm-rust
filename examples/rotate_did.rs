@@ -8,8 +8,7 @@ pub(crate) use didcomm;
 
 use didcomm::{
     did::resolvers::ExampleDIDResolver, protocols::routing::try_parse_forward,
-    secrets::resolvers::ExampleSecretsResolver, FromPrior, Message, PackEncryptedOptions,
-    UnpackOptions,
+    secrets::resolvers::ExampleKMS, FromPrior, Message, PackEncryptedOptions, UnpackOptions,
 };
 use serde_json::json;
 use test_vectors::{
@@ -26,7 +25,7 @@ async fn main() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
 
     // --- Building from_prior header
     let from_prior = FromPrior::build(CHARLIE_DID.into(), ALICE_DID.into())
@@ -88,7 +87,7 @@ async fn main() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,
@@ -119,7 +118,7 @@ async fn main() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+    let secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
     let (msg, metadata) = Message::unpack(
         &msg,

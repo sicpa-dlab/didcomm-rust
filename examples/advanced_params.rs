@@ -10,7 +10,7 @@ use didcomm::{
     algorithms::{AnonCryptAlg, AuthCryptAlg},
     did::resolvers::ExampleDIDResolver,
     protocols::routing::try_parse_forward,
-    secrets::resolvers::ExampleSecretsResolver,
+    secrets::resolvers::ExampleKMS,
     Message, PackEncryptedOptions, UnpackOptions,
 };
 use serde_json::{json, Number, Value};
@@ -33,8 +33,11 @@ async fn main() {
     .to(BOB_DID.to_owned())
     .created_time(1516269022)
     .expires_time(1516385931)
-    .header("bla1".parse().unwrap(), Value::Bool(false))
-    .header("bla2".parse().unwrap(), Value::Number(Number::from(12)))
+    .header("extra_header1".parse().unwrap(), Value::Bool(false))
+    .header(
+        "extra_header2".parse().unwrap(),
+        Value::Number(Number::from(12)),
+    )
     .finalize();
 
     // --- Packing encrypted and authenticated message ---
@@ -44,7 +47,7 @@ async fn main() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+    let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
     let (msg, metadata) = msg
         .pack_encrypted(
@@ -52,7 +55,7 @@ async fn main() {
             "did:example:alice#key-p256-1".into(),
             "did:example:alice#key-2".into(),
             &did_resolver,
-            &secrets_resolver,
+            &kms,
             &PackEncryptedOptions {
                 protect_sender: true,
                 forward: true,
@@ -80,16 +83,11 @@ async fn main() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+    let kms = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
-    let (msg, metadata) = Message::unpack(
-        &msg,
-        &did_resolver,
-        &secrets_resolver,
-        &UnpackOptions::default(),
-    )
-    .await
-    .expect("Unable unpack");
+    let (msg, metadata) = Message::unpack(&msg, &did_resolver, &kms, &UnpackOptions::default())
+        .await
+        .expect("Unable unpack");
 
     println!("Mediator1 received message is \n{:?}\n", msg);
 
@@ -110,16 +108,11 @@ async fn main() {
         MEDIATOR1_DID_DOC.clone(),
     ]);
 
-    let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+    let kms = ExampleKMS::new(BOB_SECRETS.clone());
 
-    let (msg, metadata) = Message::unpack(
-        &msg,
-        &did_resolver,
-        &secrets_resolver,
-        &UnpackOptions::default(),
-    )
-    .await
-    .expect("Unable unpack");
+    let (msg, metadata) = Message::unpack(&msg, &did_resolver, &kms, &UnpackOptions::default())
+        .await
+        .expect("Unable unpack");
 
     println!("Bob received message is \n{:?}\n", msg);
     println!("Bob received message unpack metadata is \n{:?}\n", metadata);

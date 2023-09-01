@@ -5,11 +5,8 @@ use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext},
     jws::{self, Algorithm},
-    secrets::SecretsResolver,
-    utils::{
-        crypto::{AsKnownKeyPair, KnownKeyPair},
-        did::{did_or_url, is_did},
-    },
+    secrets::KeyManagementService,
+    utils::did::{did_or_url, is_did},
     Message,
 };
 
@@ -28,7 +25,7 @@ impl Message {
     /// # Parameters
     /// - `sign_by` a DID or key ID the sender uses for signing
     /// - `did_resolver` instance of `DIDResolver` to resolve DIDs.
-    /// - `secrets_resolver` instance of SecretsResolver` to resolve sender DID keys secrets
+    /// - `kms` instance of SecretsResolver` to resolve sender DID keys secrets
     ///
     /// # Returns
     /// Tuple (signed_message, metadata)
@@ -47,7 +44,7 @@ impl Message {
         &self,
         sign_by: &str,
         did_resolver: &'dr (dyn DIDResolver + 'dr),
-        secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+        kms: &'sr (dyn KeyManagementService + 'sr),
     ) -> Result<(String, PackSignedMetadata)> {
         self._validate_pack_signed(sign_by)?;
 
@@ -76,14 +73,14 @@ impl Message {
             did_doc.authentication.iter().map(|s| s.as_str()).collect()
         };
 
-        let key_id = *secrets_resolver
+        let key_id = *kms
             .find_secrets(&authentications)
             .await
             .context("Unable find secrets")?
             .get(0)
             .ok_or_else(|| err_msg(ErrorKind::SecretNotFound, "No signer secrets found"))?;
 
-        let key_alg = secrets_resolver
+        let key_alg = kms
             .get_key_alg(key_id)
             .await
             .context("Signer secret not found")?;
@@ -91,26 +88,15 @@ impl Message {
         let payload = self.pack_plaintext(did_resolver).await?;
 
         let msg = match key_alg {
-            KeyAlg::Ed25519 => jws::sign(
-                payload.as_bytes(),
-                key_id,
-                Algorithm::EdDSA,
-                secrets_resolver,
-            ),
+            KeyAlg::Ed25519 => jws::sign(payload.as_bytes(), key_id, Algorithm::EdDSA, kms),
             // p256
-            KeyAlg::EcCurve(EcCurves::Secp256r1) => jws::sign(
-                payload.as_bytes(),
-                key_id,
-                Algorithm::Es256,
-                secrets_resolver,
-            ),
+            KeyAlg::EcCurve(EcCurves::Secp256r1) => {
+                jws::sign(payload.as_bytes(), key_id, Algorithm::Es256, kms)
+            }
             // k256
-            KeyAlg::EcCurve(EcCurves::Secp256k1) => jws::sign(
-                payload.as_bytes(),
-                key_id,
-                Algorithm::Es256K,
-                secrets_resolver,
-            ),
+            KeyAlg::EcCurve(EcCurves::Secp256k1) => {
+                jws::sign(payload.as_bytes(), key_id, Algorithm::Es256K, kms)
+            }
             _ => Err(err_msg(ErrorKind::Unsupported, "Unsupported signature alg"))?,
         }
         .await
@@ -161,7 +147,11 @@ mod tests {
         jwk::FromJwkValue,
         jws::{self, Algorithm, Header, ProtectedHeader},
         secrets::{
-            resolvers::ExampleSecretsResolver, Secret, SecretMaterial, SecretType, SecretsResolver,
+            resolvers::{
+                example::{Secret, SecretMaterial, SecretType},
+                ExampleKMS,
+            },
+            KeyManagementService,
         },
         test_vectors::{
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
@@ -176,11 +166,11 @@ mod tests {
     #[tokio::test]
     async fn pack_signed_works() {
         let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         _pack_signed_works::<Ed25519KeyPair>(
             &did_resolver,
-            &secrets_resolver,
+            &kms,
             &MESSAGE_SIMPLE,
             ALICE_DID,
             &ALICE_AUTH_METHOD_25519.id,
@@ -192,7 +182,7 @@ mod tests {
 
         _pack_signed_works::<Ed25519KeyPair>(
             &did_resolver,
-            &secrets_resolver,
+            &kms,
             &MESSAGE_SIMPLE,
             &ALICE_AUTH_METHOD_25519.id,
             &ALICE_AUTH_METHOD_25519.id,
@@ -204,7 +194,7 @@ mod tests {
 
         _pack_signed_works::<P256KeyPair>(
             &did_resolver,
-            &secrets_resolver,
+            &kms,
             &MESSAGE_SIMPLE,
             &ALICE_AUTH_METHOD_P256.id,
             &ALICE_AUTH_METHOD_P256.id,
@@ -216,7 +206,7 @@ mod tests {
 
         _pack_signed_works::<K256KeyPair>(
             &did_resolver,
-            &secrets_resolver,
+            &kms,
             &MESSAGE_SIMPLE,
             &ALICE_AUTH_METHOD_SECPP256K1.id,
             &ALICE_AUTH_METHOD_SECPP256K1.id,
@@ -228,7 +218,7 @@ mod tests {
 
         async fn _pack_signed_works<'dr, 'sr, Key: KeySigVerify + FromJwkValue>(
             did_resolver: &'dr (dyn DIDResolver + 'dr),
-            secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+            kms: &'sr (dyn KeyManagementService + 'sr),
             message: &Message,
             sign_by: &str,
             sign_by_kid: &str,
@@ -237,7 +227,7 @@ mod tests {
             verification_material: &VerificationMaterial,
         ) {
             let (msg, metadata) = message
-                .pack_signed(sign_by, did_resolver, secrets_resolver)
+                .pack_signed(sign_by, did_resolver, kms)
                 .await
                 .expect("Unable pack_signed");
 
@@ -296,10 +286,10 @@ mod tests {
     #[tokio::test]
     async fn pack_signed_works_signer_did_not_found() {
         let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let res = MESSAGE_SIMPLE
-            .pack_signed("did:example:unknown", &did_resolver, &secrets_resolver)
+            .pack_signed("did:example:unknown", &did_resolver, &kms)
             .await;
 
         let err = res.expect_err("res is ok");
@@ -313,10 +303,10 @@ mod tests {
         let mut did_doc = ALICE_DID_DOC.clone();
         did_doc.id = "not-a-did".into();
         let did_resolver = ExampleDIDResolver::new(vec![did_doc]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let res = MESSAGE_SIMPLE
-            .pack_signed("not-a-did", &did_resolver, &secrets_resolver)
+            .pack_signed("not-a-did", &did_resolver, &kms)
             .await;
 
         let err = res.expect_err("res is ok");
@@ -331,14 +321,10 @@ mod tests {
     #[tokio::test]
     async fn pack_signed_works_signer_did_url_not_found() {
         let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let res = MESSAGE_SIMPLE
-            .pack_signed(
-                &format!("{}#unkown", ALICE_DID),
-                &did_resolver,
-                &secrets_resolver,
-            )
+            .pack_signed(&format!("{}#unkown", ALICE_DID), &did_resolver, &kms)
             .await;
 
         let err = res.expect_err("res is ok");
@@ -355,10 +341,10 @@ mod tests {
         let did_resolver =
             MockDidResolver::new(vec![Err(err_msg(ErrorKind::InvalidState, "Mock error"))]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let res = MESSAGE_SIMPLE
-            .pack_signed(ALICE_DID, &did_resolver, &secrets_resolver)
+            .pack_signed(ALICE_DID, &did_resolver, &kms)
             .await;
 
         let err = res.expect_err("res is ok");
@@ -373,13 +359,13 @@ mod tests {
     #[tokio::test]
     async fn pack_signed_works_signer_secrets_not_found() {
         let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC_WITH_NO_SECRETS.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let res = MESSAGE_SIMPLE
             .pack_signed(
                 &"did:example:alice#key-not-in-secrets-1",
                 &did_resolver,
-                &secrets_resolver,
+                &kms,
             )
             .await;
 
@@ -413,7 +399,7 @@ mod tests {
             },
         });
         let did_resolver = ExampleDIDResolver::new(vec![did_doc]);
-        let secrets_resolver = ExampleSecretsResolver::new(secrets);
+        let secrets_resolver = ExampleKMS::new(secrets);
 
         let res = MESSAGE_SIMPLE
             .pack_signed(
@@ -441,8 +427,8 @@ mod tests {
             CHARLIE_DID_DOC.clone(),
         ]);
         let charlie_rotated_to_alice_secrets_resolver =
-            ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
-        let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+            ExampleKMS::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+        let bob_secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
         let (packed_msg, _pack_metadata) = MESSAGE_FROM_PRIOR_FULL
             .pack_signed(

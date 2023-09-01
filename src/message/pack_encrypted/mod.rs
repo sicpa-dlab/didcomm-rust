@@ -10,7 +10,7 @@ use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext},
     protocols::routing::wrap_in_forward_if_needed,
-    secrets::SecretsResolver,
+    secrets::KeyManagementService,
     utils::did::{did_or_url, is_did},
     Message, PackSignedMetadata,
 };
@@ -55,7 +55,7 @@ impl Message {
     ///    Adding a signature when one is not needed can degrade rather than enhance security because
     ///    it relinquishes the sender’s ability to speak off the record.
     /// - `did_resolver` instance of `DIDResolver` to resolve DIDs.
-    /// - `secrets_resolver` instance of SecretsResolver` to resolve sender DID keys secrets.
+    /// - `kms` instance of SecretsResolver` to resolve sender DID keys secrets.
     /// - `options` allow fine configuration of packing process and have implemented `Default`.
     ///
     /// # Returns
@@ -79,7 +79,7 @@ impl Message {
         from: Option<&str>,
         sign_by: Option<&str>,
         did_resolver: &'dr (dyn DIDResolver + 'dr),
-        secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+        kms: &'sr (dyn KeyManagementService + 'sr),
         options: &PackEncryptedOptions,
     ) -> Result<(String, PackEncryptedMetadata)> {
         self._validate_pack_encrypted(to, from, sign_by)?;
@@ -95,7 +95,7 @@ impl Message {
 
         let (msg, sign_by_kid) = if let Some(sign_by) = sign_by {
             let (msg, PackSignedMetadata { sign_by_kid }) = self
-                .pack_signed(sign_by, did_resolver, secrets_resolver)
+                .pack_signed(sign_by, did_resolver, kms)
                 .await
                 .context("Unable produce sign envelope")?;
 
@@ -113,7 +113,7 @@ impl Message {
                 to,
                 from,
                 did_resolver,
-                secrets_resolver,
+                kms,
                 msg.as_bytes(),
                 &options.enc_alg_auth,
                 &options.enc_alg_anon,
@@ -302,7 +302,10 @@ mod tests {
         jws,
         message::MessagingServiceMetadata,
         protocols::routing::{try_parse_forward, wrap_in_forward},
-        secrets::{resolvers::ExampleSecretsResolver, Secret, SecretMaterial},
+        secrets::resolvers::{
+            example::{Secret, SecretMaterial},
+            ExampleKMS,
+        },
         test_vectors::{
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
             ALICE_DID, ALICE_DID_DOC, ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS,
@@ -455,7 +458,7 @@ mod tests {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (msg, metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -463,7 +466,7 @@ mod tests {
                     Some(from),
                     None,
                     &did_resolver,
-                    &secrets_resolver,
+                    &kms,
                     &PackEncryptedOptions {
                         forward: false,
                         ..PackEncryptedOptions::default()
@@ -773,7 +776,7 @@ mod tests {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (msg, metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -925,7 +928,7 @@ mod tests {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (msg, metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -1058,7 +1061,7 @@ mod tests {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (msg, metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -1314,7 +1317,7 @@ mod tests {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (msg, metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -1481,7 +1484,7 @@ mod tests {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (msg, metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -1564,11 +1567,11 @@ mod tests {
                 MEDIATOR1_DID_DOC.clone(),
             ]);
 
-            let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let alice_secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
-            let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+            let bob_secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
-            let mediator1_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+            let mediator1_secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
             let (msg, pack_metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -1743,15 +1746,15 @@ mod tests {
                 MEDIATOR3_DID_DOC.clone(),
             ]);
 
-            let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let alice_secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
-            let charlie_secrets_resolver = ExampleSecretsResolver::new(CHARLIE_SECRETS.clone());
+            let charlie_secrets_resolver = ExampleKMS::new(CHARLIE_SECRETS.clone());
 
-            let mediator1_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+            let mediator1_secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
-            let mediator2_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR2_SECRETS.clone());
+            let mediator2_secrets_resolver = ExampleKMS::new(MEDIATOR2_SECRETS.clone());
 
-            let mediator3_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR3_SECRETS.clone());
+            let mediator3_secrets_resolver = ExampleKMS::new(MEDIATOR3_SECRETS.clone());
 
             let (packed_msg, pack_metadata) = msg
                 .pack_encrypted(
@@ -1993,13 +1996,13 @@ mod tests {
                 MEDIATOR2_DID_DOC.clone(),
             ]);
 
-            let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let alice_secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
-            let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+            let bob_secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
-            let mediator1_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+            let mediator1_secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
-            let mediator2_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR2_SECRETS.clone());
+            let mediator2_secrets_resolver = ExampleKMS::new(MEDIATOR2_SECRETS.clone());
 
             let (msg, pack_metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -2114,7 +2117,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let res = MESSAGE_SIMPLE
             .pack_encrypted(
@@ -2144,7 +2147,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let res = MESSAGE_SIMPLE
             .pack_encrypted(
@@ -2174,7 +2177,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let res = MESSAGE_SIMPLE
             .pack_encrypted(
@@ -2204,7 +2207,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let mut msg = MESSAGE_SIMPLE.clone();
         msg.from = CHARLIE_DID.to_string().into();
@@ -2236,7 +2239,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let mut msg = MESSAGE_SIMPLE.clone();
         msg.to = Some(vec![CHARLIE_DID.to_string()]);
@@ -2268,7 +2271,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let mut msg = MESSAGE_SIMPLE.clone();
         msg.to = Some(vec![CHARLIE_DID.to_string(), BOB_DID.to_string()]);
@@ -2292,7 +2295,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let mut msg = MESSAGE_SIMPLE.clone();
         msg.from = "not-a-did".to_string().into();
@@ -2324,7 +2327,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let mut msg = MESSAGE_SIMPLE.clone();
         msg.to = Some(vec!["not-a-did".to_string()]);
@@ -2356,7 +2359,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let _ = MESSAGE_SIMPLE
             .pack_encrypted(
@@ -2378,7 +2381,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let mut msg = MESSAGE_SIMPLE.clone();
         msg.to = Some(vec![ALICE_DID.to_string(), BOB_DID.to_string()]);
@@ -2402,7 +2405,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let _ = MESSAGE_SIMPLE
             .pack_encrypted(
@@ -2424,7 +2427,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let mut msg = MESSAGE_SIMPLE.clone();
         msg.from = "did:example:alice#key-x25519-1".to_string().into();
@@ -2457,7 +2460,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let mut msg = MESSAGE_SIMPLE.clone();
         msg.to = Some(vec!["did:example:bob#key-x25519-1".into()]);
@@ -2489,7 +2492,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let mut msg = MESSAGE_SIMPLE.clone();
         msg.from = "did:example:unknown".to_string().into();
@@ -2518,7 +2521,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let from = ALICE_DID.to_string() + "#unknown-key";
         let res = MESSAGE_SIMPLE
@@ -2549,7 +2552,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let mut msg = MESSAGE_SIMPLE.clone();
         msg.to = Some(vec!["did:example:unknown".into()]);
@@ -2581,7 +2584,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let to = BOB_DID.to_string() + "#unknown-key";
         let res = MESSAGE_SIMPLE
@@ -2612,7 +2615,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let sign_by = ALICE_DID.to_string() + "#unknown-key";
         let res = MESSAGE_SIMPLE
@@ -2643,7 +2646,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let res = MESSAGE_SIMPLE
             .pack_encrypted(
@@ -2675,7 +2678,7 @@ mod tests {
             BOB_DID_DOC.clone(),
         ]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let res = MESSAGE_SIMPLE
             .pack_encrypted(
@@ -2705,7 +2708,7 @@ mod tests {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC_NO_SECRETS.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let to = "did:example:bob#key-x25519-not-secrets-1";
         let _ = MESSAGE_SIMPLE
@@ -2760,7 +2763,7 @@ mod tests {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let res = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -2794,8 +2797,8 @@ mod tests {
             CHARLIE_DID_DOC.clone(),
         ]);
         let charlie_rotated_to_alice_secrets_resolver =
-            ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
-        let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+            ExampleKMS::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+        let bob_secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
         let (packed_msg, _pack_metadata) = MESSAGE_FROM_PRIOR_FULL
             .pack_encrypted(
@@ -2883,7 +2886,7 @@ mod tests {
 
             let derive_func = |ephem_key: KE,
                                sender_key: Option<KE>,
-                               recip_kid: &str,
+                               _recip_kid: String,
                                alg: Vec<u8>,
                                apu: Vec<u8>,
                                apv: Vec<u8>,
@@ -2965,7 +2968,7 @@ mod tests {
 
             let derive_func = |ephem_key: KE,
                                sender_key: Option<KE>,
-                               recip_kid: &str,
+                               _recip_kid: String,
                                alg: Vec<u8>,
                                apu: Vec<u8>,
                                apv: Vec<u8>,

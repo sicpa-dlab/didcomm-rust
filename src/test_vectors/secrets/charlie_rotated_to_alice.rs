@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 
-use crate::didcomm::secrets::Secret;
+use crate::didcomm::secrets::resolvers::example::Secret;
 
 use super::{
     alice::{

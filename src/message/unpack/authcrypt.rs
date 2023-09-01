@@ -1,10 +1,11 @@
 use crate::jwe::envelope::JWE;
+use crate::secrets::KeyOrKid;
 use crate::{
     algorithms::AuthCryptAlg,
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultExt},
     jwe,
-    secrets::SecretsResolver,
+    secrets::KeyManagementService,
     utils::{
         crypto::{AsKnownKeyPair, KnownKeyPair},
         did::did_or_url,
@@ -24,7 +25,7 @@ use askar_crypto::{
 pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     msg: &str,
     did_resolver: &'dr (dyn DIDResolver + 'dr),
-    secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+    kms: &'sr (dyn KeyManagementService + 'sr),
     opts: &UnpackOptions,
     metadata: &mut UnpackMetadata,
 ) -> Result<Option<String>> {
@@ -118,7 +119,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     metadata.encrypted = true;
     metadata.encrypted_from_kid = Some(from_kid.into());
 
-    let to_kids_found = secrets_resolver.find_secrets(&to_kids).await?;
+    let to_kids_found = kms.find_secrets(&to_kids).await?;
 
     if to_kids_found.is_empty() {
         Err(err_msg(
@@ -130,7 +131,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     let mut payload: Option<Vec<u8>> = None;
 
     for to_kid in to_kids_found {
-        let to_key_alg = secrets_resolver.get_key_alg(to_kid).await.kind(
+        let to_key_alg = kms.get_key_alg(to_kid).await.kind(
             ErrorKind::InvalidState,
             "Recipient secret not found after existence checking",
         )?;
@@ -151,7 +152,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     _
                 >(Some((from_kid, from_key)), (to_kid, |ephem_key: X25519KeyPair,
                                                         send_key: Option<X25519KeyPair>,
-                                                        recip_kid: &str,
+                                                        recip_kid: String,
                                                         alg: Vec<u8>,
                                                         apu: Vec<u8>,
                                                         apv: Vec<u8>,
@@ -161,8 +162,8 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                             err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
                         })?;
 
-                        secrets_resolver.derive_aes_key_from_x25519_using_edch1pu_receive(
-                            ephem_key, send_key, recip_kid, alg, apu, apv, cc_tag, true,
+                        kms.derive_aes_key_using_ecdh_1pu(
+                            KeyOrKid::X25519KeyPair(ephem_key), KeyOrKid::X25519KeyPair(send_key), KeyOrKid::Kid(recip_kid), alg, apu, apv, cc_tag, true,
                         ).await
                     }
                 })).await?
@@ -182,7 +183,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     _
                 >(Some((from_kid, from_key)), (to_kid, |ephem_key: P256KeyPair,
                                                         send_key: Option<P256KeyPair>,
-                                                        recip_kid: &str,
+                                                        recip_kid: String,
                                                         alg: Vec<u8>,
                                                         apu: Vec<u8>,
                                                         apv: Vec<u8>,
@@ -192,8 +193,8 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                             err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
                         })?;
 
-                            secrets_resolver.derive_aes_key_from_p256_using_edch1pu_receive(
-                                ephem_key, send_key, recip_kid, alg, apu, apv, cc_tag, true,
+                            kms.derive_aes_key_using_ecdh_1pu(
+                                KeyOrKid::P256KeyPair(ephem_key), KeyOrKid::P256KeyPair(send_key), KeyOrKid::Kid(recip_kid), alg, apu, apv, cc_tag, true,
                             ).await
                     }
                 })).await?

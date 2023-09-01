@@ -1,7 +1,6 @@
-use askar_crypto::sign::KeySign;
 use std::borrow::Cow;
 
-use crate::secrets::SecretsResolver;
+use crate::secrets::KeyManagementService;
 use crate::{
     error::{ErrorKind, Result, ResultExt},
     jws::envelope::{Algorithm, CompactHeader, Header, ProtectedHeader, Signature, JWS},
@@ -11,7 +10,7 @@ pub(crate) async fn sign(
     payload: &[u8],
     kid: &str,
     alg: Algorithm,
-    kms: &dyn SecretsResolver,
+    kms: &dyn KeyManagementService,
 ) -> Result<String> {
     let sig_type = alg.sig_type()?;
 
@@ -64,7 +63,7 @@ pub(crate) async fn sign_compact(
     kid: &str,
     typ: &str,
     alg: Algorithm,
-    kms: &dyn SecretsResolver,
+    kms: &dyn KeyManagementService,
 ) -> Result<String> {
     let sig_type = alg.sig_type()?;
 
@@ -104,10 +103,9 @@ mod tests {
         jwk::FromJwk,
         sign::{KeySigVerify, KeySign},
     };
-    use serde_json::json;
 
-    use crate::secrets::resolvers::ExampleSecretsResolver;
-    use crate::secrets::{Secret, SecretMaterial, SecretType};
+    use crate::secrets::resolvers::example::{Secret, SecretMaterial, SecretType};
+    use crate::secrets::resolvers::ExampleKMS;
     use crate::{
         error::{ErrorKind, Result},
         jws::{self, envelope::Algorithm},
@@ -475,7 +473,7 @@ mod tests {
                 private_key_jwk: serde_json::from_str(key)?,
             },
         };
-        let kms = ExampleSecretsResolver::new(vec![secret]);
+        let kms = ExampleKMS::new(vec![secret]);
         jws::sign(payload.as_bytes(), kid, alg.clone(), &kms).await
     }
 
@@ -493,7 +491,7 @@ mod tests {
                 private_key_jwk: serde_json::from_str(key)?,
             },
         };
-        let kms = ExampleSecretsResolver::new(vec![secret]);
+        let kms = ExampleKMS::new(vec![secret]);
         jws::sign_compact(payload.as_bytes(), kid, typ, alg.clone(), &kms).await
     }
 

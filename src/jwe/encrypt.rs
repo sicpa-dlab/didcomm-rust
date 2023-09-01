@@ -490,7 +490,7 @@ mod tests {
                             bob_edge_priv.0,
                             |ephem_key: KE,
                              sender_key: Option<KE>,
-                             recip_kid: &str,
+                             _recip_kid: String,
                              alg: Vec<u8>,
                              apu: Vec<u8>,
                              apv: Vec<u8>,

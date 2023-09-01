@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use serde_json::json;
 
-use crate::didcomm::secrets::{Secret, SecretMaterial, SecretType};
+use crate::didcomm::secrets::resolvers::example::{Secret, SecretMaterial, SecretType};
 
 lazy_static! {
     pub static ref BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1: Secret = Secret {

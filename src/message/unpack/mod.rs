@@ -10,7 +10,7 @@ use crate::{
     error::{err_msg, ErrorKind, Result, ResultExt},
     message::unpack::plaintext::_try_unpack_plaintext,
     protocols::routing::try_parse_forward,
-    secrets::SecretsResolver,
+    secrets::KeyManagementService,
     utils::did::did_or_url,
     FromPrior, Message,
 };
@@ -31,7 +31,7 @@ impl Message {
     /// # Params
     /// - `packed_msg` the message as JSON string to be unpacked
     /// - `did_resolver` instance of `DIDResolver` to resolve DIDs
-    /// - `secrets_resolver` instance of SecretsResolver` to resolve sender DID keys secrets
+    /// - `kms` instance of SecretsResolver` to resolve sender DID keys secrets
     /// - `options` allow fine configuration of unpacking process and imposing additional restrictions
     /// to message to be trusted.
     ///
@@ -53,7 +53,7 @@ impl Message {
     pub async fn unpack<'dr, 'sr>(
         msg: &str,
         did_resolver: &'dr (dyn DIDResolver + 'dr),
-        secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+        kms: &'sr (dyn KeyManagementService + 'sr),
         options: &UnpackOptions,
     ) -> Result<(Self, UnpackMetadata)> {
         let mut metadata = UnpackMetadata {
@@ -78,14 +78,13 @@ impl Message {
         let mut forwarded_msg: String;
 
         loop {
-            anoncrypted =
-                _try_unpack_anoncrypt(msg, secrets_resolver, options, &mut metadata).await?;
+            anoncrypted = _try_unpack_anoncrypt(msg, kms, options, &mut metadata).await?;
 
             if options.unwrap_re_wrapping_forward && anoncrypted.is_some() {
                 let forwarded_msg_opt = Self::_try_unwrap_forwarded_message(
                     anoncrypted.as_deref().unwrap(),
                     did_resolver,
-                    secrets_resolver,
+                    kms,
                 )
                 .await?;
 
@@ -105,8 +104,7 @@ impl Message {
         let msg = anoncrypted.as_deref().unwrap_or(msg);
 
         let authcrypted =
-            _try_unpack_authcrypt(msg, did_resolver, secrets_resolver, options, &mut metadata)
-                .await?;
+            _try_unpack_authcrypt(msg, did_resolver, kms, options, &mut metadata).await?;
         let msg = authcrypted.as_deref().unwrap_or(msg);
 
         let signed = _try_unpack_sign(msg, did_resolver, options, &mut metadata).await?;
@@ -127,7 +125,7 @@ impl Message {
     async fn _try_unwrap_forwarded_message<'dr, 'sr>(
         msg: &str,
         did_resolver: &'dr (dyn DIDResolver + 'dr),
-        secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+        kms: &'sr (dyn KeyManagementService + 'sr),
     ) -> Result<Option<String>> {
         let plaintext = match Message::from_str(msg) {
             Ok(m) => m,
@@ -136,7 +134,7 @@ impl Message {
         };
 
         if let Some(forward_msg) = try_parse_forward(&plaintext) {
-            if has_key_agreement_secret(&forward_msg.next, did_resolver, secrets_resolver).await? {
+            if has_key_agreement_secret(&forward_msg.next, did_resolver, kms).await? {
                 // TODO: Think how to avoid extra serialization of forwarded_msg here.
                 // (This serializtion is a double work because forwarded_msg will then
                 // be deserialized in _try_unpack_anoncrypt.)
@@ -227,7 +225,7 @@ pub struct UnpackMetadata {
 async fn has_key_agreement_secret<'dr, 'sr>(
     did_or_kid: &str,
     did_resolver: &'dr (dyn DIDResolver + 'dr),
-    secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+    kms: &'sr (dyn KeyManagementService + 'sr),
 ) -> Result<bool> {
     let kids = match did_or_url(did_or_kid) {
         (_, Some(kid)) => {
@@ -244,7 +242,7 @@ async fn has_key_agreement_secret<'dr, 'sr>(
 
     let kids = kids.iter().map(|k| k as &str).collect::<Vec<_>>();
 
-    let secrets_ids = secrets_resolver.find_secrets(&kids[..]).await?;
+    let secrets_ids = kms.find_secrets(&kids[..]).await?;
 
     return Ok(!secrets_ids.is_empty());
 }
@@ -255,7 +253,7 @@ mod test {
         did::resolvers::ExampleDIDResolver,
         message::MessagingServiceMetadata,
         protocols::routing::wrap_in_forward,
-        secrets::resolvers::ExampleSecretsResolver,
+        secrets::resolvers::ExampleKMS,
         test_vectors::{
             remove_field, remove_protected_field, update_field, update_protected_field,
             ALICE_AUTH_METHOD_25519, ALICE_AUTH_METHOD_P256, ALICE_AUTH_METHOD_SECPP256K1,
@@ -497,7 +495,7 @@ mod test {
             sign_alg: SignAlg,
         ) {
             let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone()]);
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (msg, _) = message
                 .pack_signed(sign_by, &did_resolver, &secrets_resolver)
@@ -630,11 +628,11 @@ mod test {
                 MEDIATOR1_DID_DOC.clone(),
             ]);
 
-            let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let alice_secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
-            let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+            let bob_secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
-            let mediator1_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+            let mediator1_secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
             let (msg, pack_metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -755,11 +753,11 @@ mod test {
                 MEDIATOR1_DID_DOC.clone(),
             ]);
 
-            let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let alice_secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
-            let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+            let bob_secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
-            let mediator1_secrets_resolver = ExampleSecretsResolver::new(MEDIATOR1_SECRETS.clone());
+            let mediator1_secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
             let (msg, pack_metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -1003,7 +1001,7 @@ mod test {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (packed, _) = msg
                 .pack_encrypted(
@@ -1137,7 +1135,7 @@ mod test {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (packed, _) = msg
                 .pack_encrypted(
@@ -1145,7 +1143,7 @@ mod test {
                     None,
                     Some(sign_by),
                     &did_resolver,
-                    &secrets_resolver,
+                    &kms,
                     &PackEncryptedOptions {
                         forward: false,
                         enc_alg_anon: enc_alg.clone(),
@@ -1328,7 +1326,7 @@ mod test {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (packed, _) = msg
                 .pack_encrypted(
@@ -1503,7 +1501,7 @@ mod test {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (packed, _) = msg
                 .pack_encrypted(
@@ -1615,7 +1613,7 @@ mod test {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (packed, _) = msg
                 .pack_encrypted(
@@ -1733,7 +1731,7 @@ mod test {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-            let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let (packed, _) = msg
                 .pack_encrypted(
@@ -2095,16 +2093,11 @@ mod test {
             CHARLIE_DID_DOC.clone(),
         ]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+        let kms = ExampleKMS::new(BOB_SECRETS.clone());
 
-        let (msg, metadata) = Message::unpack(
-            msg,
-            &did_resolver,
-            &secrets_resolver,
-            &UnpackOptions::default(),
-        )
-        .await
-        .expect("unpack is ok.");
+        let (msg, metadata) = Message::unpack(msg, &did_resolver, &kms, &UnpackOptions::default())
+            .await
+            .expect("unpack is ok.");
 
         assert_eq!(&msg, exp_msg);
         assert_eq!(&metadata, exp_metadata);
@@ -2122,7 +2115,7 @@ mod test {
             CHARLIE_DID_DOC.clone(),
         ]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
         let (msg, mut metadata) = Message::unpack(
             msg,
@@ -2150,7 +2143,7 @@ mod test {
             CHARLIE_DID_DOC.clone(),
         ]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+        let secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
 
         let err = Message::unpack(
             msg,

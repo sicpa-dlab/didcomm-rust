@@ -31,8 +31,8 @@ mod tests {
     use askar_crypto::{alg::ed25519::Ed25519KeyPair, jwk::FromJwk};
 
     use crate::jws::{self, Algorithm};
-    use crate::secrets::resolvers::ExampleSecretsResolver;
-    use crate::secrets::{Secret, SecretMaterial, SecretType};
+    use crate::secrets::resolvers::example::{Secret, SecretMaterial, SecretType};
+    use crate::secrets::resolvers::ExampleKMS;
 
     #[tokio::test]
     async fn demo_works() {
@@ -57,7 +57,7 @@ mod tests {
                 .expect("Unable from_jwk"),
             },
         };
-        let kms = ExampleSecretsResolver::new(vec![alice_secret]);
+        let kms = ExampleKMS::new(vec![alice_secret]);
 
         // Alice public key
         let alice_pkey = Ed25519KeyPair::from_jwk(

@@ -19,7 +19,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
         sender: Option<(&str, &'a KE)>,
         recipient: (
             &'a str,
-            impl FnOnce(KE, Option<KE>, &'a str, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) -> FUT,
+            impl FnOnce(KE, Option<KE>, String, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) -> FUT,
         ),
     ) -> Result<Vec<u8>>
     where
@@ -62,7 +62,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
         let kw = derive_func(
             epk,
             skey.cloned(),
-            kid,
+            kid.to_string(),
             self.protected.alg.as_str().as_bytes().to_vec(),
             self.apu.as_deref().unwrap_or(&[]).to_vec(),
             self.apv.to_vec(),
@@ -1038,7 +1038,7 @@ mod tests {
 
         let derive_func = |ephem_key: KE,
                            sender_key: Option<KE>,
-                           recip_kid: &str,
+                           _recip_kid: String,
                            alg: Vec<u8>,
                            apu: Vec<u8>,
                            apv: Vec<u8>,

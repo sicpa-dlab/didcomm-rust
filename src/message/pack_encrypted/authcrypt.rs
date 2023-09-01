@@ -1,10 +1,11 @@
+use crate::secrets::KeyOrKid;
 use crate::utils::DummyFuture;
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg},
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext},
     jwe,
-    secrets::SecretsResolver,
+    secrets::KeyManagementService,
     utils::{
         crypto::{AsKnownKeyPair, KnownKeyAlg},
         did::did_or_url,
@@ -24,7 +25,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
     to: &str,
     from: &str,
     did_resolver: &'dr (dyn DIDResolver + 'dr),
-    secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+    kms: &'sr (dyn KeyManagementService + 'sr),
     msg: &[u8],
     enc_alg_auth: &AuthCryptAlg,
     enc_alg_anon: &AnonCryptAlg,
@@ -65,7 +66,7 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
     }
 
     // Keep only sender keys present in the wallet
-    let from_kids = secrets_resolver
+    let from_kids = kms
         .find_secrets(&from_kids)
         .await
         .context("Unable find secrets")?;
@@ -199,12 +200,17 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                                     err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
                                 })?;
 
-                                secrets_resolver
-                                    .derive_aes_key_from_x25519_using_edch1pu(
-                                        ephem_key, send_kid, recip_key, alg, apu, apv, cc_tag,
-                                        false,
-                                    )
-                                    .await
+                                kms.derive_aes_key_using_ecdh_1pu(
+                                    KeyOrKid::X25519KeyPair(ephem_key),
+                                    KeyOrKid::Kid(send_kid),
+                                    KeyOrKid::X25519KeyPair(recip_key),
+                                    alg,
+                                    apu,
+                                    apv,
+                                    cc_tag,
+                                    false,
+                                )
+                                .await
                             }
                         },
                     )),
@@ -335,12 +341,17 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                                     err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
                                 })?;
 
-                                secrets_resolver
-                                    .derive_aes_key_from_p256_using_edch1pu(
-                                        ephem_key, send_kid, recip_key, alg, apu, apv, cc_tag,
-                                        false,
-                                    )
-                                    .await
+                                kms.derive_aes_key_using_ecdh_1pu(
+                                    KeyOrKid::P256KeyPair(ephem_key),
+                                    KeyOrKid::Kid(send_kid),
+                                    KeyOrKid::P256KeyPair(recip_key),
+                                    alg,
+                                    apu,
+                                    apv,
+                                    cc_tag,
+                                    false,
+                                )
+                                .await
                             }
                         },
                     )),

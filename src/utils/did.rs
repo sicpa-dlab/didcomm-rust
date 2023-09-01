@@ -1,8 +1,7 @@
 use askar_crypto::alg::{
     ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair, x25519::X25519KeyPair,
 };
-use askar_crypto::repr::{KeyPublicBytes, KeySecretBytes};
-use serde_json::{json, Value};
+use serde_json::json;
 use std::io::Cursor;
 use varint::{VarintRead, VarintWrite};
 
@@ -11,7 +10,6 @@ use crate::{
     did::{did_doc::VerificationMethodType, VerificationMaterial, VerificationMethod},
     error::{err_msg, ErrorKind, Result, ResultExt},
     jwk::FromJwkValue,
-    secrets::{Secret, SecretMaterial, SecretType},
     utils::crypto::{AsKnownKeyPair, KnownKeyAlg, KnownKeyPair},
 };
 
@@ -245,244 +243,6 @@ impl AsKnownKeyPair for VerificationMethod {
     }
 }
 
-impl AsKnownKeyPair for Secret {
-    fn key_alg(&self) -> KnownKeyAlg {
-        match (&self.type_, &self.secret_material) {
-            (
-                SecretType::JsonWebKey2020,
-                SecretMaterial::JWK {
-                    private_key_jwk: ref value,
-                },
-            ) => match (value["kty"].as_str(), value["crv"].as_str()) {
-                (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => KnownKeyAlg::P256,
-                (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => KnownKeyAlg::K256,
-                (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => KnownKeyAlg::Ed25519,
-                (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => KnownKeyAlg::X25519,
-                _ => KnownKeyAlg::Unsupported,
-            },
-            (
-                SecretType::X25519KeyAgreementKey2019,
-                SecretMaterial::Base58 {
-                    private_key_base58: _,
-                },
-            ) => KnownKeyAlg::X25519,
-            (
-                SecretType::Ed25519VerificationKey2018,
-                SecretMaterial::Base58 {
-                    private_key_base58: _,
-                },
-            ) => KnownKeyAlg::Ed25519,
-            (
-                SecretType::X25519KeyAgreementKey2020,
-                SecretMaterial::Multibase {
-                    private_key_multibase: _,
-                },
-            ) => KnownKeyAlg::X25519,
-            (
-                SecretType::Ed25519VerificationKey2020,
-                SecretMaterial::Multibase {
-                    private_key_multibase: _,
-                },
-            ) => KnownKeyAlg::Ed25519,
-            _ => KnownKeyAlg::Unsupported,
-        }
-    }
-
-    fn as_key_pair(&self) -> Result<KnownKeyPair> {
-        match (&self.type_, &self.secret_material) {
-            (
-                SecretType::JsonWebKey2020,
-                SecretMaterial::JWK {
-                    private_key_jwk: ref value,
-                },
-            ) => match (value["kty"].as_str(), value["crv"].as_str()) {
-                (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
-                    P256KeyPair::from_jwk_value(value)
-                        .kind(ErrorKind::Malformed, "Unable parse jwk")
-                        .map(KnownKeyPair::P256)
-                }
-                (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
-                    K256KeyPair::from_jwk_value(value)
-                        .kind(ErrorKind::Malformed, "Unable parse jwk")
-                        .map(KnownKeyPair::K256)
-                }
-                (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
-                    Ed25519KeyPair::from_jwk_value(value)
-                        .kind(ErrorKind::Malformed, "Unable parse jwk")
-                        .map(KnownKeyPair::Ed25519)
-                }
-                (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
-                    X25519KeyPair::from_jwk_value(value)
-                        .kind(ErrorKind::Malformed, "Unable parse jwk")
-                        .map(KnownKeyPair::X25519)
-                }
-                _ => Err(err_msg(
-                    ErrorKind::Unsupported,
-                    "Unsupported key type or curve",
-                )),
-            },
-
-            (
-                SecretType::X25519KeyAgreementKey2019,
-                SecretMaterial::Base58 {
-                    private_key_base58: ref value,
-                },
-            ) => {
-                let decoded_value = bs58::decode(value)
-                    .into_vec()
-                    .to_didcomm("Wrong base58 value in secret material")?;
-
-                let key_pair = X25519KeyPair::from_secret_bytes(&decoded_value)
-                    .kind(ErrorKind::Malformed, "Unable parse x25519 secret material")?;
-
-                let mut jwk = json!({
-                    "kty": "OKP",
-                    "crv": "X25519",
-                });
-
-                key_pair.with_public_bytes(|buf| {
-                    jwk["x"] = Value::String(base64::encode_config(buf, base64::URL_SAFE_NO_PAD))
-                });
-
-                key_pair.with_secret_bytes(|buf| {
-                    if let Some(sk) = buf {
-                        jwk["d"] = Value::String(base64::encode_config(sk, base64::URL_SAFE_NO_PAD))
-                    }
-                });
-
-                X25519KeyPair::from_jwk_value(&jwk)
-                    .kind(ErrorKind::Malformed, "Unable parse base58 secret material")
-                    .map(KnownKeyPair::X25519)
-            }
-
-            (
-                SecretType::Ed25519VerificationKey2018,
-                SecretMaterial::Base58 {
-                    private_key_base58: ref value,
-                },
-            ) => {
-                let decoded_value = bs58::decode(value)
-                    .into_vec()
-                    .to_didcomm("Wrong base58 value in secret material")?;
-
-                let curve25519_point_size = 32;
-                let (d_value, x_value) = decoded_value.split_at(curve25519_point_size);
-                let base64_url_d_value = base64::encode_config(&d_value, base64::URL_SAFE_NO_PAD);
-                let base64_url_x_value = base64::encode_config(&x_value, base64::URL_SAFE_NO_PAD);
-
-                let jwk = json!({"kty": "OKP",
-                    "crv": "Ed25519",
-                    "x": base64_url_x_value,
-                    "d": base64_url_d_value
-                });
-
-                Ed25519KeyPair::from_jwk_value(&jwk)
-                    .kind(ErrorKind::Malformed, "Unable parse base58 secret material")
-                    .map(KnownKeyPair::Ed25519)
-            }
-
-            (
-                SecretType::X25519KeyAgreementKey2020,
-                SecretMaterial::Multibase {
-                    private_key_multibase: ref value,
-                },
-            ) => {
-                if !value.starts_with('z') {
-                    Err(err_msg(
-                        ErrorKind::IllegalArgument,
-                        "Multibase must start with 'z'",
-                    ))?
-                }
-                let decoded_multibase_value = bs58::decode(&value[1..])
-                    .into_vec()
-                    .to_didcomm("Wrong multibase value in secret material")?;
-
-                let (codec, decoded_value) = _from_multicodec(&decoded_multibase_value)?;
-                if codec != Codec::X25519Priv {
-                    Err(err_msg(
-                        ErrorKind::IllegalArgument,
-                        "Wrong codec in multibase secret material",
-                    ))?
-                }
-
-                let key_pair = X25519KeyPair::from_secret_bytes(&decoded_value)
-                    .kind(ErrorKind::Malformed, "Unable parse x25519 secret material")?;
-
-                let mut jwk = json!({
-                    "kty": "OKP",
-                    "crv": "X25519",
-                });
-
-                key_pair.with_public_bytes(|buf| {
-                    jwk["x"] = Value::String(base64::encode_config(buf, base64::URL_SAFE_NO_PAD))
-                });
-
-                key_pair.with_secret_bytes(|buf| {
-                    if let Some(sk) = buf {
-                        jwk["d"] = Value::String(base64::encode_config(sk, base64::URL_SAFE_NO_PAD))
-                    }
-                });
-
-                X25519KeyPair::from_jwk_value(&jwk)
-                    .kind(
-                        ErrorKind::Malformed,
-                        "Unable parse multibase secret material",
-                    )
-                    .map(KnownKeyPair::X25519)
-            }
-
-            (
-                SecretType::Ed25519VerificationKey2020,
-                SecretMaterial::Multibase {
-                    private_key_multibase: ref value,
-                },
-            ) => {
-                if !value.starts_with('z') {
-                    Err(err_msg(
-                        ErrorKind::IllegalArgument,
-                        "Multibase must start with 'z'",
-                    ))?
-                }
-                let decoded_multibase_value = bs58::decode(&value[1..])
-                    .into_vec()
-                    .to_didcomm("Wrong multibase value in secret material")?;
-
-                let (codec, decoded_value) = _from_multicodec(&decoded_multibase_value)?;
-                if codec != Codec::Ed25519Priv {
-                    Err(err_msg(
-                        ErrorKind::IllegalArgument,
-                        "Wrong codec in multibase secret material",
-                    ))?
-                }
-
-                let curve25519_point_size = 32;
-                let (d_value, x_value) = decoded_value.split_at(curve25519_point_size);
-                let base64_url_d_value = base64::encode_config(&d_value, base64::URL_SAFE_NO_PAD);
-                let base64_url_x_value = base64::encode_config(&x_value, base64::URL_SAFE_NO_PAD);
-
-                let jwk = json!({
-                    "kty": "OKP",
-                    "crv": "Ed25519",
-                    "x": base64_url_x_value,
-                    "d": base64_url_d_value
-                });
-
-                Ed25519KeyPair::from_jwk_value(&jwk)
-                    .kind(
-                        ErrorKind::Malformed,
-                        "Unable parse multibase secret material",
-                    )
-                    .map(KnownKeyPair::Ed25519)
-            }
-
-            _ => Err(err_msg(
-                ErrorKind::Unsupported,
-                "Unsupported secret method type and material combination",
-            )),
-        }
-    }
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum Codec {
     X25519Pub,
@@ -503,7 +263,7 @@ impl Codec {
     }
 }
 
-fn _from_multicodec(value: &Vec<u8>) -> Result<(Codec, &[u8])> {
+pub(crate) fn _from_multicodec(value: &Vec<u8>) -> Result<(Codec, &[u8])> {
     let mut val: Cursor<Vec<u8>> = Cursor::new(value.clone());
     let prefix_int = val
         .read_unsigned_varint_32()
@@ -522,7 +282,7 @@ fn _from_multicodec(value: &Vec<u8>) -> Result<(Codec, &[u8])> {
 mod tests {
     use crate::did::{VerificationMaterial, VerificationMethod, VerificationMethodType};
     use crate::jwk::FromJwkValue;
-    use crate::secrets::{Secret, SecretMaterial, SecretType};
+    use crate::secrets::resolvers::example::{Secret, SecretMaterial, SecretType};
     use crate::utils::crypto::{AsKnownKeyPair, KnownKeyPair};
     use crate::utils::did::{did_or_url, is_did};
     use askar_crypto::alg::ed25519::Ed25519KeyPair;
