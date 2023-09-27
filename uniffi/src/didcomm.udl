@@ -1,7 +1,7 @@
-[Wrapped]
+[Custom]
 typedef string JsonValue;
 
-// 1. MAIN DIDCOMM INTERFACE 
+// 1. MAIN DIDCOMM INTERFACE
 
 interface DIDComm {
   constructor(DIDResolver did_resolver, SecretsResolver secret_resolver);
@@ -182,10 +182,10 @@ interface OnGetSecretResult {
 };
 
 interface OnFindSecretsResult {
-  [Throws=ErrorKind]  
+  [Throws=ErrorKind]
   void success(sequence<string> result);
 
-  [Throws=ErrorKind]  
+  [Throws=ErrorKind]
   void error(ErrorKind err, string msg);
 };
 
@@ -343,7 +343,7 @@ callback interface OnFromPriorUnpackResult {
 // 11. FORWARD
 
 callback interface OnWrapInForwardResult {
-  void success(string result); 
+  void success(string result);
   void error(ErrorKind err, string msg);
 };
 
