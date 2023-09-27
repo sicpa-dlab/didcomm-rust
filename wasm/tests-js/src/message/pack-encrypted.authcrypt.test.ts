@@ -29,10 +29,10 @@ import {
   CHARLIE_DID,
   CHARLIE_DID_DOC,
   ExampleDIDResolver,
-  ExampleSecretsResolver,
+  ExampleKMS,
   MESSAGE_SIMPLE,
   MockDIDResolver,
-  MockSecretsResolver,
+  MockKMS,
 } from "../test-vectors";
 import { Message } from "didcomm";
 
@@ -69,14 +69,14 @@ test.each([
   "Message.pack-encrypted authcrypt works for $case",
   async ({ message, from, to, expMetadata }) => {
     const didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-    let secretResolver = new ExampleSecretsResolver(ALICE_SECRETS);
+    let kms = new ExampleKMS(ALICE_SECRETS);
 
     const [encrypted, metadata] = await message.pack_encrypted(
       to,
       from,
       null,
       didResolver,
-      secretResolver,
+      kms,
       {
         protect_sender: false,
         forward: false,
@@ -89,12 +89,12 @@ test.each([
     expect(typeof encrypted).toStrictEqual("string");
     expect(metadata).toStrictEqual(expMetadata);
 
-    secretResolver = new ExampleSecretsResolver(BOB_SECRETS);
+    kms = new ExampleKMS(BOB_SECRETS);
 
     const [unpacked, _] = await Message.unpack(
       encrypted,
       didResolver,
-      secretResolver,
+      kms,
       {}
     );
 
@@ -106,7 +106,7 @@ test.each([
   {
     case: "from is not a did or did url",
     didResolver: new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]),
-    secretsResolver: new ExampleSecretsResolver(ALICE_SECRETS),
+    kms: new ExampleKMS(ALICE_SECRETS),
     message: MESSAGE_SIMPLE,
     from: "not-a-did",
     to: BOB_DID,
@@ -116,7 +116,7 @@ test.each([
   {
     case: "Signer DID not a did",
     didResolver: new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]),
-    secretsResolver: new ExampleSecretsResolver(ALICE_SECRETS),
+    kms: new ExampleKMS(ALICE_SECRETS),
     message: MESSAGE_SIMPLE,
     from: ALICE_DID,
     to: "not-a-did",
@@ -126,7 +126,7 @@ test.each([
   {
     case: "Signer DID URL not found",
     didResolver: new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]),
-    secretsResolver: new ExampleSecretsResolver(ALICE_SECRETS),
+    kms: new ExampleKMS(ALICE_SECRETS),
     message: MESSAGE_SIMPLE,
     from: ALICE_DID,
     to: BOB_DID,
@@ -137,7 +137,7 @@ test.each([
   {
     case: "from differs message from",
     didResolver: new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]),
-    secretsResolver: new ExampleSecretsResolver(ALICE_SECRETS),
+    kms: new ExampleKMS(ALICE_SECRETS),
     message: MESSAGE_SIMPLE,
     from: BOB_DID,
     to: BOB_DID,
@@ -148,7 +148,7 @@ test.each([
   {
     case: "to differs message to",
     didResolver: new ExampleDIDResolver([ALICE_DID_DOC, CHARLIE_DID_DOC]),
-    secretsResolver: new ExampleSecretsResolver(ALICE_SECRETS),
+    kms: new ExampleKMS(ALICE_SECRETS),
     message: MESSAGE_SIMPLE,
     from: ALICE_DID,
     to: CHARLIE_DID,
@@ -159,7 +159,7 @@ test.each([
   {
     case: "from unknown did",
     didResolver: new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]),
-    secretsResolver: new ExampleSecretsResolver(ALICE_SECRETS),
+    kms: new ExampleKMS(ALICE_SECRETS),
     message: new Message({
       id: "1234567890",
       typ: "application/didcomm-plain+json",
@@ -178,7 +178,7 @@ test.each([
   {
     case: "from unknown did url",
     didResolver: new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]),
-    secretsResolver: new ExampleSecretsResolver(ALICE_SECRETS),
+    kms: new ExampleKMS(ALICE_SECRETS),
     message: MESSAGE_SIMPLE,
     from: ALICE_DID + "#unknown-key",
     to: BOB_DID,
@@ -188,7 +188,7 @@ test.each([
   {
     case: "from unknown did url",
     didResolver: new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]),
-    secretsResolver: new ExampleSecretsResolver(ALICE_SECRETS),
+    kms: new ExampleKMS(ALICE_SECRETS),
     message: MESSAGE_SIMPLE,
     from: "did:example:alice#key-x25519-not-in-secrets-1",
     to: BOB_DID,
@@ -199,7 +199,7 @@ test.each([
   "Message.pack-encrypted handles $case",
   async ({
     didResolver,
-    secretsResolver,
+    kms,
     message,
     from,
     to,
@@ -211,7 +211,7 @@ test.each([
       from,
       signBy,
       didResolver,
-      secretsResolver,
+      kms,
       {}
     );
     await expect(res).rejects.toThrowError(expError);

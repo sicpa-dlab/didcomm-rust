@@ -6,8 +6,9 @@ use askar_crypto::{
 };
 use std::future::Future;
 
+use crate::error::ResultContext;
 use crate::{
-    error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
+    error::{err_msg, ErrorKind, Result, ResultExt},
     jwe::ParsedJWE,
     jwk::{FromJwkValue, ToJwkValue},
     utils::crypto::{JoseKDF, KeyWrap},
@@ -19,7 +20,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
         sender: Option<(&str, &'a KE)>,
         recipient: (
             &'a str,
-            impl FnOnce(KE, Option<KE>, String, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) -> FUT,
+            impl FnOnce(String, Option<String>, String, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) -> FUT,
         ),
     ) -> Result<Vec<u8>>
     where
@@ -54,14 +55,16 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
                 .kind(ErrorKind::Malformed, "Unable decode encrypted_key")?
         };
 
-        let epk = KE::from_jwk_value(&self.protected.epk).context("Unable instantiate epk")?;
-
         let tag = base64::decode_config(self.jwe.tag, base64::URL_SAFE_NO_PAD)
             .kind(ErrorKind::Malformed, "Unable decode tag")?;
 
         let kw = derive_func(
-            epk,
-            skey.cloned(),
+            self.protected.epk.to_string(),
+            skey.map(|key| {
+                key.to_jwk_public(None)
+                    .kind(ErrorKind::Malformed, "Unable to serialize sender key")
+            })
+            .transpose()?,
             kid.to_string(),
             self.protected.alg.as_str().as_bytes().to_vec(),
             self.apu.as_deref().unwrap_or(&[]).to_vec(),
@@ -69,7 +72,7 @@ impl<'a, 'b> ParsedJWE<'a, 'b> {
             tag.clone(),
         )
         .await
-        .kind(ErrorKind::InvalidState, "Unable derive kw")?;
+        .context("Unable derive kw")?;
 
         let cek: CE = kw
             .unwrap_key(&encrypted_key)
@@ -110,6 +113,7 @@ mod tests {
         repr::{KeyGen, KeySecretBytes},
     };
 
+    use crate::error::ResultExt;
     use crate::{
         error::{Error, ErrorKind},
         jwe::{self, test_support::*},
@@ -531,11 +535,12 @@ mod tests {
             .await;
 
         let err = res.expect_err("res is ok");
+        println!("{}", err);
         assert_eq!(err.kind(), ErrorKind::Malformed);
 
         assert_eq!(
             format!("{}", err),
-            "Malformed: Unable instantiate epk: Unable produce jwk: Invalid key data",
+            "Malformed: Unable derive kw: Unable to instantiate ephem key: Invalid key data",
         );
     }
 
@@ -1036,14 +1041,22 @@ mod tests {
         let _sender = sender.map(|(kid, k)| (kid, KE::from_jwk(k).expect("Unable from_jwk")));
         let sender = _sender.as_ref().map(|(kid, k)| (*kid, k));
 
-        let derive_func = |ephem_key: KE,
-                           sender_key: Option<KE>,
+        let derive_func = |ephem_key: String,
+                           sender_key: Option<String>,
                            _recip_kid: String,
                            alg: Vec<u8>,
                            apu: Vec<u8>,
                            apv: Vec<u8>,
                            cc_tag: Vec<u8>| {
             async move {
+                let ephem_key = KE::from_jwk(&ephem_key)
+                    .kind(ErrorKind::Malformed, "Unable to instantiate ephem key")?;
+                let sender_key = sender_key
+                    .map(|sk_jwk| {
+                        KE::from_jwk(&sk_jwk)
+                            .kind(ErrorKind::Malformed, "Unable to instantiate sender key")
+                    })
+                    .transpose()?;
                 KDF::derive_key(
                     &ephem_key,
                     sender_key.as_ref(),

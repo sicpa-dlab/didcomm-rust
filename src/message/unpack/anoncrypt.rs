@@ -1,4 +1,4 @@
-use crate::secrets::KeyOrKid;
+use crate::secrets::{KidOrJwk, KnownKeyAlg};
 use crate::{
     algorithms::AnonCryptAlg,
     error::{err_msg, ErrorKind, Result, ResultExt},
@@ -7,7 +7,6 @@ use crate::{
     utils::did::did_or_url,
     UnpackMetadata, UnpackOptions,
 };
-use askar_crypto::alg::{EcCurves, KeyAlg};
 use askar_crypto::{
     alg::{
         aes::{A256CbcHs512, A256Gcm, A256Kw, AesKey},
@@ -85,7 +84,7 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
         )?;
 
         let _payload = match (to_key_alg, &parsed_jwe.protected.enc) {
-            (KeyAlg::X25519, jwe::EncAlgorithm::A256cbcHs512) => {
+            (KnownKeyAlg::X25519, jwe::EncAlgorithm::A256cbcHs512) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256cbcHs512EcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -95,19 +94,19 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         AesKey<A256Kw>,
                         _
                     >(None, (to_kid,
-                             |ephem_key: X25519KeyPair,
-                              _send_key: Option<X25519KeyPair>,
+                             |ephem_key: String,
+                              _send_key: Option<String>,
                               recip_kid: String,
                               alg: Vec<u8>,
                               apu: Vec<u8>,
                               apv: Vec<u8>,
                               _cc_tag: Vec<u8>| {
                         kms.derive_aes_key_using_ecdh_es(
-                            KeyOrKid::X25519KeyPair(ephem_key), KeyOrKid::Kid(recip_kid), alg, apu, apv, true,
+                            KidOrJwk::X25519Key(ephem_key), KidOrJwk::Kid(recip_kid), alg, apu, apv, true,
                         )
                 })).await?
             }
-            (KeyAlg::X25519, jwe::EncAlgorithm::Xc20P) => {
+            (KnownKeyAlg::X25519, jwe::EncAlgorithm::Xc20P) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::Xc20pEcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -116,19 +115,19 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         X25519KeyPair,
                         AesKey<A256Kw>,
                         _
-                    >(None, (to_kid, |ephem_key: X25519KeyPair,
-                                      _send_key: Option<X25519KeyPair>,
+                    >(None, (to_kid, |ephem_key: String,
+                                      _send_key: Option<String>,
                                       recip_kid: String,
                                       alg: Vec<u8>,
                                       apu: Vec<u8>,
                                       apv: Vec<u8>,
                                       _cc_tag: Vec<u8>| {
                     kms.derive_aes_key_using_ecdh_es(
-                        KeyOrKid::X25519KeyPair(ephem_key), KeyOrKid::Kid(recip_kid), alg, apu, apv, true,
+                        KidOrJwk::X25519Key(ephem_key), KidOrJwk::Kid(recip_kid), alg, apu, apv, true,
                     )
                 })).await?
             }
-            (KeyAlg::X25519, jwe::EncAlgorithm::A256Gcm) => {
+            (KnownKeyAlg::X25519, jwe::EncAlgorithm::A256Gcm) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256gcmEcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -137,20 +136,20 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         X25519KeyPair,
                         AesKey<A256Kw>,
                         _
-                    >(None, (to_kid, |ephem_key: X25519KeyPair,
-                                      _send_key: Option<X25519KeyPair>,
+                    >(None, (to_kid, |ephem_key: String,
+                                      _send_key: Option<String>,
                                       recip_kid: String,
                                       alg: Vec<u8>,
                                       apu: Vec<u8>,
                                       apv: Vec<u8>,
                                       _cc_tag: Vec<u8>| {
                     kms.derive_aes_key_using_ecdh_es(
-                        KeyOrKid::X25519KeyPair(ephem_key), KeyOrKid::Kid(recip_kid), alg, apu, apv, true,
+                        KidOrJwk::X25519Key(ephem_key), KidOrJwk::Kid(recip_kid), alg, apu, apv, true,
                     )
                 })).await?
             }
             // p256
-            (KeyAlg::EcCurve(EcCurves::Secp256r1), jwe::EncAlgorithm::A256cbcHs512) => {
+            (KnownKeyAlg::P256, jwe::EncAlgorithm::A256cbcHs512) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256cbcHs512EcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -159,19 +158,19 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         P256KeyPair,
                         AesKey<A256Kw>,
                         _
-                    >(None, (to_kid, |ephem_key: P256KeyPair,
-                                      _send_key: Option<P256KeyPair>,
+                    >(None, (to_kid, |ephem_key: String,
+                                      _send_key: Option<String>,
                                       recip_kid: String,
                                       alg: Vec<u8>,
                                       apu: Vec<u8>,
                                       apv: Vec<u8>,
                                       _cc_tag: Vec<u8>| {
                     kms.derive_aes_key_using_ecdh_es(
-                        KeyOrKid::P256KeyPair(ephem_key), KeyOrKid::Kid(recip_kid), alg, apu, apv, true,
+                        KidOrJwk::P256Key(ephem_key), KidOrJwk::Kid(recip_kid), alg, apu, apv, true,
                     )
                 })).await?
             }
-            (KeyAlg::EcCurve(EcCurves::Secp256r1), jwe::EncAlgorithm::Xc20P) => {
+            (KnownKeyAlg::P256, jwe::EncAlgorithm::Xc20P) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::Xc20pEcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -180,19 +179,19 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         P256KeyPair,
                         AesKey<A256Kw>,
                         _
-                    >(None, (to_kid, |ephem_key: P256KeyPair,
-                                      _send_key: Option<P256KeyPair>,
+                    >(None, (to_kid, |ephem_key: String,
+                                      _send_key: Option<String>,
                                       recip_kid: String,
                                       alg: Vec<u8>,
                                       apu: Vec<u8>,
                                       apv: Vec<u8>,
                                       _cc_tag: Vec<u8>| {
                     kms.derive_aes_key_using_ecdh_es(
-                        KeyOrKid::P256KeyPair(ephem_key), KeyOrKid::Kid(recip_kid), alg, apu, apv, true,
+                        KidOrJwk::P256Key(ephem_key), KidOrJwk::Kid(recip_kid), alg, apu, apv, true,
                     )
                 })).await?
             }
-            (KeyAlg::EcCurve(EcCurves::Secp256r1), jwe::EncAlgorithm::A256Gcm) => {
+            (KnownKeyAlg::P256, jwe::EncAlgorithm::A256Gcm) => {
                 metadata.enc_alg_anon = Some(AnonCryptAlg::A256gcmEcdhEsA256kw);
 
                 parsed_jwe.decrypt::<
@@ -201,15 +200,15 @@ pub(crate) async fn _try_unpack_anoncrypt<'sr>(
                         P256KeyPair,
                         AesKey<A256Kw>,
                         _
-                    >(None, (to_kid, |ephem_key: P256KeyPair,
-                                      _send_key: Option<P256KeyPair>,
+                    >(None, (to_kid, |ephem_key: String,
+                                      _send_key: Option<String>,
                                       recip_kid: String,
                                       alg: Vec<u8>,
                                       apu: Vec<u8>,
                                       apv: Vec<u8>,
                                       _cc_tag: Vec<u8>| {
                     kms.derive_aes_key_using_ecdh_es(
-                        KeyOrKid::P256KeyPair(ephem_key), KeyOrKid::Kid(recip_kid), alg, apu, apv, true,
+                        KidOrJwk::P256Key(ephem_key), KidOrJwk::Kid(recip_kid), alg, apu, apv, true,
                     )
                 })).await?
             }

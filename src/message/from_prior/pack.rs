@@ -1,3 +1,4 @@
+use crate::secrets::KnownKeyAlg;
 use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
@@ -7,7 +8,6 @@ use crate::{
     utils::did::{did_or_url, is_did},
     FromPrior,
 };
-use askar_crypto::alg::{EcCurves, KeyAlg};
 
 impl FromPrior {
     /// Packs a plaintext `from_prior` value into a signed JWT.
@@ -103,37 +103,22 @@ impl FromPrior {
             )
         })?;
 
-        // let secret = kms
-        //     .get_secret(kid)
-        //     .await
-        //     .context("Unable to find secret")?
-        //     .ok_or_else(|| {
-        //         err_msg(
-        //             ErrorKind::SecretNotFound,
-        //             "from_prior issuer secret not found",
-        //         )
-        //     })?;
-        //
-        // let sign_key = secret
-        //     .as_key_pair()
-        //     .context("Unable to instantiate from_prior issuer key")?;
-
         let from_prior_jwt = match secret_alg {
-            KeyAlg::Ed25519 => jws::sign_compact(
+            KnownKeyAlg::Ed25519 => jws::sign_compact(
                 from_prior_str.as_bytes(),
                 kid,
                 JWT_TYP,
                 Algorithm::EdDSA,
                 kms,
             ),
-            KeyAlg::EcCurve(EcCurves::Secp256r1) => jws::sign_compact(
+            KnownKeyAlg::P256 => jws::sign_compact(
                 from_prior_str.as_bytes(),
                 kid,
                 JWT_TYP,
                 Algorithm::Es256,
                 kms,
             ),
-            KeyAlg::EcCurve(EcCurves::Secp256k1) => jws::sign_compact(
+            KnownKeyAlg::K256 => jws::sign_compact(
                 from_prior_str.as_bytes(),
                 kid,
                 JWT_TYP,

@@ -1,6 +1,6 @@
 use crate::error::{err_msg, ErrorKind, ResultExt, ToResult};
 use crate::jwk::FromJwkValue;
-use crate::secrets::KeyOrKid;
+use crate::secrets::{KidOrJwk, KnownSignatureType};
 use crate::utils::crypto::{AsKnownKeyPair, JoseKDF, KnownKeyAlg, KnownKeyPair};
 use crate::utils::did::{Codec, _from_multicodec};
 use crate::{error::Result, secrets::KeyManagementService};
@@ -9,12 +9,12 @@ use askar_crypto::alg::ed25519::Ed25519KeyPair;
 use askar_crypto::alg::k256::K256KeyPair;
 use askar_crypto::alg::p256::P256KeyPair;
 use askar_crypto::alg::x25519::X25519KeyPair;
-use askar_crypto::alg::{EcCurves, KeyAlg};
 use askar_crypto::buffer::SecretBytes;
+use askar_crypto::jwk::FromJwk;
 use askar_crypto::kdf::ecdh_1pu::Ecdh1PU;
 use askar_crypto::kdf::ecdh_es::EcdhEs;
 use askar_crypto::repr::{KeyPublicBytes, KeySecretBytes};
-use askar_crypto::sign::{KeySign, SignatureType};
+use askar_crypto::sign::KeySign;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -36,20 +36,15 @@ impl ExampleKMS {
             .ok_or(err_msg(ErrorKind::InvalidState, "Secret not found"))
     }
 
-    fn resolve_kid(&self, x: KeyOrKid) -> Result<KeyOrKid> {
+    fn resolve_key(&self, x: KidOrJwk) -> Result<KnownKeyPair> {
         match x {
-            KeyOrKid::Kid(kid) => {
-                let secret = self.get_secret(&kid)?;
-                match secret.as_key_pair()? {
-                    KnownKeyPair::X25519(key) => Ok(KeyOrKid::X25519KeyPair(key)),
-                    KnownKeyPair::P256(key) => Ok(KeyOrKid::P256KeyPair(key)),
-                    _ => Err(err_msg(
-                        ErrorKind::Unsupported,
-                        "Unsupported key type found",
-                    )),
-                }
-            }
-            key => Ok(key),
+            KidOrJwk::Kid(kid) => self.get_secret(&kid)?.as_key_pair(),
+            KidOrJwk::X25519Key(jwk) => X25519KeyPair::from_jwk(&jwk)
+                .kind(ErrorKind::Malformed, "Unable parse jwk")
+                .map(KnownKeyPair::X25519),
+            KidOrJwk::P256Key(jwk) => P256KeyPair::from_jwk(&jwk)
+                .kind(ErrorKind::Malformed, "Unable parse jwk")
+                .map(KnownKeyPair::P256),
         }
     }
 }
@@ -57,13 +52,8 @@ impl ExampleKMS {
 #[cfg_attr(feature = "uniffi", async_trait)]
 #[cfg_attr(not(feature = "uniffi"), async_trait(?Send))]
 impl KeyManagementService for ExampleKMS {
-    async fn get_key_alg(&self, secret_id: &str) -> Result<KeyAlg> {
-        let secret = self
-            .known_secrets
-            .iter()
-            .find(|s| s.id == secret_id)
-            .cloned()
-            .ok_or(err_msg(ErrorKind::InvalidState, "Secret not found"))?;
+    async fn get_key_alg(&self, secret_id: &str) -> Result<KnownKeyAlg> {
+        let secret = self.get_secret(secret_id)?;
 
         match (&secret.type_, &secret.secret_material) {
             (
@@ -72,14 +62,16 @@ impl KeyManagementService for ExampleKMS {
                     private_key_jwk: ref value,
                 },
             ) => match (value["kty"].as_str(), value["crv"].as_str()) {
-                (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => {
-                    Ok(KeyAlg::EcCurve(EcCurves::Secp256r1))
-                }
+                (Some(kty), Some(crv)) if kty == "EC" && crv == "P-256" => Ok(KnownKeyAlg::P256),
                 (Some(kty), Some(crv)) if kty == "EC" && crv == "secp256k1" => {
-                    Ok(KeyAlg::EcCurve(EcCurves::Secp256k1))
+                    Ok(KnownKeyAlg::K256)
                 }
-                (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => Ok(KeyAlg::Ed25519),
-                (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => Ok(KeyAlg::X25519),
+                (Some(kty), Some(crv)) if kty == "OKP" && crv == "Ed25519" => {
+                    Ok(KnownKeyAlg::Ed25519)
+                }
+                (Some(kty), Some(crv)) if kty == "OKP" && crv == "X25519" => {
+                    Ok(KnownKeyAlg::X25519)
+                }
                 _ => Err(err_msg(
                     ErrorKind::Unsupported,
                     "Unsupported key type or curve",
@@ -90,25 +82,25 @@ impl KeyManagementService for ExampleKMS {
                 SecretMaterial::Base58 {
                     private_key_base58: _,
                 },
-            ) => Ok(KeyAlg::X25519),
+            ) => Ok(KnownKeyAlg::X25519),
             (
                 SecretType::Ed25519VerificationKey2018,
                 SecretMaterial::Base58 {
                     private_key_base58: _,
                 },
-            ) => Ok(KeyAlg::Ed25519),
+            ) => Ok(KnownKeyAlg::Ed25519),
             (
                 SecretType::X25519KeyAgreementKey2020,
                 SecretMaterial::Multibase {
                     private_key_multibase: _,
                 },
-            ) => Ok(KeyAlg::X25519),
+            ) => Ok(KnownKeyAlg::X25519),
             (
                 SecretType::Ed25519VerificationKey2020,
                 SecretMaterial::Multibase {
                     private_key_multibase: _,
                 },
-            ) => Ok(KeyAlg::Ed25519),
+            ) => Ok(KnownKeyAlg::Ed25519),
             _ => Err(err_msg(
                 ErrorKind::Unsupported,
                 "Unsupported key type or curve",
@@ -128,50 +120,46 @@ impl KeyManagementService for ExampleKMS {
         &self,
         secret_id: &str,
         message: &[u8],
-        sig_type: Option<SignatureType>,
+        sig_type: Option<KnownSignatureType>,
     ) -> Result<SecretBytes> {
-        let secret = self
-            .known_secrets
-            .iter()
-            .find(|s| s.id == secret_id)
-            .cloned()
-            .expect("Secret not found");
+        let secret = self.get_secret(secret_id)?;
+
         match secret.as_key_pair()? {
             KnownKeyPair::X25519(_) => {
                 Err(err_msg(ErrorKind::Unsupported, "Unsupported signature alg"))
             }
             KnownKeyPair::Ed25519(key) => key
-                .create_signature(message, sig_type)
+                .create_signature(message, sig_type.map(|x| x.into()))
                 .kind(ErrorKind::InvalidState, "Unable create signature"),
             KnownKeyPair::P256(key) => key
-                .create_signature(message, sig_type)
+                .create_signature(message, sig_type.map(|x| x.into()))
                 .kind(ErrorKind::InvalidState, "Unable create signature"),
             KnownKeyPair::K256(key) => key
-                .create_signature(message, sig_type)
+                .create_signature(message, sig_type.map(|x| x.into()))
                 .kind(ErrorKind::InvalidState, "Unable create signature"),
         }
     }
 
     async fn derive_aes_key_using_ecdh_1pu(
         &self,
-        ephem_key: KeyOrKid,
-        send_key: KeyOrKid,
-        recip_key: KeyOrKid,
+        ephem_key: KidOrJwk, // epk + sk + rk -> cek
+        send_key: KidOrJwk,
+        recip_key: KidOrJwk,
         alg: Vec<u8>,
         apu: Vec<u8>,
         apv: Vec<u8>,
         cc_tag: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>> {
-        // resolve possible key ids to keys
-        let send_key = self.resolve_kid(send_key)?;
-        let recip_key = self.resolve_kid(recip_key)?;
+        let ephem_key = self.resolve_key(ephem_key)?;
+        let send_key = self.resolve_key(send_key)?;
+        let recip_key = self.resolve_key(recip_key)?;
 
         match (ephem_key, send_key, recip_key) {
             (
-                KeyOrKid::X25519KeyPair(ephem_key),
-                KeyOrKid::X25519KeyPair(send_key),
-                KeyOrKid::X25519KeyPair(recip_key),
+                KnownKeyPair::X25519(ephem_key),
+                KnownKeyPair::X25519(send_key),
+                KnownKeyPair::X25519(recip_key),
             ) => Ecdh1PU::derive_key(
                 &ephem_key,
                 Some(&send_key),
@@ -183,9 +171,9 @@ impl KeyManagementService for ExampleKMS {
                 receive,
             ),
             (
-                KeyOrKid::P256KeyPair(ephem_key),
-                KeyOrKid::P256KeyPair(send_key),
-                KeyOrKid::P256KeyPair(recip_key),
+                KnownKeyPair::P256(ephem_key),
+                KnownKeyPair::P256(send_key),
+                KnownKeyPair::P256(recip_key),
             ) => Ecdh1PU::derive_key(
                 &ephem_key,
                 Some(&send_key),
@@ -202,21 +190,21 @@ impl KeyManagementService for ExampleKMS {
 
     async fn derive_aes_key_using_ecdh_es(
         &self,
-        ephem_key: KeyOrKid,
-        recip_key: KeyOrKid,
+        ephem_key: KidOrJwk,
+        recip_key: KidOrJwk,
         alg: Vec<u8>,
         apu: Vec<u8>,
         apv: Vec<u8>,
         receive: bool,
     ) -> Result<AesKey<A256Kw>> {
-        // resolve possible key ids to keys
-        let recip_key = self.resolve_kid(recip_key)?;
+        let ephem_key = self.resolve_key(ephem_key)?;
+        let recip_key = self.resolve_key(recip_key)?;
 
         match (ephem_key, recip_key) {
-            (KeyOrKid::X25519KeyPair(ephem_key), KeyOrKid::X25519KeyPair(recip_key)) => {
+            (KnownKeyPair::X25519(ephem_key), KnownKeyPair::X25519(recip_key)) => {
                 EcdhEs::derive_key(&ephem_key, None, &recip_key, &alg, &apu, &apv, &[], receive)
             }
-            (KeyOrKid::P256KeyPair(ephem_key), KeyOrKid::P256KeyPair(recip_key)) => {
+            (KnownKeyPair::P256(ephem_key), KnownKeyPair::P256(recip_key)) => {
                 EcdhEs::derive_key(&ephem_key, None, &recip_key, &alg, &apu, &apv, &[], receive)
             }
             _ => Err(err_msg(ErrorKind::Unsupported, "Unsupported derive keys")),

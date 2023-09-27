@@ -1,4 +1,4 @@
-use crate::secrets::KeyOrKid;
+use crate::secrets::KidOrJwk;
 use crate::utils::DummyFuture;
 use crate::{
     algorithms::{AnonCryptAlg, AuthCryptAlg},
@@ -188,9 +188,9 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     jwe::EncAlgorithm::A256cbcHs512,
                     Some((
                         &from_key.id,
-                        |ephem_key: X25519KeyPair,
+                        |ephem_key: String,
                          send_kid: Option<String>,
-                         recip_key: X25519KeyPair,
+                         recip_key: String,
                          alg: Vec<u8>,
                          apu: Vec<u8>,
                          apv: Vec<u8>,
@@ -201,9 +201,9 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                                 })?;
 
                                 kms.derive_aes_key_using_ecdh_1pu(
-                                    KeyOrKid::X25519KeyPair(ephem_key),
-                                    KeyOrKid::Kid(send_kid),
-                                    KeyOrKid::X25519KeyPair(recip_key),
+                                    KidOrJwk::X25519Key(ephem_key),
+                                    KidOrJwk::Kid(send_kid),
+                                    KidOrJwk::X25519Key(recip_key),
                                     alg,
                                     apu,
                                     apv,
@@ -235,9 +235,9 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                X25519KeyPair,
+                                String,
                                 Option<String>,
-                                X25519KeyPair,
+                                String,
                                 Vec<u8>,
                                 Vec<u8>,
                                 Vec<u8>,
@@ -261,9 +261,9 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                X25519KeyPair,
+                                String,
                                 Option<String>,
-                                X25519KeyPair,
+                                String,
                                 Vec<u8>,
                                 Vec<u8>,
                                 Vec<u8>,
@@ -287,9 +287,9 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                X25519KeyPair,
+                                String,
                                 Option<String>,
-                                X25519KeyPair,
+                                String,
                                 Vec<u8>,
                                 Vec<u8>,
                                 Vec<u8>,
@@ -329,9 +329,9 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                     jwe::EncAlgorithm::A256cbcHs512,
                     Some((
                         &from_key.id,
-                        &move |ephem_key: P256KeyPair,
+                        &move |ephem_key: String,
                                send_kid: Option<String>,
-                               recip_key: P256KeyPair,
+                               recip_key: String,
                                alg: Vec<u8>,
                                apu: Vec<u8>,
                                apv: Vec<u8>,
@@ -342,9 +342,9 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                                 })?;
 
                                 kms.derive_aes_key_using_ecdh_1pu(
-                                    KeyOrKid::P256KeyPair(ephem_key),
-                                    KeyOrKid::Kid(send_kid),
-                                    KeyOrKid::P256KeyPair(recip_key),
+                                    KidOrJwk::P256Key(ephem_key),
+                                    KidOrJwk::Kid(send_kid),
+                                    KidOrJwk::P256Key(recip_key),
                                     alg,
                                     apu,
                                     apv,
@@ -376,9 +376,9 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                P256KeyPair,
+                                String,
                                 Option<String>,
-                                P256KeyPair,
+                                String,
                                 Vec<u8>,
                                 Vec<u8>,
                                 Vec<u8>,
@@ -402,9 +402,9 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                P256KeyPair,
+                                String,
                                 Option<String>,
-                                P256KeyPair,
+                                String,
                                 Vec<u8>,
                                 Vec<u8>,
                                 Vec<u8>,
@@ -428,9 +428,9 @@ pub(crate) async fn authcrypt<'dr, 'sr>(
                         None::<(
                             &str,
                             &fn(
-                                P256KeyPair,
+                                String,
                                 Option<String>,
-                                P256KeyPair,
+                                String,
                                 Vec<u8>,
                                 Vec<u8>,
                                 Vec<u8>,

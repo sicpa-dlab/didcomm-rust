@@ -27,13 +27,13 @@ interface DIDResolver {
      * @param `did` a DID to be resolved.
      *
      * @returns An instance of resolved DID DOC or null if DID is not found.
-     * 
+     *
      * @throws DIDCommMalformed - Resolved DID Doc looks malformed
      * @throws DIDCommIoError - IO error in resolving process
      * @throws DIDCommInvalidState - Code error or unexpected state was detected
-     * 
+     *
      * Note to throw compatible error use code like this
-     * 
+     *
      * ```
      * let e = Error("Unble perform io operation");
      * e.name = "DIDCommIoError"

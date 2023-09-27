@@ -5,7 +5,7 @@ import {
   CHARLIE_SECRETS,
   CHARLIE_SECRET_AUTH_KEY_ED25519,
   ExampleDIDResolver,
-  ExampleSecretsResolver,
+  ExampleKMS,
   FROM_PRIOR_FULL,
   FROM_PRIOR_MINIMAL,
 } from "../test-vectors";
@@ -37,12 +37,12 @@ test.each([
       CHARLIE_DID_DOC,
     ]);
 
-    const secretsResolver = new ExampleSecretsResolver(CHARLIE_SECRETS);
+    const kms = new ExampleKMS(CHARLIE_SECRETS);
 
     const [packed, kid] = await fromPrior.pack(
       issuerKid,
       didResolver,
-      secretsResolver
+      kms
     );
 
     expect(typeof packed).toStrictEqual("string");

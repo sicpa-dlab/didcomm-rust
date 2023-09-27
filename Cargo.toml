@@ -60,12 +60,11 @@ features = ["v4"]
 [dev-dependencies]
 lazy_static = '1.4.0'
 
-[dependencies.tokio]
+[dev-dependencies.tokio]
 version = '1.9'
 features = [
     'rt',
     'macros',
-    'rt-multi-thread'
 ]
 
 [dev-dependencies.getrandom]

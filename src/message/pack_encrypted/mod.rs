@@ -293,6 +293,7 @@ mod tests {
 
     use serde_json::{json, Value};
 
+    use crate::error::ResultExt;
     use crate::{
         algorithms::AnonCryptAlg,
         did::{resolvers::ExampleDIDResolver, VerificationMaterial, VerificationMethod},
@@ -1567,11 +1568,9 @@ mod tests {
                 MEDIATOR1_DID_DOC.clone(),
             ]);
 
-            let alice_secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
-
-            let bob_secrets_resolver = ExampleKMS::new(BOB_SECRETS.clone());
-
-            let mediator1_secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
+            let alice_kms = ExampleKMS::new(ALICE_SECRETS.clone());
+            let bob_kms = ExampleKMS::new(BOB_SECRETS.clone());
+            let mediator1_kms = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
 
             let (msg, pack_metadata) = MESSAGE_SIMPLE
                 .pack_encrypted(
@@ -1579,7 +1578,7 @@ mod tests {
                     from,
                     sign_by,
                     &did_resolver,
-                    &alice_secrets_resolver,
+                    &alice_kms,
                     &PackEncryptedOptions::default(),
                 )
                 .await
@@ -1625,7 +1624,7 @@ mod tests {
             let (unpacked_msg_mediator1, unpack_metadata_mediator1) = Message::unpack(
                 &msg,
                 &did_resolver,
-                &mediator1_secrets_resolver,
+                &mediator1_kms,
                 &UnpackOptions::default(),
             )
             .await
@@ -1649,7 +1648,7 @@ mod tests {
             let (unpacked_msg, unpack_metadata) = Message::unpack(
                 &forwarded_msg,
                 &did_resolver,
-                &bob_secrets_resolver,
+                &bob_kms,
                 &UnpackOptions::default(),
             )
             .await
@@ -1746,15 +1745,11 @@ mod tests {
                 MEDIATOR3_DID_DOC.clone(),
             ]);
 
-            let alice_secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
-
-            let charlie_secrets_resolver = ExampleKMS::new(CHARLIE_SECRETS.clone());
-
-            let mediator1_secrets_resolver = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
-
-            let mediator2_secrets_resolver = ExampleKMS::new(MEDIATOR2_SECRETS.clone());
-
-            let mediator3_secrets_resolver = ExampleKMS::new(MEDIATOR3_SECRETS.clone());
+            let alice_kms = ExampleKMS::new(ALICE_SECRETS.clone());
+            let charlie_kms = ExampleKMS::new(CHARLIE_SECRETS.clone());
+            let mediator1_kms = ExampleKMS::new(MEDIATOR1_SECRETS.clone());
+            let mediator2_kms = ExampleKMS::new(MEDIATOR2_SECRETS.clone());
+            let mediator3_kms = ExampleKMS::new(MEDIATOR3_SECRETS.clone());
 
             let (packed_msg, pack_metadata) = msg
                 .pack_encrypted(
@@ -1762,7 +1757,7 @@ mod tests {
                     from,
                     sign_by,
                     &did_resolver,
-                    &alice_secrets_resolver,
+                    &alice_kms,
                     &PackEncryptedOptions {
                         forward_headers: Some(HashMap::from_iter([
                             ("example-header-1".into(), json!("example-header-1-value")),
@@ -1814,7 +1809,7 @@ mod tests {
             let (unpacked_msg_mediator3, unpack_metadata_mediator3) = Message::unpack(
                 &packed_msg,
                 &did_resolver,
-                &mediator3_secrets_resolver,
+                &mediator3_kms,
                 &UnpackOptions::default(),
             )
             .await
@@ -1851,7 +1846,7 @@ mod tests {
             let (unpacked_msg_mediator2, unpack_metadata_mediator2) = Message::unpack(
                 &forwarded_msg_at_mediator3,
                 &did_resolver,
-                &mediator2_secrets_resolver,
+                &mediator2_kms,
                 &UnpackOptions::default(),
             )
             .await
@@ -1888,7 +1883,7 @@ mod tests {
             let (unpacked_msg_mediator1, unpack_metadata_mediator1) = Message::unpack(
                 &forwarded_msg_at_mediator2,
                 &did_resolver,
-                &mediator1_secrets_resolver,
+                &mediator1_kms,
                 &UnpackOptions::default(),
             )
             .await
@@ -1922,7 +1917,7 @@ mod tests {
             let (unpacked_msg, unpack_metadata) = Message::unpack(
                 &forwarded_msg_at_mediator1,
                 &did_resolver,
-                &charlie_secrets_resolver,
+                &charlie_kms,
                 &UnpackOptions::default(),
             )
             .await
@@ -2884,14 +2879,22 @@ mod tests {
                 _ => panic!("Unexpected verification method"),
             };
 
-            let derive_func = |ephem_key: KE,
-                               sender_key: Option<KE>,
+            let derive_func = |ephem_key: String,
+                               sender_key: Option<String>,
                                _recip_kid: String,
                                alg: Vec<u8>,
                                apu: Vec<u8>,
                                apv: Vec<u8>,
                                cc_tag: Vec<u8>| {
                 async move {
+                    let ephem_key = KE::from_jwk(&ephem_key)
+                        .kind(ErrorKind::InvalidState, "Unable to deserialize ephem key")?;
+                    let sender_key = sender_key
+                        .map(|sk_jwk| {
+                            KE::from_jwk(&sk_jwk)
+                                .kind(ErrorKind::InvalidState, "Unable to deserialize ephem key")
+                        })
+                        .transpose()?;
                     KDF::derive_key(
                         &ephem_key,
                         sender_key.as_ref(),
@@ -2966,14 +2969,22 @@ mod tests {
                 _ => panic!("Unexpected verification method"),
             };
 
-            let derive_func = |ephem_key: KE,
-                               sender_key: Option<KE>,
+            let derive_func = |ephem_key: String,
+                               sender_key: Option<String>,
                                _recip_kid: String,
                                alg: Vec<u8>,
                                apu: Vec<u8>,
                                apv: Vec<u8>,
                                cc_tag: Vec<u8>| {
                 async move {
+                    let ephem_key = KE::from_jwk(&ephem_key)
+                        .kind(ErrorKind::InvalidState, "Unable to deserialize ephem key")?;
+                    let sender_key = sender_key
+                        .map(|sk_jwk| {
+                            KE::from_jwk(&sk_jwk)
+                                .kind(ErrorKind::InvalidState, "Unable to deserialize ephem key")
+                        })
+                        .transpose()?;
                     KDF::derive_key(
                         &ephem_key,
                         sender_key.as_ref(),

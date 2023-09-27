@@ -1,6 +1,6 @@
-use askar_crypto::alg::{EcCurves, KeyAlg};
 use serde::Serialize;
 
+use crate::secrets::KnownKeyAlg;
 use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext},
@@ -88,15 +88,11 @@ impl Message {
         let payload = self.pack_plaintext(did_resolver).await?;
 
         let msg = match key_alg {
-            KeyAlg::Ed25519 => jws::sign(payload.as_bytes(), key_id, Algorithm::EdDSA, kms),
+            KnownKeyAlg::Ed25519 => jws::sign(payload.as_bytes(), key_id, Algorithm::EdDSA, kms),
             // p256
-            KeyAlg::EcCurve(EcCurves::Secp256r1) => {
-                jws::sign(payload.as_bytes(), key_id, Algorithm::Es256, kms)
-            }
+            KnownKeyAlg::P256 => jws::sign(payload.as_bytes(), key_id, Algorithm::Es256, kms),
             // k256
-            KeyAlg::EcCurve(EcCurves::Secp256k1) => {
-                jws::sign(payload.as_bytes(), key_id, Algorithm::Es256K, kms)
-            }
+            KnownKeyAlg::K256 => jws::sign(payload.as_bytes(), key_id, Algorithm::Es256K, kms),
             _ => Err(err_msg(ErrorKind::Unsupported, "Unsupported signature alg"))?,
         }
         .await

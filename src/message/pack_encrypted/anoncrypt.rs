@@ -115,9 +115,9 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            X25519KeyPair,
+                            String,
                             Option<String>,
-                            X25519KeyPair,
+                            String,
                             Vec<u8>,
                             Vec<u8>,
                             Vec<u8>,
@@ -141,9 +141,9 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            X25519KeyPair,
+                            String,
                             Option<String>,
-                            X25519KeyPair,
+                            String,
                             Vec<u8>,
                             Vec<u8>,
                             Vec<u8>,
@@ -167,9 +167,9 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            X25519KeyPair,
+                            String,
                             Option<String>,
-                            X25519KeyPair,
+                            String,
                             Vec<u8>,
                             Vec<u8>,
                             Vec<u8>,
@@ -207,9 +207,9 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            P256KeyPair,
+                            String,
                             Option<String>,
-                            P256KeyPair,
+                            String,
                             Vec<u8>,
                             Vec<u8>,
                             Vec<u8>,
@@ -233,9 +233,9 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            P256KeyPair,
+                            String,
                             Option<String>,
-                            P256KeyPair,
+                            String,
                             Vec<u8>,
                             Vec<u8>,
                             Vec<u8>,
@@ -259,9 +259,9 @@ pub(crate) async fn anoncrypt<'dr, 'sr>(
                     None::<(
                         &str,
                         fn(
-                            P256KeyPair,
+                            String,
                             Option<String>,
-                            P256KeyPair,
+                            String,
                             Vec<u8>,
                             Vec<u8>,
                             Vec<u8>,

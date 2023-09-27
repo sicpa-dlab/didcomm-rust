@@ -1,4 +1,4 @@
-import { Secret } from "didcomm";
+import { Secret } from "..";
 
 export const CHARLIE_ROTATED_TO_ALICE_SECRETS: Secret[] = [
   {

@@ -35,7 +35,7 @@ pub(crate) async fn sign(
         let sign_input = format!("{}.{}", protected, payload);
 
         let signature = kms
-            .create_signature(kid, sign_input.as_bytes(), Some(sig_type))
+            .create_signature(kid, sign_input.as_bytes(), Some(sig_type.into()))
             .await
             .kind(ErrorKind::InvalidState, "Unable create signature")?;
 
@@ -85,7 +85,7 @@ pub(crate) async fn sign_compact(
         let sign_input = format!("{}.{}", header, payload);
 
         let signature = kms
-            .create_signature(kid, sign_input.as_bytes(), Some(sig_type))
+            .create_signature(kid, sign_input.as_bytes(), Some(sig_type.into()))
             .await?;
 
         base64::encode_config(&signature, base64::URL_SAFE_NO_PAD)

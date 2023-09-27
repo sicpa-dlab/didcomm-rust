@@ -2,20 +2,22 @@
 
 pub mod resolvers;
 
-use askar_crypto::alg::aes::{A256Kw, AesKey};
-use askar_crypto::alg::p256::P256KeyPair;
-use askar_crypto::alg::x25519::X25519KeyPair;
-use askar_crypto::alg::KeyAlg;
-use askar_crypto::buffer::SecretBytes;
-use askar_crypto::sign::SignatureType;
+pub use askar_crypto::alg::aes::{A256Kw, AesKey};
+pub use askar_crypto::alg::KeyAlg;
+pub use askar_crypto::buffer::SecretBytes;
+pub use askar_crypto::repr::KeySecretBytes;
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
 use crate::error::Result;
+pub use crate::utils::crypto::KnownKeyAlg;
+pub use crate::utils::crypto::KnownSignatureType;
 
-pub enum KeyOrKid {
+#[derive(Serialize, Deserialize)]
+pub enum KidOrJwk {
     Kid(String),
-    X25519KeyPair(X25519KeyPair),
-    P256KeyPair(P256KeyPair),
+    X25519Key(String),
+    P256Key(String),
 }
 
 /// Interface for KeyManagementService.
@@ -34,7 +36,7 @@ pub trait KeyManagementService: Sync {
     /// # Errors
     /// - IOError
     /// - InvalidState
-    async fn get_key_alg(&self, secret_id: &str) -> Result<KeyAlg>;
+    async fn get_key_alg(&self, secret_id: &str) -> Result<KnownKeyAlg>;
 
     /// Find all secrets that have one of the given IDs.
     /// Return ids of secrets only for key IDs for which a secret is present.
@@ -65,7 +67,7 @@ pub trait KeyManagementService: Sync {
         &self,
         secret_id: &str,
         message: &[u8],
-        sig_type: Option<SignatureType>,
+        sig_type: Option<KnownSignatureType>,
     ) -> Result<SecretBytes>;
 
     /// ECDH-1PU derivation of key
@@ -81,9 +83,9 @@ pub trait KeyManagementService: Sync {
     /// - `receive`: Whether derived key is used on receive or send side.
     async fn derive_aes_key_using_ecdh_1pu(
         &self,
-        ephem_key: KeyOrKid,
-        send_key: KeyOrKid,
-        recip_key: KeyOrKid,
+        ephem_key: KidOrJwk,
+        send_key: KidOrJwk,
+        recip_key: KidOrJwk,
         alg: Vec<u8>,
         apu: Vec<u8>,
         apv: Vec<u8>,
@@ -91,7 +93,7 @@ pub trait KeyManagementService: Sync {
         receive: bool,
     ) -> Result<AesKey<A256Kw>>;
 
-    /// ECDH-1PU derivation of key
+    /// ECDH-ES derivation of key
     ///
     /// # Parameters
     /// - `ephem_key` Ephemeral key (cannot be kid)
@@ -102,8 +104,8 @@ pub trait KeyManagementService: Sync {
     /// - `receive`: Whether derived key is used on receive or send side.
     async fn derive_aes_key_using_ecdh_es(
         &self,
-        ephem_key: KeyOrKid,
-        recip_key: KeyOrKid,
+        ephem_key: KidOrJwk,
+        recip_key: KidOrJwk,
         alg: Vec<u8>,
         apu: Vec<u8>,
         apv: Vec<u8>,
@@ -127,7 +129,7 @@ pub trait KeyManagementService {
     /// # Errors
     /// - IOError
     /// - InvalidState
-    async fn get_key_alg(&self, secret_id: &str) -> Result<KeyAlg>;
+    async fn get_key_alg(&self, secret_id: &str) -> Result<KnownKeyAlg>;
 
     /// Find all secrets that have one of the given IDs.
     /// Return ids of secrets only for key IDs for which a secret is present.
@@ -158,7 +160,7 @@ pub trait KeyManagementService {
         &self,
         secret_id: &str,
         message: &[u8],
-        sig_type: Option<SignatureType>,
+        sig_type: Option<KnownSignatureType>,
     ) -> Result<SecretBytes>;
 
     /// ECDH-1PU derivation of key
@@ -174,9 +176,9 @@ pub trait KeyManagementService {
     /// - `receive`: Whether derived key is used on receive or send side.
     async fn derive_aes_key_using_ecdh_1pu(
         &self,
-        ephem_key: KeyOrKid,
-        send_key: KeyOrKid,
-        recip_key: KeyOrKid,
+        ephem_key: KidOrJwk,
+        send_key: KidOrJwk,
+        recip_key: KidOrJwk,
         alg: Vec<u8>,
         apu: Vec<u8>,
         apv: Vec<u8>,
@@ -195,8 +197,8 @@ pub trait KeyManagementService {
     /// - `receive`: Whether derived key is used on receive or send side.
     async fn derive_aes_key_using_ecdh_es(
         &self,
-        ephem_key: KeyOrKid,
-        recip_key: KeyOrKid,
+        ephem_key: KidOrJwk,
+        recip_key: KidOrJwk,
         alg: Vec<u8>,
         apu: Vec<u8>,
         apv: Vec<u8>,

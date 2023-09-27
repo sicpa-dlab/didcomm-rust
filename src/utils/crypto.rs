@@ -1,3 +1,4 @@
+use askar_crypto::sign::SignatureType;
 use askar_crypto::{
     alg::{
         aes::{A128Kw, A256Kw, AesKey},
@@ -11,6 +12,7 @@ use askar_crypto::{
     kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation, KeyExchange},
     repr::{KeySecretBytes, ToSecretBytes},
 };
+use serde::{Deserialize, Serialize};
 
 use crate::error::{err_msg, ErrorKind, Result, ResultExt};
 
@@ -112,8 +114,8 @@ impl<Key: KeyExchange, KW: KeyWrap + FromKeyDerivation + Sized> JoseKDF<Key, KW>
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub(crate) enum KnownKeyAlg {
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum KnownKeyAlg {
     Ed25519,
     X25519,
     P256,
@@ -174,6 +176,36 @@ pub(crate) trait AsKnownKeyPair {
         match self.as_key_pair()? {
             KnownKeyPair::K256(k) => Ok(k),
             _ => Err(err_msg(ErrorKind::InvalidState, "Unexpected key pair type"))?,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum KnownSignatureType {
+    /// Standard signature output for ed25519
+    EdDSA,
+    /// Elliptic curve DSA using P-256 and SHA-256
+    ES256,
+    /// Elliptic curve DSA using K-256 and SHA-256
+    ES256K,
+}
+
+impl From<SignatureType> for KnownSignatureType {
+    fn from(value: SignatureType) -> Self {
+        match value {
+            SignatureType::EdDSA => KnownSignatureType::EdDSA,
+            SignatureType::ES256 => KnownSignatureType::ES256,
+            SignatureType::ES256K => KnownSignatureType::ES256K,
+        }
+    }
+}
+
+impl From<KnownSignatureType> for SignatureType {
+    fn from(value: KnownSignatureType) -> Self {
+        match value {
+            KnownSignatureType::EdDSA => SignatureType::EdDSA,
+            KnownSignatureType::ES256 => SignatureType::ES256,
+            KnownSignatureType::ES256K => SignatureType::ES256K,
         }
     }
 }

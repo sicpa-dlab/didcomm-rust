@@ -9,6 +9,7 @@ use sha2::{Digest, Sha256};
 use std::borrow::Cow;
 use std::future::Future;
 
+use crate::error::{err_msg, ResultContext};
 use crate::{
     error::{ErrorKind, Result, ResultExt},
     jwe::envelope::{Algorithm, EncAlgorithm, PerRecipientHeader, ProtectedHeader, Recipient, JWE},
@@ -22,7 +23,7 @@ pub(crate) async fn encrypt<CE, KDF, KE, KW, FUT>(
     enc: EncAlgorithm,
     sender: Option<(
         &str,
-        impl Fn(KE, Option<String>, KE, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) -> FUT,
+        impl Fn(String, Option<String>, String, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) -> FUT,
     )>, // (skid, derive func)
     recipients: &[(&str, &KE)], // (kid, recipient key)
 ) -> Result<String>
@@ -112,9 +113,14 @@ where
                 ),
                 Some(ref derive_func) => {
                     derive_func(
-                        epk.clone(),
+                        epk.to_jwk_secret(None)
+                            .kind(ErrorKind::InvalidState, "Unable to serialize epk")?
+                            .as_opt_str()
+                            .ok_or(err_msg(ErrorKind::InvalidState, "Unable to serialize epk"))?
+                            .to_string(),
                         skid.map(|x| x.to_string()),
-                        key.clone().clone(),
+                        key.to_jwk_public(None)
+                            .kind(ErrorKind::InvalidState, "Unable to serialize recip key")?,
                         alg.as_str().as_bytes().to_owned(),
                         skid.as_ref()
                             .map(|s| s.as_bytes())
@@ -126,14 +132,14 @@ where
                     .await
                 }
             }
-            .kind(ErrorKind::InvalidState, "Unable derive kw")?; //TODO Check this test and move to decrypt
+            .context("Unable to derive kw")?;
 
             let encrypted_key = kw
                 .wrap_key(&cek)
                 .kind(ErrorKind::InvalidState, "Unable wrap key")?;
 
             let encrypted_key = base64::encode_config(&encrypted_key, base64::URL_SAFE_NO_PAD);
-            encrypted_keys.push((kid.clone(), encrypted_key));
+            encrypted_keys.push((&kid, encrypted_key));
         }
 
         encrypted_keys
@@ -175,7 +181,7 @@ mod tests {
         repr::{KeyGen, KeyPublicBytes, KeySecretBytes, ToPublicBytes, ToSecretBytes},
     };
 
-    use crate::error::err_msg;
+    use crate::error::{err_msg, ResultExt};
     use crate::utils::DummyFuture;
     use crate::{
         error::{ErrorKind, Result},
@@ -434,15 +440,23 @@ mod tests {
                 alice_priv.map(|(kid, key)| {
                     (
                         kid,
-                        move |ephem_key: KE,
+                        move |ephem_key: String,
                               send_kid: Option<String>,
-                              recip_key: KE,
+                              recip_key: String,
                               alg: Vec<u8>,
                               apu: Vec<u8>,
                               apv: Vec<u8>,
                               cc_tag: Vec<u8>| {
                             async move {
                                 if send_kid.map(|x| x.as_str() == kid).unwrap_or(false) {
+                                    let ephem_key = KE::from_jwk(&ephem_key).kind(
+                                        ErrorKind::InvalidState,
+                                        "Unable to deserialize ephemeral key",
+                                    )?;
+                                    let recip_key = KE::from_jwk(&recip_key).kind(
+                                        ErrorKind::InvalidState,
+                                        "Unable to deserialize recip key",
+                                    )?;
                                     KDF::derive_key(
                                         &ephem_key,
                                         Some(&key),
@@ -488,14 +502,26 @@ mod tests {
                         alice_pub,
                         (
                             bob_edge_priv.0,
-                            |ephem_key: KE,
-                             sender_key: Option<KE>,
+                            |ephem_key: String,
+                             sender_key: Option<String>,
                              _recip_kid: String,
                              alg: Vec<u8>,
                              apu: Vec<u8>,
                              apv: Vec<u8>,
                              cc_tag: Vec<u8>| {
                                 async move {
+                                    let ephem_key = KE::from_jwk(&ephem_key).kind(
+                                        ErrorKind::InvalidState,
+                                        "Unable to deserialize ephem key",
+                                    )?;
+                                    let sender_key = sender_key
+                                        .map(|sk_jwk| {
+                                            KE::from_jwk(&sk_jwk).kind(
+                                                ErrorKind::InvalidState,
+                                                "Unable to deserialize ephem key",
+                                            )
+                                        })
+                                        .transpose()?;
                                     KDF::derive_key(
                                         &ephem_key,
                                         sender_key.as_ref(),
@@ -537,9 +563,9 @@ mod tests {
             None::<(
                 &str,
                 &fn(
-                    X25519KeyPair,
+                    String,
                     Option<String>,
-                    X25519KeyPair,
+                    String,
                     Vec<u8>,
                     Vec<u8>,
                     Vec<u8>,
@@ -552,6 +578,9 @@ mod tests {
 
         let err = res.expect_err("res is ok");
         assert_eq!(err.kind(), ErrorKind::InvalidState);
-        assert_eq!(format!("{}", err), "Invalid state: Unable derive kw: Invalid state: No sender key for ecdh-1pu: No sender key for ecdh-1pu");
+        assert_eq!(
+            format!("{}", err),
+            "Invalid state: Unable to derive kw: No sender key for ecdh-1pu"
+        );
     }
 }

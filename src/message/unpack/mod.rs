@@ -1776,7 +1776,7 @@ mod test {
     async fn unpack_works_invalid_epk_point() {
         _verify_unpack_malformed(
             &INVALID_ENCRYPTED_MSG_ANON_P256_EPK_WRONG_POINT,
-            "Malformed: Unable instantiate epk: Unable produce jwk: Invalid key data",
+            "Malformed: Unable derive kw: Unable parse jwk: Invalid key data",
         )
         .await;
     }

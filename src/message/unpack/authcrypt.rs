@@ -1,5 +1,5 @@
 use crate::jwe::envelope::JWE;
-use crate::secrets::KeyOrKid;
+use crate::secrets::{KidOrJwk, KnownKeyAlg};
 use crate::{
     algorithms::AuthCryptAlg,
     did::DIDResolver,
@@ -12,7 +12,6 @@ use crate::{
     },
     UnpackMetadata, UnpackOptions,
 };
-use askar_crypto::alg::{EcCurves, KeyAlg};
 use askar_crypto::{
     alg::{
         aes::{A256CbcHs512, A256Kw, AesKey},
@@ -139,7 +138,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
         let _payload = match (&from_key, to_key_alg, &parsed_jwe.protected.enc) {
             (
                 KnownKeyPair::X25519(ref from_key),
-                KeyAlg::X25519,
+                KnownKeyAlg::X25519,
                 jwe::EncAlgorithm::A256cbcHs512,
             ) => {
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
@@ -150,8 +149,8 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     X25519KeyPair,
                     AesKey<A256Kw>,
                     _
-                >(Some((from_kid, from_key)), (to_kid, |ephem_key: X25519KeyPair,
-                                                        send_key: Option<X25519KeyPair>,
+                >(Some((from_kid, from_key)), (to_kid, |ephem_key: String,
+                                                        send_key: Option<String>,
                                                         recip_kid: String,
                                                         alg: Vec<u8>,
                                                         apu: Vec<u8>,
@@ -163,14 +162,14 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                         })?;
 
                         kms.derive_aes_key_using_ecdh_1pu(
-                            KeyOrKid::X25519KeyPair(ephem_key), KeyOrKid::X25519KeyPair(send_key), KeyOrKid::Kid(recip_kid), alg, apu, apv, cc_tag, true,
+                            KidOrJwk::X25519Key(ephem_key), KidOrJwk::X25519Key(send_key), KidOrJwk::Kid(recip_kid), alg, apu, apv, cc_tag, true,
                         ).await
                     }
                 })).await?
             }
             (
                 KnownKeyPair::P256(ref from_key),
-                KeyAlg::EcCurve(EcCurves::Secp256r1),
+                KnownKeyAlg::P256,
                 jwe::EncAlgorithm::A256cbcHs512,
             ) => {
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
@@ -181,8 +180,8 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     P256KeyPair,
                     AesKey<A256Kw>,
                     _
-                >(Some((from_kid, from_key)), (to_kid, |ephem_key: P256KeyPair,
-                                                        send_key: Option<P256KeyPair>,
+                >(Some((from_kid, from_key)), (to_kid, |ephem_key: String,
+                                                        send_key: Option<String>,
                                                         recip_kid: String,
                                                         alg: Vec<u8>,
                                                         apu: Vec<u8>,
@@ -194,16 +193,16 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                         })?;
 
                             kms.derive_aes_key_using_ecdh_1pu(
-                                KeyOrKid::P256KeyPair(ephem_key), KeyOrKid::P256KeyPair(send_key), KeyOrKid::Kid(recip_kid), alg, apu, apv, cc_tag, true,
+                                KidOrJwk::P256Key(ephem_key), KidOrJwk::P256Key(send_key), KidOrJwk::Kid(recip_kid), alg, apu, apv, cc_tag, true,
                             ).await
                     }
                 })).await?
             }
-            (KnownKeyPair::X25519(_), KeyAlg::EcCurve(EcCurves::Secp256r1), _) => Err(err_msg(
+            (KnownKeyPair::X25519(_), KnownKeyAlg::P256, _) => Err(err_msg(
                 ErrorKind::Malformed,
                 "Incompatible sender and recipient key agreement curves",
             ))?,
-            (KnownKeyPair::P256(_), KeyAlg::X25519, _) => Err(err_msg(
+            (KnownKeyPair::P256(_), KnownKeyAlg::X25519, _) => Err(err_msg(
                 ErrorKind::Malformed,
                 "Incompatible sender and recipient key agreement curves",
             ))?,
