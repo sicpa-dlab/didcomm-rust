@@ -2,17 +2,10 @@ use async_trait::async_trait;
 use didcomm::{
     error::{err_msg, ErrorKind, Result as _Result, ResultContext, ResultExt},
     secrets::{
-        KeyManagementService as _KeyManagementService,
-        KidOrJwk,
-        SecretBytes,
-        KeySecretBytes,
-        KnownSignatureType,
-        A256Kw,
-        AesKey,
-        KnownKeyAlg,
-    }
+        A256Kw, AesKey, KeyManagementService as _KeyManagementService, KeySecretBytes, KidOrJwk,
+        KnownKeyAlg, KnownSignatureType, SecretBytes,
+    },
 };
-use didcomm::error::Error;
 use js_sys::{Array, Uint8Array};
 use wasm_bindgen::{prelude::*, JsCast};
 
@@ -133,7 +126,6 @@ pub(crate) struct JsKeyManagementService(pub(crate) KeyManagementService);
 
 #[async_trait(?Send)]
 impl _KeyManagementService for JsKeyManagementService {
-
     async fn get_key_alg(&self, secret_id: &str) -> _Result<KnownKeyAlg> {
         let key_alg = self
             .0
@@ -142,10 +134,12 @@ impl _KeyManagementService for JsKeyManagementService {
             .from_js()
             .context("Unable get key alg")?;
 
-        let key_alg: KnownKeyAlg = key_alg.into_serde().kind(
-            ErrorKind::InvalidState,
-            "Unable deserialize KeyAlg from JsValue",
-        )?;
+        let key_alg = serde_wasm_bindgen::from_value(key_alg).map_err(|_| {
+            err_msg(
+                ErrorKind::InvalidState,
+                "Unable deserialize KeyAlg from JsValue",
+            )
+        })?;
 
         Ok(key_alg)
     }
@@ -192,10 +186,12 @@ impl _KeyManagementService for JsKeyManagementService {
         message: &[u8],
         sig_type: Option<KnownSignatureType>,
     ) -> _Result<SecretBytes> {
-        let sig_type = serde_wasm_bindgen::to_value(&sig_type).map_err(|_| {err_msg(
-            ErrorKind::InvalidState,
-            "Unable covert KnownSignatureType to JsValue",
-        )})?;
+        let sig_type = serde_wasm_bindgen::to_value(&sig_type).map_err(|_| {
+            err_msg(
+                ErrorKind::InvalidState,
+                "Unable covert KnownSignatureType to JsValue",
+            )
+        })?;
 
         let secret_bytes = self
             .0
@@ -220,22 +216,17 @@ impl _KeyManagementService for JsKeyManagementService {
         cc_tag: Vec<u8>,
         receive: bool,
     ) -> _Result<AesKey<A256Kw>> {
-        let ephem_key = serde_wasm_bindgen::to_value(&ephem_key).map_err(|_| {err_msg(
-            ErrorKind::InvalidState,
-            "Unable covert KidOrJwk to JsValue",
-        )})?;
+        let ephem_key = serde_wasm_bindgen::to_value(&ephem_key)
+            .map_err(|_| err_msg(ErrorKind::InvalidState, "Unable covert KidOrJwk to JsValue"))?;
 
-        let send_key = serde_wasm_bindgen::to_value(&send_key).map_err(|_| {err_msg(
-            ErrorKind::InvalidState,
-            "Unable covert KidOrJwk to JsValue",
-        )})?;
+        let send_key = serde_wasm_bindgen::to_value(&send_key)
+            .map_err(|_| err_msg(ErrorKind::InvalidState, "Unable covert KidOrJwk to JsValue"))?;
 
-        let recip_key = serde_wasm_bindgen::to_value(&recip_key).map_err(|_| {err_msg(
-            ErrorKind::InvalidState,
-            "Unable covert KidOrJwk to JsValue",
-        )})?;
+        let recip_key = serde_wasm_bindgen::to_value(&recip_key)
+            .map_err(|_| err_msg(ErrorKind::InvalidState, "Unable covert KidOrJwk to JsValue"))?;
 
-        let derived_key = self.0
+        let derived_key = self
+            .0
             .derive_aes_key_using_ecdh_1pu(
                 ephem_key, send_key, recip_key, alg, apu, apv, cc_tag, receive,
             )
@@ -262,19 +253,14 @@ impl _KeyManagementService for JsKeyManagementService {
         apv: Vec<u8>,
         receive: bool,
     ) -> _Result<AesKey<A256Kw>> {
+        let ephem_key = serde_wasm_bindgen::to_value(&ephem_key)
+            .map_err(|_| err_msg(ErrorKind::InvalidState, "Unable covert KidOrJwk to JsValue"))?;
 
-        let ephem_key = serde_wasm_bindgen::to_value(&ephem_key).map_err(|_| {err_msg(
-            ErrorKind::InvalidState,
-            "Unable covert KidOrJwk to JsValue",
-        )})?;
+        let recip_key = serde_wasm_bindgen::to_value(&recip_key)
+            .map_err(|_| err_msg(ErrorKind::InvalidState, "Unable covert KidOrJwk to JsValue"))?;
 
-        let recip_key = serde_wasm_bindgen::to_value(&recip_key).map_err(|_| {err_msg(
-            ErrorKind::InvalidState,
-            "Unable covert KidOrJwk to JsValue",
-        )})?;
-
-
-        let derived_key = self.0
+        let derived_key = self
+            .0
             .derive_aes_key_using_ecdh_es(ephem_key, recip_key, alg, apu, apv, receive)
             .await
             .from_js()
