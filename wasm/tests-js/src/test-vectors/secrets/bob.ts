@@ -1,4 +1,4 @@
-import { Secret } from "..";
+import { Secret } from "../secret";
 
 export const BOB_SECRET_KEY_AGREEMENT_KEY_X25519_1: Secret = {
   id: "did:example:bob#key-x25519-1",

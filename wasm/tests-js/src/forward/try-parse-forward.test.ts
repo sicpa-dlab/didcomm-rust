@@ -1,4 +1,3 @@
-import { Message, ParsedForward } from "didcomm";
 import { MESSAGE_SIMPLE, FORWARD_MESSAGE } from "../test-vectors";
 
 // TODO: more tests

@@ -1,4 +1,4 @@
-import { Secret } from "..";
+import { Secret } from "../secret";
 
 export const ALICE_SECRETS: Secret[] = [
   {
