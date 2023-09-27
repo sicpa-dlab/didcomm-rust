@@ -67,7 +67,7 @@ export class ExampleKMS implements KeyManagementService {
 
   async create_signature(secretId: string, message: Uint8Array, sigType: KnownSignatureType | null): Promise<Uint8Array> {
     const key = this._getKey(secretId);
-    let sigAlg = undefined
+    let sigAlg: SigAlgs
     switch (sigType) {
       case "EdDSA":
         sigAlg = SigAlgs.EdDSA;
