@@ -22,4 +22,4 @@ pub use secrets::*;
 #[cfg(test)]
 mod test_helper;
 
-uniffi_macros::include_scaffolding!("didcomm");
+uniffi::include_scaffolding!("didcomm");
