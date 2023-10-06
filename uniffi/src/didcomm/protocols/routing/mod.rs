@@ -58,8 +58,7 @@ mod tests {
     use std::iter::FromIterator;
 
     use crate::test_helper::{
-        create_did_resolver, create_secrets_resolver, get_ok, PackResult, UnpackResult,
-        WrapInForwardResult,
+        create_did_resolver, create_kms, get_ok, PackResult, UnpackResult, WrapInForwardResult,
     };
     use crate::DIDComm;
     use didcomm_core::algorithms::AnonCryptAlg;
@@ -73,7 +72,7 @@ mod tests {
 
     #[tokio::test]
     async fn pack_encrypted_works_single_mediator() {
-        let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
+        let didcomm = DIDComm::new(create_did_resolver(), create_kms());
         let msg = MESSAGE_SIMPLE.clone();
 
         // ALICE
@@ -113,7 +112,7 @@ mod tests {
 
     #[tokio::test]
     async fn pack_encrypted_works_multiple_mediators_alternative_endpoints() {
-        let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
+        let didcomm = DIDComm::new(create_did_resolver(), create_kms());
         let msg = Message::build(
             "1234567890".to_owned(),
             "http://example.com/protocols/lets_do_lunch/1.0/proposal".to_owned(),
@@ -193,7 +192,7 @@ mod tests {
 
     #[tokio::test]
     async fn wrap_in_forward_works_mediator_unknown_by_sender() {
-        let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
+        let didcomm = DIDComm::new(create_did_resolver(), create_kms());
         let msg = MESSAGE_SIMPLE.clone();
 
         // ALICE

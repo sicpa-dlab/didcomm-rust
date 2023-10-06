@@ -9,6 +9,8 @@ use askar_crypto::alg::ed25519::Ed25519KeyPair;
 use askar_crypto::alg::k256::K256KeyPair;
 use askar_crypto::alg::p256::P256KeyPair;
 use askar_crypto::alg::x25519::X25519KeyPair;
+use askar_crypto::alg::AnyKey;
+use askar_crypto::alg::AnyKeyCreate;
 use askar_crypto::buffer::SecretBytes;
 use askar_crypto::jwk::FromJwk;
 use askar_crypto::kdf::ecdh_1pu::Ecdh1PU;
@@ -18,6 +20,7 @@ use askar_crypto::sign::KeySign;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::sync::Arc;
 
 pub struct ExampleKMS {
     known_secrets: Vec<Secret>,
@@ -251,6 +254,19 @@ pub enum SecretMaterial {
 
     #[serde(rename_all = "camelCase")]
     Base58 { private_key_base58: String },
+}
+
+impl Secret {
+    pub fn to_key(&self) -> Result<Arc<AnyKey>> {
+        // Box::new(KeyT(self.as_key_pair().unwrap()))
+        let any_key = match self.as_key_pair()? {
+            KnownKeyPair::Ed25519(key) => Arc::<AnyKey>::from_key(key),
+            KnownKeyPair::X25519(key) => Arc::<AnyKey>::from_key(key),
+            KnownKeyPair::P256(key) => Arc::<AnyKey>::from_key(key),
+            KnownKeyPair::K256(key) => Arc::<AnyKey>::from_key(key),
+        };
+        Ok(any_key)
+    }
 }
 
 impl AsKnownKeyPair for Secret {
