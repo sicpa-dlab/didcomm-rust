@@ -171,9 +171,9 @@ jobs:
       - name: List npm version
         run: npm --version
 
-      - name: Upgrade node-gyp
+      - name: Install Windows Build tools
         if: runner.os == 'Windows'
-        run: npm install -g node-gyp@latest
+        run: npm install --global windows-build-tools
 
       - name: Install wasm-pack Windows
         if: runner.os == 'Windows'
