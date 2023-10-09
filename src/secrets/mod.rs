@@ -2,7 +2,7 @@
 
 pub mod resolvers;
 
-pub use aries_askar::crypto::{
+pub use askar_crypto::{
     alg::{
         aes::{A256Kw, AesKey},
         KeyAlg,

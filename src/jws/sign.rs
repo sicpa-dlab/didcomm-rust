@@ -98,7 +98,7 @@ pub(crate) async fn sign_compact(
 
 #[cfg(test)]
 mod tests {
-    use aries_askar::crypto::{
+    use askar_crypto::{
         alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair},
         jwk::FromJwk,
         sign::{KeySigVerify, KeySign},

@@ -28,7 +28,7 @@ pub(crate) use parse::{parse, parse_compact, ParsedCompactJWS, ParsedJWS};
 
 #[cfg(test)]
 mod tests {
-    use aries_askar::crypto::{alg::ed25519::Ed25519KeyPair, jwk::FromJwk};
+    use askar_crypto::{alg::ed25519::Ed25519KeyPair, jwk::FromJwk};
 
     use crate::jws::{self, Algorithm};
     use crate::secrets::resolvers::example::{Secret, SecretMaterial, SecretType};

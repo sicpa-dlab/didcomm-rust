@@ -4,7 +4,7 @@ use crate::secrets::{KidOrJwk, KnownSignatureType};
 use crate::utils::crypto::{AsKnownKeyPair, JoseKDF, KnownKeyAlg, KnownKeyPair};
 use crate::utils::did::{Codec, _from_multicodec};
 use crate::{error::Result, secrets::KeyManagementService};
-use aries_askar::crypto::{
+use askar_crypto::{
     alg::{
         aes::{A256Kw, AesKey},
         ed25519::Ed25519KeyPair,

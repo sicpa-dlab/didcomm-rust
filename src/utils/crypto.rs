@@ -1,4 +1,4 @@
-use aries_askar::crypto::{
+use askar_crypto::{
     alg::{
         aes::{A128Kw, A256Kw, AesKey},
         ed25519::Ed25519KeyPair,

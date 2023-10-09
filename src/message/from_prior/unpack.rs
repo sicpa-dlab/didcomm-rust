@@ -5,7 +5,7 @@ use crate::{
     utils::{crypto::AsKnownKeyPair, did::did_or_url},
     FromPrior,
 };
-use aries_askar::crypto::alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair};
+use askar_crypto::alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair};
 
 impl FromPrior {
     /// Unpacks a plaintext value from a signed `from_prior` JWT.
