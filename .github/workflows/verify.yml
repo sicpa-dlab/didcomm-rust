@@ -170,7 +170,7 @@ jobs:
 
       - name: Install wasm-pack Windows
         if: runner.os == 'Windows'
-        run: npm install -g wasm-pack@0.10.1
+        run: npm install -g wasm-pack@0.12.1
 
       - name: Build pkg (bundler)
         run: make
