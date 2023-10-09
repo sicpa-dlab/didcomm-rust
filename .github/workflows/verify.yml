@@ -173,7 +173,7 @@ jobs:
 
       - name: Upgrade node-gyp
         if: runner.os == 'Windows'
-        run: npm install node-gyp@latest
+        run: npm install -g node-gyp@latest
 
       - name: Install wasm-pack Windows
         if: runner.os == 'Windows'
