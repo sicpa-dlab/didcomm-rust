@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use aries_askar::crypto::repr::ToSecretBytes;
 use aries_askar::crypto::{
     alg::{AnyKey, EcCurves},
     jwk::FromJwk,
     kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation},
     sign::KeySign,
 };
-use aries_askar::crypto::repr::ToSecretBytes;
 use async_trait::async_trait;
 use didcomm_core::secrets::{
     resolvers::example::Secret, A256Kw, AesKey, KeyAlg, KnownKeyAlg, KnownSignatureType,
@@ -31,7 +31,7 @@ impl ExampleKMS {
             .map(|s| (s.id.clone(), s.to_key()))
             // remove all invalid/not-supported keys
             .filter(|(_id, key_result)| key_result.is_ok())
-            .map(|(id, key_result)|(id, key_result.unwrap()))
+            .map(|(id, key_result)| (id, key_result.unwrap()))
             .collect();
         Self { known_secrets }
     }
