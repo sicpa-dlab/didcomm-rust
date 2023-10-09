@@ -39,16 +39,19 @@ where
         None => (None, None),
     };
 
-    let mut rng = random::default_rng();
-    let cek = CE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate cek")?;
+    let (cek, epk) = {
+        // drop the rng imediatelly to avoid problems because it is not send.
+        let mut rng = random::default_rng();
+        let cek = CE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate cek")?;
+        let epk = KE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate epk")?;
+        (cek, epk)
+    };
 
     let apv = {
         let mut kids = recipients.iter().map(|r| r.0).collect::<Vec<_>>();
         kids.sort();
         Sha256::digest(kids.join(".").as_bytes())
     };
-
-    let epk = KE::generate(&mut rng).kind(ErrorKind::InvalidState, "Unable generate epk")?;
 
     let protected = {
         let epk = epk.to_jwk_public_value()?;
@@ -120,7 +123,7 @@ where
                             .to_string(),
                         skid.map(|x| x.to_string()),
                         key.to_jwk_public(None)
-                            .kind(ErrorKind::InvalidState, "Unable to serialize recip key")?,
+                            .kind(ErrorKind::Malformed, "Unable to serialize recip key")?,
                         alg.as_str().as_bytes().to_owned(),
                         skid.as_ref()
                             .map(|s| s.as_bytes())

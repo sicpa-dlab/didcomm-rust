@@ -3,10 +3,11 @@ use std::sync::Arc;
 
 use aries_askar::crypto::{
     alg::{AnyKey, EcCurves},
-    jwk::{FromJwk, ToJwk},
+    jwk::FromJwk,
     kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation},
     sign::KeySign,
 };
+use aries_askar::crypto::repr::ToSecretBytes;
 use async_trait::async_trait;
 use didcomm_core::secrets::{
     resolvers::example::Secret, A256Kw, AesKey, KeyAlg, KnownKeyAlg, KnownSignatureType,
@@ -27,7 +28,10 @@ impl ExampleKMS {
     pub fn new(secrets: Vec<Secret>) -> Self {
         let known_secrets = secrets
             .iter()
-            .map(|s| (s.id.clone(), s.to_key().unwrap()))
+            .map(|s| (s.id.clone(), s.to_key()))
+            // remove all invalid/not-supported keys
+            .filter(|(_id, key_result)| key_result.is_ok())
+            .map(|(id, key_result)|(id, key_result.unwrap()))
             .collect();
         Self { known_secrets }
     }
@@ -130,12 +134,12 @@ impl KeyManagementService for ExampleKMS {
             Err(_) => return ErrorCode::Error,
         };
 
-        let kw = match kw.to_jwk_secret(None) {
-            Ok(sb) => sb,
+        let kw = match kw.to_secret_bytes() {
+            Ok(sb) => sb.to_vec(),
             Err(_) => return ErrorCode::Error,
         };
 
-        match cb.success(kw.to_vec()) {
+        match cb.success(kw) {
             Ok(_) => ErrorCode::Success,
             Err(_) => ErrorCode::Error,
         }
@@ -168,12 +172,12 @@ impl KeyManagementService for ExampleKMS {
             Err(_) => return ErrorCode::Error,
         };
 
-        let kw = match kw.to_jwk_secret(None) {
-            Ok(sb) => sb,
+        let kw = match kw.to_secret_bytes() {
+            Ok(sb) => sb.to_vec(),
             Err(_) => return ErrorCode::Error,
         };
 
-        match cb.success(kw.to_vec()) {
+        match cb.success(kw) {
             Ok(_) => ErrorCode::Success,
             Err(_) => ErrorCode::Error,
         }
