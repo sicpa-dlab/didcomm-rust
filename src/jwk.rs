@@ -1,4 +1,4 @@
-use askar_crypto::{
+use aries_askar::crypto::{
     alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair, x25519::X25519KeyPair},
     jwk::{FromJwk, ToJwk},
 };
@@ -41,7 +41,7 @@ impl ToJwkValue for X25519KeyPair {}
 
 #[cfg(test)]
 mod tests {
-    use askar_crypto::alg::ed25519::Ed25519KeyPair;
+    use aries_askar::crypto::alg::ed25519::Ed25519KeyPair;
     use serde_json::json;
 
     use super::*;

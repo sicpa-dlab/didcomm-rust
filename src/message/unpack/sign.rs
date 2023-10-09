@@ -1,4 +1,4 @@
-use askar_crypto::alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair};
+use aries_askar::crypto::alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair};
 
 use crate::jws::JWS;
 use crate::{

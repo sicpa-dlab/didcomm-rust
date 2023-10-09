@@ -98,7 +98,7 @@ pub(crate) async fn sign_compact(
 
 #[cfg(test)]
 mod tests {
-    use askar_crypto::{
+    use aries_askar::crypto::{
         alg::{ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair},
         jwk::FromJwk,
         sign::{KeySigVerify, KeySign},
@@ -316,6 +316,8 @@ mod tests {
             assert_eq!(msg.parsed_header.typ, typ);
             assert_eq!(msg.parsed_header.alg, alg);
             assert_eq!(msg.parsed_header.kid, kid);
+
+            println!("pkey: {}", pkey);
 
             let pkey = K::from_jwk(pkey).expect("Unable from_jwk");
             let valid = msg.verify::<K>(&pkey).expect("Unable verify");
@@ -550,6 +552,7 @@ mod tests {
     const ALICE_PKEY_K256: &str = r#"
     {
         "kty":"EC",
+        "crv":"secp256k1",
         "d":"N3Hm1LXA210YVGGsXw_GklMwcLu_bMgnzDese6YQIyA",
         "x":"aToW5EaTq5mlAf8C5ECYDSkqsJycrW-e1SQ6_GJcAOk",
         "y":"JAGX94caA21WKreXwYUaOCYTBMrqaX4KWIlsQZTHWCk"

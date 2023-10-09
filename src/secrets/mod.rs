@@ -2,10 +2,14 @@
 
 pub mod resolvers;
 
-pub use askar_crypto::alg::aes::{A256Kw, AesKey};
-pub use askar_crypto::alg::KeyAlg;
-pub use askar_crypto::buffer::SecretBytes;
-pub use askar_crypto::repr::KeySecretBytes;
+pub use aries_askar::crypto::{
+    alg::{
+        aes::{A256Kw, AesKey},
+        KeyAlg,
+    },
+    buffer::SecretBytes,
+    repr::KeySecretBytes,
+};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 

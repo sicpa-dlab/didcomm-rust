@@ -1,20 +1,16 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use aries_askar::crypto::alg::{AnyKey, EcCurves};
-use aries_askar::crypto::jwk::FromJwk;
-use aries_askar::crypto::jwk::ToJwk;
-use aries_askar::crypto::kdf::ecdh_1pu::Ecdh1PU;
-use aries_askar::crypto::kdf::ecdh_es::EcdhEs;
-use aries_askar::crypto::kdf::FromKeyDerivation;
-use aries_askar::crypto::sign::KeySign;
-use aries_askar::kms::KeyAlg;
+use aries_askar::crypto::{
+    alg::{AnyKey, EcCurves},
+    jwk::{FromJwk, ToJwk},
+    kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation},
+    sign::KeySign,
+};
 use async_trait::async_trait;
-use didcomm_core::secrets::resolvers::example::Secret;
-use didcomm_core::secrets::A256Kw;
-use didcomm_core::secrets::AesKey;
-use didcomm_core::secrets::KnownKeyAlg;
-use didcomm_core::secrets::KnownSignatureType;
+use didcomm_core::secrets::{
+    resolvers::example::Secret, A256Kw, AesKey, KeyAlg, KnownKeyAlg, KnownSignatureType,
+};
 
 use crate::secrets::kms::KidOrJwkAdapted;
 use crate::{

@@ -11,7 +11,7 @@ use crate::{
         did::did_or_url,
     },
 };
-use askar_crypto::{
+use aries_askar::crypto::{
     alg::{
         aes::{A256CbcHs512, A256Gcm, A256Kw, AesKey},
         chacha20::{Chacha20Key, XC20P},

@@ -4,19 +4,21 @@ use crate::secrets::{KidOrJwk, KnownSignatureType};
 use crate::utils::crypto::{AsKnownKeyPair, JoseKDF, KnownKeyAlg, KnownKeyPair};
 use crate::utils::did::{Codec, _from_multicodec};
 use crate::{error::Result, secrets::KeyManagementService};
-use askar_crypto::alg::aes::{A256Kw, AesKey};
-use askar_crypto::alg::ed25519::Ed25519KeyPair;
-use askar_crypto::alg::k256::K256KeyPair;
-use askar_crypto::alg::p256::P256KeyPair;
-use askar_crypto::alg::x25519::X25519KeyPair;
-use askar_crypto::alg::AnyKey;
-use askar_crypto::alg::AnyKeyCreate;
-use askar_crypto::buffer::SecretBytes;
-use askar_crypto::jwk::FromJwk;
-use askar_crypto::kdf::ecdh_1pu::Ecdh1PU;
-use askar_crypto::kdf::ecdh_es::EcdhEs;
-use askar_crypto::repr::{KeyPublicBytes, KeySecretBytes};
-use askar_crypto::sign::KeySign;
+use aries_askar::crypto::{
+    alg::{
+        aes::{A256Kw, AesKey},
+        ed25519::Ed25519KeyPair,
+        k256::K256KeyPair,
+        p256::P256KeyPair,
+        x25519::X25519KeyPair,
+        AnyKey, AnyKeyCreate,
+    },
+    buffer::SecretBytes,
+    jwk::FromJwk,
+    kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs},
+    repr::{KeyPublicBytes, KeySecretBytes},
+    sign::KeySign,
+};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};

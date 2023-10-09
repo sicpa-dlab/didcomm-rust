@@ -1,4 +1,4 @@
-use askar_crypto::{
+use aries_askar::crypto::{
     buffer::SecretBytes,
     encrypt::{KeyAeadInPlace, KeyAeadMeta},
     kdf::{FromKeyDerivation, KeyExchange},
@@ -168,7 +168,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use askar_crypto::{
+    use aries_askar::crypto::{
         alg::{
             aes::{A256CbcHs512, A256Gcm, A256Kw, AesKey},
             chacha20::{Chacha20Key, XC20P},

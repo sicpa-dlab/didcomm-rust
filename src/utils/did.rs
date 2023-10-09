@@ -1,4 +1,4 @@
-use askar_crypto::alg::{
+use aries_askar::crypto::alg::{
     ed25519::Ed25519KeyPair, k256::K256KeyPair, p256::P256KeyPair, x25519::X25519KeyPair,
 };
 use serde_json::json;
@@ -285,8 +285,8 @@ mod tests {
     use crate::secrets::resolvers::example::{Secret, SecretMaterial, SecretType};
     use crate::utils::crypto::{AsKnownKeyPair, KnownKeyPair};
     use crate::utils::did::{did_or_url, is_did};
-    use askar_crypto::alg::ed25519::Ed25519KeyPair;
-    use askar_crypto::alg::x25519::X25519KeyPair;
+    use aries_askar::crypto::alg::ed25519::Ed25519KeyPair;
+    use aries_askar::crypto::alg::x25519::X25519KeyPair;
     use serde_json::json;
 
     #[test]

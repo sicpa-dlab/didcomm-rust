@@ -12,7 +12,7 @@ use crate::{
     },
     UnpackMetadata, UnpackOptions,
 };
-use askar_crypto::{
+use aries_askar::crypto::{
     alg::{
         aes::{A256CbcHs512, A256Kw, AesKey},
         p256::P256KeyPair,

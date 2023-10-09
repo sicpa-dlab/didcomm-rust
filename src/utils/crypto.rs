@@ -1,5 +1,4 @@
-use askar_crypto::sign::SignatureType;
-use askar_crypto::{
+use aries_askar::crypto::{
     alg::{
         aes::{A128Kw, A256Kw, AesKey},
         ed25519::Ed25519KeyPair,
@@ -11,6 +10,7 @@ use askar_crypto::{
     encrypt::KeyAeadInPlace,
     kdf::{ecdh_1pu::Ecdh1PU, ecdh_es::EcdhEs, FromKeyDerivation, KeyExchange},
     repr::{KeySecretBytes, ToSecretBytes},
+    sign::SignatureType,
 };
 use serde::{Deserialize, Serialize};
 
