@@ -167,10 +167,13 @@ jobs:
       - name: Install wasm-pack
         if: runner.os != 'Windows'
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      
+
+      - name: List npm version
+        run: npm --version
+
       - name: Upgrade npm windows
         if: runner.os == 'Windows'
-        run: npm install --global --production npm-windows-upgrade && npm-windows-upgrade --npm-version latest
+        run: npm install --global --production npm-windows-upgrade && npm-windows-upgrade --npm-version 7
 
       - name: Install wasm-pack Windows
         if: runner.os == 'Windows'
