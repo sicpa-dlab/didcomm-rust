@@ -134,6 +134,10 @@ jobs:
       - name: Find node
         if: runner.os == 'Windows'
         run: where node
+        run: ls "C:\Program Files"
+        run: ls "C:\Program Files\Microsoft Visual Studio"
+        run: ls "C:\Program Files\Microsoft Visual Studio\2022"
+        run: ls "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
 
       - name: Upgrade gyp
         if: runner.os == 'Windows'
