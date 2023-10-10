@@ -175,7 +175,7 @@ jobs:
         run: cd tests-js && npm install
 
       - name: Lint tests-js
-        run: cd tests-js && npm run check
+        run: cd tests-js && npm config set script-shell=powershell && npm run check
 
       - name: Test tests-js (bundler)
         if: false  # TODO that check is not supported yet for bundler build
