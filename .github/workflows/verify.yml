@@ -134,6 +134,9 @@ jobs:
       - name: Find node
         if: runner.os == 'Windows'
         run: |
+          echo $VCINSTALLDIR
+          set VCINSTALLDIR="C:\Program Files\Microsoft Visual Studio\2022\Community\VC"
+          echo $VCINSTALLDIR
           where node
           echo ======
           ls "C:\Program Files"
@@ -143,6 +146,11 @@ jobs:
           ls "C:\Program Files\Microsoft Visual Studio\2022"
           echo ======
           ls "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          echo ======
+          ls "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC"
+          echo ======
+          ls "C:\Program Files\Microsoft Visual Studio 14.0\"
+          
 
       - name: Upgrade gyp
         if: runner.os == 'Windows'
