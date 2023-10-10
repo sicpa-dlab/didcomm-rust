@@ -134,9 +134,9 @@ jobs:
       - name: Find node
         if: runner.os == 'Windows'
         run: |
-          echo $VCINSTALLDIR
+          echo %VCINSTALLDIR%
           set VCINSTALLDIR="C:\Program Files\Microsoft Visual Studio\2022\Community\VC"
-          echo $VCINSTALLDIR
+          echo %VCINSTALLDIR%
           where node
           echo ======
           ls "C:\Program Files"
