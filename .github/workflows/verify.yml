@@ -169,7 +169,7 @@ jobs:
 
       - name: Install tests-js (bundler)
         env:
-          VCINSTALLDIR: "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC"
+          VCINSTALLDIR: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC
         run: cd tests-js && npm install
 
       - name: Lint tests-js
