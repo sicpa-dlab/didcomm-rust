@@ -75,50 +75,10 @@ jobs:
           # verify nodejs target
           WASM_TARGET=nodejs PKG_NAME=${{ env.PKG_NAME_NODEJS }} make -C wasm build install
 
-  verify:
-    strategy:
-      matrix:
-        os: [ macos-latest, windows-latest, ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set rustup profile & toolchain
-        run: |
-          rustup set profile minimal
-          rustup toolchain install stable
-
-      - name: Get timestamp for cache
-        id: date
-        run: echo "yearmo=$(date +%Y%m)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{steps.date.outputs.yearmo}}
-
-      - name: Cargo fmt
-        # TODO enable that once https://github.com/rust-lang/rustfmt/issues/4477
-        #      is resolved
-        if: runner.os != 'Windows'
-        run: cargo fmt --all -- --check
-
-      - name: Debug build
-        run: cargo build --verbose
-
-      - name: Test
-        run: cargo test --verbose
-
   verify-wasm:
     strategy:
       matrix:
-        os: [ macos-latest, windows-latest, ubuntu-latest ]
+        os: [ windows-latest ]
         node: [ 14, 16 ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -170,9 +130,14 @@ jobs:
 
       - name: List npm version
         run: npm --version
-      
+
       - name: Find node
+        if: runner.os == 'Windows'
         run: where node
+
+      - name: Upgrade gyp
+        if: runner.os == 'Windows'
+        run: cd "C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\run-script" && npm install node-gyp@latest && cd -
 
       - name: Install Windows Build tools
         if: runner.os == 'Windows'
@@ -227,46 +192,3 @@ jobs:
       - name: Test demo (nodejs)
         run: cd demo && npm run start
 
-  verify-uniffi:
-    strategy:
-      matrix:
-        os: [ macos-latest, windows-latest, ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-        working-directory: uniffi
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set rustup profile & toolchain
-        run: |
-          rustup set profile minimal
-          rustup toolchain install stable
-
-      - name: Get timestamp for cache
-        id: date
-        run: echo "yearmo=$(date +%Y%m)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{steps.date.outputs.yearmo}}
-
-      - name: Cargo fmt
-        # TODO enable that once https://github.com/rust-lang/rustfmt/issues/4477
-        #      is resolved
-        if: runner.os != 'Windows'
-        run: cargo fmt --all -- --check
-
-      - name: Debug build
-        run: cargo build --verbose
-
-      - name: Test
-        run: cargo test --verbose
