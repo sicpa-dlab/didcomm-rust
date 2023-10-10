@@ -170,6 +170,9 @@ jobs:
 
       - name: List npm version
         run: npm --version
+      
+      - name: Find node
+        run: where node
 
       - name: Install Windows Build tools
         if: runner.os == 'Windows'
