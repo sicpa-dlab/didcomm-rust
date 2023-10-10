@@ -135,9 +135,13 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           where node
+          echo ======
           ls "C:\Program Files"
+          echo ======
           ls "C:\Program Files\Microsoft Visual Studio"
+          echo ======
           ls "C:\Program Files\Microsoft Visual Studio\2022"
+          echo ======
           ls "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
 
       - name: Upgrade gyp
