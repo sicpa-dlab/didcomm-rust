@@ -98,5 +98,24 @@ pub struct DIDCommMessagingService {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub accept: Option<Vec<String>>,
 
+    #[serde(default)]
     pub routing_keys: Vec<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    const SERVICE_URI: &str = "https://example.com/path";
+
+    #[test]
+    fn parsing_minimal_didcomm_messaging_service_works() {
+        let service: DIDCommMessagingService =
+            serde_json::from_value(json!({ "uri": SERVICE_URI })).unwrap();
+
+        assert_eq!(service.uri, SERVICE_URI);
+        assert!(service.routing_keys.is_empty());
+        assert!(service.accept.is_none());
+    }
 }

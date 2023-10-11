@@ -23,7 +23,7 @@ To use `didcomm`, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-didcomm = "0.3"
+didcomm = "0.4"
 ```
 
 ## Run examples

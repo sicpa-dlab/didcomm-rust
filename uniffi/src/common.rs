@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::UniffiCustomTypeWrapper;
+use crate::UniffiCustomTypeConverter;
 use didcomm_core::error::{err_msg, ErrorKind, Result, ResultExt, ResultExtNoContext, ToResult};
 use futures::{channel::oneshot, executor::ThreadPool};
 use lazy_static::lazy_static;
@@ -25,15 +25,15 @@ lazy_static! {
 // We use `JsonValue` in our UDL. It moves to and from Uniffi bindings via a string.
 pub type JsonValue = serde_json::Value;
 
-// We must implement the UniffiCustomTypeWrapper trait.
-impl UniffiCustomTypeWrapper for JsonValue {
-    type Wrapped = String;
+// We must implement the UniffiCustomTypeConverter trait.
+impl UniffiCustomTypeConverter for JsonValue {
+    type Builtin = String;
 
-    fn wrap(val: Self::Wrapped) -> uniffi::Result<Self> {
+    fn into_custom(val: Self::Builtin) -> uniffi::Result<Self> {
         Ok(serde_json::from_str(&val).to_didcomm("Invalid json value")?)
     }
 
-    fn unwrap(obj: Self) -> Self::Wrapped {
+    fn from_custom(obj: Self) -> Self::Builtin {
         serde_json::to_string(&obj).expect("unable serialize json value")
     }
 }
