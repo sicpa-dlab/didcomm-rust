@@ -1,5 +1,4 @@
-mod secret;
-mod secrets_resolver;
+mod kms;
 
-pub(crate) use secrets_resolver::JsSecretsResolver;
-pub use secrets_resolver::SecretsResolver;
+pub(crate) use kms::JsKeyManagementService;
+pub use kms::KeyManagementService;

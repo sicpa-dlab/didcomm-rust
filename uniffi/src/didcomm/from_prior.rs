@@ -4,7 +4,7 @@ use crate::DIDComm;
 
 use crate::common::{ErrorCode, EXECUTOR};
 use crate::did_resolver_adapter::DIDResolverAdapter;
-use crate::secrets_resolver_adapter::SecretsResolverAdapter;
+use crate::kms_adapter::KeyManagementServiceAdapter;
 
 pub trait OnFromPriorPackResult: Sync + Send {
     fn success(&self, from_prior_jwt: String, kid: String);
@@ -25,12 +25,9 @@ impl DIDComm {
     ) -> ErrorCode {
         let msg = msg.clone();
         let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
-        let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());
+        let kms = KeyManagementServiceAdapter::new(self.kms.clone());
 
-        let future = async move {
-            msg.pack(issuer_kid.as_deref(), &did_resolver, &secret_resolver)
-                .await
-        };
+        let future = async move { msg.pack(issuer_kid.as_deref(), &did_resolver, &kms).await };
         EXECUTOR.spawn_ok(async move {
             match future.await {
                 Ok((from_prior_jwt, kid)) => cb.success(from_prior_jwt, kid),
@@ -66,7 +63,7 @@ mod tests {
 
     use crate::{
         test_helper::{create_did_resolver, get_ok, FromPriorPackResult, FromPriorUnpackResult},
-        DIDComm, ExampleSecretsResolver,
+        DIDComm, ExampleKMS,
     };
     use didcomm_core::test_vectors::{
         ALICE_DID, CHARLIE_DID, CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519,
@@ -80,9 +77,7 @@ mod tests {
 
         DIDComm::new(
             create_did_resolver(),
-            Box::new(ExampleSecretsResolver::new(
-                CHARLIE_ROTATED_TO_ALICE_SECRETS.clone(),
-            )),
+            Box::new(ExampleKMS::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone())),
         )
         .pack_from_prior(
             &from_prior,
@@ -99,9 +94,7 @@ mod tests {
         let (cb, receiver) = FromPriorPackResult::new();
         let did_comm = DIDComm::new(
             create_did_resolver(),
-            Box::new(ExampleSecretsResolver::new(
-                CHARLIE_ROTATED_TO_ALICE_SECRETS.clone(),
-            )),
+            Box::new(ExampleKMS::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone())),
         );
 
         let from_prior = FromPrior::build(CHARLIE_DID.into(), ALICE_DID.into())

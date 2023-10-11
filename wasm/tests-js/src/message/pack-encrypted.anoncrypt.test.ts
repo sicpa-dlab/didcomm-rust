@@ -24,7 +24,7 @@ import {
   BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_2,
   BOB_VERIFICATION_METHOD_KEY_AGREEM_X25519_3,
   ExampleDIDResolver,
-  ExampleSecretsResolver,
+  ExampleKMS,
   MESSAGE_SIMPLE,
 } from "../test-vectors";
 import { Message } from "didcomm";
@@ -90,14 +90,14 @@ test.each([
   "Message.pack-encrypted anoncrypt works for $case",
   async ({ message, signBy, to, expMetadata }) => {
     const didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-    let secretResolver = new ExampleSecretsResolver(ALICE_SECRETS);
+    let kms = new ExampleKMS(ALICE_SECRETS);
 
     const [encrypted, metadata] = await message.pack_encrypted(
       to,
       null,
       signBy,
       didResolver,
-      secretResolver,
+      kms,
       {
         protect_sender: false,
         forward: false,
@@ -110,12 +110,12 @@ test.each([
     expect(typeof encrypted).toStrictEqual("string");
     expect(metadata).toStrictEqual(expMetadata);
 
-    secretResolver = new ExampleSecretsResolver(BOB_SECRETS);
+    kms = new ExampleKMS(BOB_SECRETS);
 
     const [unpacked, _] = await Message.unpack(
       encrypted,
       didResolver,
-      secretResolver,
+      kms,
       {}
     );
 

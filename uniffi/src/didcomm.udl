@@ -4,7 +4,7 @@ typedef string JsonValue;
 // 1. MAIN DIDCOMM INTERFACE
 
 interface DIDComm {
-  constructor(DIDResolver did_resolver, SecretsResolver secret_resolver);
+  constructor(DIDResolver did_resolver, KeyManagementService kms);
 
   ErrorCode pack_plaintext([ByRef] Message msg, OnPackPlaintextResult cb);
   ErrorCode pack_signed([ByRef] Message msg, string sign_by, OnPackSignedResult cb);
@@ -168,14 +168,17 @@ interface ExampleDIDResolver {
 
 // 5. SECRETS RESOLVER
 
-callback interface SecretsResolver {
-  ErrorCode get_secret(string secretid, OnGetSecretResult cb); // should be in camel case
+callback interface KeyManagementService {
+  ErrorCode get_key_alg(string secretid, OnGetKeyAlgResult cb); // should be in camel case
   ErrorCode find_secrets(sequence<string> secretids, OnFindSecretsResult cb); // should be in camel case
+  ErrorCode create_signature(string secretid, bytes message, KnownSignatureType? sigtype, OnSecretBytesResult cb);
+  ErrorCode derive_aes_key_using_ecdh_1pu(KidOrJwkAdapted epk, KidOrJwkAdapted sk, KidOrJwkAdapted rk, bytes alg, bytes apu, bytes apv, bytes tag, boolean recive, OnSecretBytesResult cb);
+  ErrorCode derive_aes_key_using_ecdh_es(KidOrJwkAdapted epk, KidOrJwkAdapted rk, bytes alg, bytes apu, bytes apv, boolean recive, OnSecretBytesResult cb);
 };
 
-interface OnGetSecretResult {
+interface OnGetKeyAlgResult {
   [Throws=ErrorKind]
-  void success(Secret? result);
+  void success(KnownKeyAlg result);
 
   [Throws=ErrorKind]
   void error(ErrorKind err, string msg);
@@ -184,6 +187,14 @@ interface OnGetSecretResult {
 interface OnFindSecretsResult {
   [Throws=ErrorKind]
   void success(sequence<string> result);
+
+  [Throws=ErrorKind]
+  void error(ErrorKind err, string msg);
+};
+
+interface OnSecretBytesResult {
+  [Throws=ErrorKind]
+  void success(bytes result);
 
   [Throws=ErrorKind]
   void error(ErrorKind err, string msg);
@@ -212,10 +223,33 @@ enum SecretType {
     "Other",
 };
 
-interface ExampleSecretsResolver {
+enum KnownKeyAlg {
+    "Ed25519",
+    "X25519",
+    "P256",
+    "K256",
+    "Unsupported",
+};
+
+enum KnownSignatureType {
+    "EdDSA",
+    "ES256",
+    "ES256K",
+};
+
+[Enum]
+interface KidOrJwkAdapted {
+  Kid(string kid);
+  Jwk(string jwk);
+};
+
+interface ExampleKMS {
   constructor(sequence<Secret> known_secrets);
-  ErrorCode get_secret(string secret_id, OnGetSecretResult cb);
+  ErrorCode get_key_alg(string secret_id, OnGetKeyAlgResult cb);
   ErrorCode find_secrets(sequence<string> secret_ids, OnFindSecretsResult cb);
+  ErrorCode create_signature(string secretid, bytes message, KnownSignatureType? sigtype, OnSecretBytesResult cb);
+  ErrorCode derive_aes_key_using_ecdh_1pu(KidOrJwkAdapted epk, KidOrJwkAdapted sk, KidOrJwkAdapted rk, bytes alg, bytes apu, bytes apv, bytes tag, boolean recive, OnSecretBytesResult cb);
+  ErrorCode derive_aes_key_using_ecdh_es(KidOrJwkAdapted epk, KidOrJwkAdapted rk, bytes alg, bytes apu, bytes apv, boolean recive, OnSecretBytesResult cb);
 };
 
 

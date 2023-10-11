@@ -7,7 +7,8 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
 use crate::{
-    error::JsResult, DIDResolver, JsDIDResolver, JsSecretsResolver, Message, SecretsResolver,
+    error::JsResult, DIDResolver, JsDIDResolver, JsKeyManagementService, KeyManagementService,
+    Message,
 };
 
 #[wasm_bindgen]
@@ -19,12 +20,12 @@ impl Message {
         from: Option<String>,
         sign_by: Option<String>,
         did_resolver: DIDResolver,
-        secrets_resolver: SecretsResolver,
+        kms: KeyManagementService,
         options: JsValue,
     ) -> Promise {
         let msg = self.0.clone();
         let did_resolver = JsDIDResolver(did_resolver);
-        let secrets_resolver = JsSecretsResolver(secrets_resolver);
+        let kms = JsKeyManagementService(kms);
 
         future_to_promise(async move {
             let options: PackEncryptedOptions = options
@@ -38,7 +39,7 @@ impl Message {
                     from.as_deref(),
                     sign_by.as_deref(),
                     &did_resolver,
-                    &secrets_resolver,
+                    &kms,
                     &options,
                 )
                 .await
@@ -101,14 +102,14 @@ interface Message {
      *    Adding a signature when one is not needed can degrade rather than enhance security because
      *    it relinquishes the sender’s ability to speak off the record.
      * @param `did_resolver` instance of `DIDResolver` to resolve DIDs.
-     * @param `secrets_resolver` instance of SecretsResolver` to resolve sender DID keys secrets.
+     * @param `kms` instance of `KeyManagementService` to resolve sender DID keys secrets.
      * @param `options` allow fine configuration of packing process.
      *
      * @returns Tuple `[encrypted_message, metadata]`.
      * - `encrypted_message` A DIDComm encrypted message as a JSON string.
      * - `metadata` additional metadata about this `pack` execution like used keys identifiers,
      *   used messaging service.
-     * 
+     *
      * @throws DIDCommDIDNotResolved
      * @throws DIDCommDIDUrlNotFound
      * @throws DIDCommMalformed
@@ -119,11 +120,11 @@ interface Message {
      * @throws DIDCommIllegalArgument
      */
     pack_encrypted(
-        to: string, 
+        to: string,
         from: string | null,
-        sign_by: string | null, 
+        sign_by: string | null,
         did_resolver: DIDResolver,
-        secrets_resolver: SecretsResolver,
+        kms: KeyManagementService,
         options: PackEncryptedOptions,
     ): Promise<[string, PackEncryptedMetadata]>;
 }
@@ -189,7 +190,7 @@ type PackEncryptedMetadata = {
      */
     messaging_service?: MessagingServiceMetadata,
 
-    /** 
+    /**
      * Identifier (DID URL) of sender key used for message encryption.
      */
     from_kid?: string,

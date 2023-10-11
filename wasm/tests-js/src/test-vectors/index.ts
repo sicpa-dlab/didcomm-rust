@@ -6,4 +6,4 @@ export * from "./from_prior_jwt";
 export * from "./message";
 export * from "./plaintext";
 export * from "./secrets";
-export * from "./secrets_resolver";
+export * from "./kms";

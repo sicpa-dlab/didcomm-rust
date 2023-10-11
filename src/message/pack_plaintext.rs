@@ -74,7 +74,7 @@ mod tests {
     use crate::{
         did::resolvers::ExampleDIDResolver,
         error::ErrorKind,
-        secrets::resolvers::ExampleSecretsResolver,
+        secrets::resolvers::ExampleKMS,
         test_vectors::{
             ALICE_DID_DOC, BOB_DID_DOC, BOB_SECRETS, CHARLIE_DID_DOC,
             CHARLIE_SECRET_AUTH_KEY_ED25519, FROM_PRIOR_FULL, MESSAGE_ATTACHMENT_BASE64,
@@ -131,7 +131,7 @@ mod tests {
             BOB_DID_DOC.clone(),
             CHARLIE_DID_DOC.clone(),
         ]);
-        let bob_secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+        let bob_kms = ExampleKMS::new(BOB_SECRETS.clone());
 
         let packed_msg = MESSAGE_FROM_PRIOR_FULL
             .pack_plaintext(&did_resolver)
@@ -141,7 +141,7 @@ mod tests {
         let (unpacked_msg, unpack_metadata) = Message::unpack(
             &packed_msg,
             &did_resolver,
-            &bob_secrets_resolver,
+            &bob_kms,
             &UnpackOptions::default(),
         )
         .await

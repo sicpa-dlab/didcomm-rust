@@ -1,13 +1,11 @@
+use crate::secrets::KnownKeyAlg;
 use crate::{
     did::DIDResolver,
     error::{err_msg, ErrorKind, Result, ResultContext, ResultExt},
     jws::{self, Algorithm},
     message::from_prior::JWT_TYP,
-    secrets::SecretsResolver,
-    utils::{
-        crypto::{AsKnownKeyPair, KnownKeyPair},
-        did::{did_or_url, is_did},
-    },
+    secrets::KeyManagementService,
+    utils::did::{did_or_url, is_did},
     FromPrior,
 };
 
@@ -18,7 +16,7 @@ impl FromPrior {
     /// # Parameters
     /// - `issuer_kid` (optional) identifier of the issuer key being used to sign `from_prior` JWT value.
     /// - `did_resolver` instance of `DIDResolver` to resolve DIDs.
-    /// - `secrets_resolver` instance of `SecretsResolver` to resolve issuer DID keys secrets.
+    /// - `kms` instance of `SecretsResolver` to resolve issuer DID keys secrets.
     ///
     /// # Returns
     /// Tuple (signed `from_prior` JWT, identifier of the issuer key actually used to sign `from_prior`)
@@ -35,7 +33,7 @@ impl FromPrior {
         &self,
         issuer_kid: Option<&str>,
         did_resolver: &'dr (dyn DIDResolver + 'dr),
-        secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+        kms: &'sr (dyn KeyManagementService + 'sr),
     ) -> Result<(String, String)> {
         self.validate_pack(issuer_kid)?;
 
@@ -86,7 +84,7 @@ impl FromPrior {
             did_doc.authentication.iter().map(|s| s.as_str()).collect()
         };
 
-        let kid = *secrets_resolver
+        let kid = *kms
             .find_secrets(&authentication_kids)
             .await
             .context("Unable to find secrets")?
@@ -98,42 +96,38 @@ impl FromPrior {
                 )
             })?;
 
-        let secret = secrets_resolver
-            .get_secret(kid)
-            .await
-            .context("Unable to find secret")?
-            .ok_or_else(|| {
-                err_msg(
-                    ErrorKind::SecretNotFound,
-                    "from_prior issuer secret not found",
-                )
-            })?;
+        let secret_alg = kms.get_key_alg(kid).await.map_err(|_| {
+            err_msg(
+                ErrorKind::SecretNotFound,
+                "from_prior issuer secret not found",
+            )
+        })?;
 
-        let sign_key = secret
-            .as_key_pair()
-            .context("Unable to instantiate from_prior issuer key")?;
-
-        let from_prior_jwt = match sign_key {
-            KnownKeyPair::Ed25519(ref key) => jws::sign_compact(
+        let from_prior_jwt = match secret_alg {
+            KnownKeyAlg::Ed25519 => jws::sign_compact(
                 from_prior_str.as_bytes(),
-                (kid, key),
+                kid,
                 JWT_TYP,
                 Algorithm::EdDSA,
+                kms,
             ),
-            KnownKeyPair::P256(ref key) => jws::sign_compact(
+            KnownKeyAlg::P256 => jws::sign_compact(
                 from_prior_str.as_bytes(),
-                (kid, key),
+                kid,
                 JWT_TYP,
                 Algorithm::Es256,
+                kms,
             ),
-            KnownKeyPair::K256(ref key) => jws::sign_compact(
+            KnownKeyAlg::K256 => jws::sign_compact(
                 from_prior_str.as_bytes(),
-                (kid, key),
+                kid,
                 JWT_TYP,
                 Algorithm::Es256K,
+                kms,
             ),
             _ => Err(err_msg(ErrorKind::Unsupported, "Unsupported signature alg"))?,
         }
+        .await
         .context("Unable to produce signature")?;
 
         Ok((from_prior_jwt, String::from(kid)))
@@ -188,7 +182,7 @@ mod tests {
     use crate::{
         did::resolvers::ExampleDIDResolver,
         error::ErrorKind,
-        secrets::resolvers::ExampleSecretsResolver,
+        secrets::resolvers::ExampleKMS,
         test_vectors::{
             ALICE_DID, ALICE_DID_DOC, ALICE_SECRETS, ALICE_SECRET_AUTH_KEY_ED25519, CHARLIE_DID,
             CHARLIE_DID_DOC, CHARLIE_ROTATED_TO_ALICE_SECRETS, CHARLIE_SECRET_AUTH_KEY_ED25519,
@@ -209,7 +203,7 @@ mod tests {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), CHARLIE_DID_DOC.clone()]);
             let charlie_rotated_to_alice_secrets_resolver =
-                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+                ExampleKMS::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
 
             let (from_prior_jwt, pack_kid) = from_prior
                 .pack(
@@ -241,7 +235,7 @@ mod tests {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), CHARLIE_DID_DOC.clone()]);
             let charlie_rotated_to_alice_secrets_resolver =
-                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+                ExampleKMS::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
 
             let (from_prior_jwt, pack_kid) = from_prior
                 .pack(
@@ -300,7 +294,7 @@ mod tests {
         ) {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), CHARLIE_DID_DOC.clone()]);
-            let alice_secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+            let alice_secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
 
             let err = from_prior
                 .pack(Some(issuer_kid), &did_resolver, &alice_secrets_resolver)
@@ -357,7 +351,7 @@ mod tests {
             let did_resolver =
                 ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), CHARLIE_DID_DOC.clone()]);
             let charlie_rotated_to_alice_secrets_resolver =
-                ExampleSecretsResolver::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
+                ExampleKMS::new(CHARLIE_ROTATED_TO_ALICE_SECRETS.clone());
 
             let err = from_prior
                 .pack(

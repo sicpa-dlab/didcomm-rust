@@ -36,7 +36,7 @@ npm run start
 - This library requires `wasm32` compatible environment (modern browsers and recent NodeJS are supported).
 - In order to use the library, `SecretsResolver` and `DIDResolver` interfaces must be implemented on the application level.
   Demo application provides 2 simple implementations `ExampleDIDResolver`
-  and `ExampleSecretsResolver` that allows resolve locally known DID docs and secrets for tests/demo purposes.
+  and `ExampleKMS` that allows resolve locally known DID docs and secrets for tests/demo purposes.
   - Verification materials are expected in JWK, Base58 and Multibase (internally Base58 only) formats.
       - In Base58 and Multibase formats, keys using only X25519 and Ed25519 curves are supported.
       - For private keys in Base58 and Multibase formats, the verification material value contains both private and public parts (concatenated bytes).
@@ -106,14 +106,14 @@ const msg = new Message({
 // --- Packing encrypted and authenticated message ---
 
 let didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-let secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
+let kms = new ExampleKMS(ALICE_SECRETS);
 
 const [encryptedMsg, encryptMetadata] = await msg.pack_encrypted(
   BOB_DID,
   ALICE_DID,
   null,
   didResolver,
-  secretsResolver,
+  kms,
   {
     forward: false, // Forward wrapping is unsupported in current version
   }
@@ -126,12 +126,12 @@ console.log("Sending message\n", encryptedMsg);
 
 // --- Unpacking message ---
 didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+kms = new ExampleKMS(BOB_SECRETS);
 
 const [unpackedMsg, unpackMetadata] = await Message.unpack(
   encrypted_msg,
   didResolver,
-  secretsResolver,
+  kms,
   {}
 );
 
@@ -147,7 +147,7 @@ let [encryptedMsg, encryptMetadata] = await msg.pack_encrypted(
   null, // Keep sender as None here
   null,
   didResolver,
-  secretsResolver,
+  kms,
   {
     forward: false, // Forward wrapping is unsupported in current version
   }
@@ -162,7 +162,7 @@ let [encrypted_msg, encrypt_metadata] = await msg.pack_encrypted(
   ALICE_DID,
   ALICE_DID, // Provide information about signer here
   did_resolver,
-  secrets_resolver,
+  kms,
   {
     forward: false, // Forward wrapping is unsupported in current version
   }
@@ -186,7 +186,7 @@ See `Message.pack_signed` documentation for more details.
 let [signed, metadata] = await msg.pack_signed(
   ALICE_DID,
   didResolver,
-  secretsResolver
+  kms
 );
 ```
 

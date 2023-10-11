@@ -14,21 +14,18 @@ pub use unpack::OnUnpackResult;
 
 use std::sync::Arc;
 
-use crate::{DIDResolver, SecretsResolver};
+use crate::{DIDResolver, KeyManagementService};
 
 pub struct DIDComm {
     did_resolver: Arc<Box<dyn DIDResolver>>,
-    secret_resolver: Arc<Box<dyn SecretsResolver>>,
+    kms: Arc<Box<dyn KeyManagementService>>,
 }
 
 impl DIDComm {
-    pub fn new(
-        did_resolver: Box<dyn DIDResolver>,
-        secret_resolver: Box<dyn SecretsResolver>,
-    ) -> Self {
+    pub fn new(did_resolver: Box<dyn DIDResolver>, kms: Box<dyn KeyManagementService>) -> Self {
         DIDComm {
             did_resolver: Arc::new(did_resolver),
-            secret_resolver: Arc::new(secret_resolver),
+            kms: Arc::new(kms),
         }
     }
 }

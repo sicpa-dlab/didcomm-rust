@@ -3,7 +3,7 @@ use didcomm_core::{Message, PackEncryptedMetadata, PackEncryptedOptions};
 
 use crate::common::{ErrorCode, EXECUTOR};
 use crate::did_resolver_adapter::DIDResolverAdapter;
-use crate::secrets::secrets_resolver_adapter::SecretsResolverAdapter;
+use crate::secrets::kms_adapter::KeyManagementServiceAdapter;
 use crate::DIDComm;
 
 pub trait OnPackEncryptedResult: Sync + Send {
@@ -24,7 +24,7 @@ impl DIDComm {
         let msg = msg.clone();
         let options = options.clone();
         let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
-        let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());
+        let kms = KeyManagementServiceAdapter::new(self.kms.clone());
 
         let future = async move {
             msg.pack_encrypted(
@@ -32,7 +32,7 @@ impl DIDComm {
                 from.as_deref(),
                 sign_by.as_deref(),
                 &did_resolver,
-                &secret_resolver,
+                &kms,
                 &options,
             )
             .await
@@ -50,9 +50,7 @@ impl DIDComm {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_helper::{
-        create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult,
-    };
+    use crate::test_helper::{create_did_resolver, create_kms, get_error, get_ok, PackResult};
     use crate::DIDComm;
     use didcomm_core::error::ErrorKind;
     use didcomm_core::test_vectors::{ALICE_DID, BOB_DID, MESSAGE_SIMPLE};
@@ -63,7 +61,7 @@ mod tests {
     async fn pack_encrypted_works() {
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_encrypted(
+        DIDComm::new(create_did_resolver(), create_kms()).pack_encrypted(
             &MESSAGE_SIMPLE,
             String::from(BOB_DID),
             Some(String::from(ALICE_DID)),
@@ -89,7 +87,7 @@ mod tests {
 
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_encrypted(
+        DIDComm::new(create_did_resolver(), create_kms()).pack_encrypted(
             &msg,
             String::from("did:unknown:bob"),
             Some(String::from(ALICE_DID)),
@@ -106,7 +104,7 @@ mod tests {
     async fn pack_encrypted_works_did_url_not_found() {
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_encrypted(
+        DIDComm::new(create_did_resolver(), create_kms()).pack_encrypted(
             &MESSAGE_SIMPLE,
             String::from(format!("{}#unknown-fragment", BOB_DID)),
             Some(String::from(ALICE_DID)),
@@ -123,7 +121,7 @@ mod tests {
     async fn pack_encrypted_works_secret_not_found() {
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_encrypted(
+        DIDComm::new(create_did_resolver(), create_kms()).pack_encrypted(
             &MESSAGE_SIMPLE,
             String::from(BOB_DID),
             Some(String::from(format!(
@@ -143,7 +141,7 @@ mod tests {
     async fn pack_encrypted_works_illegal_argument() {
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_encrypted(
+        DIDComm::new(create_did_resolver(), create_kms()).pack_encrypted(
             &MESSAGE_SIMPLE,
             String::from("not-a-did"),
             Some(String::from(ALICE_DID)),

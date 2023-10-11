@@ -3,7 +3,7 @@ use didcomm_core::{error::ErrorKind, Message, UnpackMetadata, UnpackOptions};
 use crate::common::EXECUTOR;
 use crate::did_resolver_adapter::DIDResolverAdapter;
 use crate::DIDComm;
-use crate::{secrets_resolver_adapter::SecretsResolverAdapter, ErrorCode};
+use crate::{kms_adapter::KeyManagementServiceAdapter, ErrorCode};
 
 pub trait OnUnpackResult: Sync + Send {
     fn success(&self, result: Message, metadata: UnpackMetadata);
@@ -20,10 +20,9 @@ impl DIDComm {
         let msg = msg.clone();
         let options = options.clone();
         let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
-        let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());
+        let kms = KeyManagementServiceAdapter::new(self.kms.clone());
 
-        let future =
-            async move { Message::unpack(&msg, &did_resolver, &secret_resolver, &options).await };
+        let future = async move { Message::unpack(&msg, &did_resolver, &kms, &options).await };
         EXECUTOR.spawn_ok(async move {
             match future.await {
                 Ok((result, metadata)) => cb.success(result, metadata),
@@ -38,7 +37,7 @@ impl DIDComm {
 #[cfg(test)]
 mod tests {
     use crate::test_helper::{
-        create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult, UnpackResult,
+        create_did_resolver, create_kms, get_error, get_ok, PackResult, UnpackResult,
     };
     use crate::DIDComm;
     use didcomm_core::error::ErrorKind;
@@ -49,7 +48,7 @@ mod tests {
     #[tokio::test]
     async fn unpack_works_plaintext() {
         let msg = MESSAGE_SIMPLE.clone();
-        let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
+        let didcomm = DIDComm::new(create_did_resolver(), create_kms());
 
         let (cb, receiver) = PackResult::new();
         didcomm.pack_plaintext(&MESSAGE_SIMPLE, cb);
@@ -65,7 +64,7 @@ mod tests {
     #[tokio::test]
     async fn unpack_works_signed() {
         let msg = MESSAGE_SIMPLE.clone();
-        let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
+        let didcomm = DIDComm::new(create_did_resolver(), create_kms());
 
         let (cb, receiver) = PackResult::new();
         didcomm.pack_signed(&msg, String::from(ALICE_DID), cb);
@@ -81,7 +80,7 @@ mod tests {
     #[tokio::test]
     async fn unpack_works_encrypted() {
         let msg = MESSAGE_SIMPLE.clone();
-        let didcomm = DIDComm::new(create_did_resolver(), create_secrets_resolver());
+        let didcomm = DIDComm::new(create_did_resolver(), create_kms());
 
         let (cb, receiver) = PackResult::new();
         didcomm.pack_encrypted(
@@ -107,7 +106,7 @@ mod tests {
     #[tokio::test]
     async fn unpack_works_malformed() {
         let (cb, receiver) = UnpackResult::new();
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).unpack(
+        DIDComm::new(create_did_resolver(), create_kms()).unpack(
             String::from("invalid message"),
             &UnpackOptions::default(),
             cb,

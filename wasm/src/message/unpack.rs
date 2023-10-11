@@ -9,8 +9,8 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
 use crate::{
-    error::JsResult, utils::set_panic_hook, DIDResolver, JsDIDResolver, JsSecretsResolver, Message,
-    SecretsResolver,
+    error::JsResult, utils::set_panic_hook, DIDResolver, JsDIDResolver, JsKeyManagementService,
+    KeyManagementService, Message,
 };
 
 #[wasm_bindgen(skip_typescript)]
@@ -19,14 +19,14 @@ impl Message {
     pub fn unpack(
         msg: String,
         did_resolver: DIDResolver,
-        secrets_resolver: SecretsResolver,
+        kms: KeyManagementService,
         options: JsValue,
     ) -> Promise {
         // TODO: Better place?
         set_panic_hook();
 
         let did_resolver = JsDIDResolver(did_resolver);
-        let secrets_resolver = JsSecretsResolver(secrets_resolver);
+        let kms = JsKeyManagementService(kms);
 
         future_to_promise(async move {
             let options: UnpackOptions = options
@@ -34,10 +34,9 @@ impl Message {
                 .kind(ErrorKind::Malformed, "Options param is malformed")
                 .as_js()?;
 
-            let (msg, metadata) =
-                didcomm::Message::unpack(&msg, &did_resolver, &secrets_resolver, &options)
-                    .await
-                    .as_js()?;
+            let (msg, metadata) = didcomm::Message::unpack(&msg, &did_resolver, &kms, &options)
+                .await
+                .as_js()?;
 
             let metadata = JsValue::from_serde(&metadata)
                 .kind(ErrorKind::InvalidState, "Unable serialize UnpackMetadata")
@@ -58,7 +57,7 @@ impl Message {
 #[wasm_bindgen(typescript_custom_section)]
 const MESSAGE_UNPACK_TS: &'static str = r#"
 export namespace Message {
-    /** 
+    /**
      * Unpacks the packed message by doing decryption and verifying the signatures.
      * This method supports all DID Comm message types (encrypted, signed, plaintext).
      *
@@ -68,7 +67,7 @@ export namespace Message {
      *
      * @param `packed_msg` the message as JSON string to be unpacked
      * @param `did_resolver` instance of `DIDResolver` to resolve DIDs
-     * @param `secrets_resolver` instance of SecretsResolver` to resolve sender DID keys secrets
+     * @param `kms` instance of SecretsResolver` to resolve sender DID keys secrets
      * @param `options` allow fine configuration of unpacking process and imposing additional restrictions
      * to message to be trusted.
      *
@@ -89,7 +88,7 @@ export namespace Message {
     function unpack(
         msg: string,
         did_resolver: DIDResolver,
-        secrets_resolver: SecretsResolver,
+        kms: SecretsResolver,
         options: UnpackOptions,
     ): Promise<[Message, UnpackMetadata]>;
 }
@@ -175,7 +174,7 @@ type UnpackMetadata = {
      * Default "A256cbcHs512Ecdh1puA256kw"
      */
     enc_alg_auth?: "A256cbcHs512Ecdh1puA256kw",
- 
+
     /**
      * Algorithm used for anonymous encryption.
      * Default "Xc20pEcdhEsA256kw"

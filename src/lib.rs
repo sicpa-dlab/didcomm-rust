@@ -34,7 +34,7 @@ mod tests {
     use serde_json::json;
 
     use crate::{
-        did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleSecretsResolver, Message,
+        did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleKMS, Message,
         PackEncryptedOptions, UnpackOptions,
     };
 
@@ -58,7 +58,7 @@ mod tests {
         // --- Packing message ---
 
         let sender_did_resolver = ExampleDIDResolver::new(vec![]);
-        let sender_secrets_resolver = ExampleSecretsResolver::new(vec![]);
+        let sender_kms = ExampleKMS::new(vec![]);
 
         let (packed_msg, metadata) = msg
             .pack_encrypted(
@@ -66,7 +66,7 @@ mod tests {
                 Some(sender),
                 None,
                 &sender_did_resolver,
-                &sender_secrets_resolver,
+                &sender_kms,
                 &PackEncryptedOptions::default(),
             )
             .await
@@ -84,12 +84,12 @@ mod tests {
         // --- Unpacking message ---
 
         let recipient_did_resolver = ExampleDIDResolver::new(vec![]);
-        let recipient_secrets_resolver = ExampleSecretsResolver::new(vec![]);
+        let recipient_kms = ExampleKMS::new(vec![]);
 
         let (msg, metadata) = Message::unpack(
             &packed_msg,
             &recipient_did_resolver,
-            &recipient_secrets_resolver,
+            &recipient_kms,
             &UnpackOptions::default(),
         )
         .await

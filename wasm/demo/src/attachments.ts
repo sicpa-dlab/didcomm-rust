@@ -9,7 +9,7 @@ import {
 } from "./test-vectors";
 import {
   ExampleDIDResolver,
-  ExampleSecretsResolver,
+  ExampleKMS,
 } from "../../tests-js/src/test-vectors";
 
 async function main() {
@@ -37,14 +37,14 @@ async function main() {
 
   // --- Packing encrypted and authenticated message ---
   let didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  let secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
+  let kms = new ExampleKMS(ALICE_SECRETS);
 
   const [encryptedMsg, encryptMetadata] = await msg.pack_encrypted(
     BOB_DID,
     ALICE_DID,
     ALICE_DID,
     didResolver,
-    secretsResolver,
+    kms,
     {
       forward: false, // TODO: should be true by default
     }
@@ -57,12 +57,12 @@ async function main() {
 
   // --- Unpacking message ---
   didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+  kms = new ExampleKMS(BOB_SECRETS);
 
   const [unpackedMsg, unpackMetadata] = await Message.unpack(
     encryptedMsg,
     didResolver,
-    secretsResolver,
+    kms,
     {}
   );
 

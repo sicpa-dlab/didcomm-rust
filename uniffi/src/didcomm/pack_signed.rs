@@ -3,7 +3,7 @@ use didcomm_core::{error::ErrorKind, PackSignedMetadata};
 
 use crate::common::{ErrorCode, EXECUTOR};
 use crate::did_resolver_adapter::DIDResolverAdapter;
-use crate::secrets::secrets_resolver_adapter::SecretsResolverAdapter;
+use crate::secrets::kms_adapter::KeyManagementServiceAdapter;
 use crate::DIDComm;
 
 pub trait OnPackSignedResult: Sync + Send {
@@ -20,12 +20,9 @@ impl DIDComm {
     ) -> ErrorCode {
         let msg = msg.clone();
         let did_resolver = DIDResolverAdapter::new(self.did_resolver.clone());
-        let secret_resolver = SecretsResolverAdapter::new(self.secret_resolver.clone());
+        let kms = KeyManagementServiceAdapter::new(self.kms.clone());
 
-        let future = async move {
-            msg.pack_signed(&sign_by, &did_resolver, &secret_resolver)
-                .await
-        };
+        let future = async move { msg.pack_signed(&sign_by, &did_resolver, &kms).await };
 
         EXECUTOR.spawn_ok(async move {
             match future.await {
@@ -44,9 +41,7 @@ mod tests {
     use didcomm_core::Message;
     use serde_json::json;
 
-    use crate::test_helper::{
-        create_did_resolver, create_secrets_resolver, get_error, get_ok, PackResult,
-    };
+    use crate::test_helper::{create_did_resolver, create_kms, get_error, get_ok, PackResult};
     use crate::DIDComm;
 
     use didcomm_core::test_vectors::{ALICE_DID, MESSAGE_SIMPLE};
@@ -55,7 +50,7 @@ mod tests {
     async fn pack_signed_works() {
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_signed(
+        DIDComm::new(create_did_resolver(), create_kms()).pack_signed(
             &MESSAGE_SIMPLE,
             String::from(ALICE_DID),
             cb,
@@ -78,7 +73,7 @@ mod tests {
 
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_signed(
+        DIDComm::new(create_did_resolver(), create_kms()).pack_signed(
             &msg,
             String::from("did:unknown:alice"),
             cb,
@@ -92,7 +87,7 @@ mod tests {
     async fn pack_signed_works_did_url_not_found() {
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_signed(
+        DIDComm::new(create_did_resolver(), create_kms()).pack_signed(
             &MESSAGE_SIMPLE,
             String::from(format!("{}#unknown-fragment", ALICE_DID)),
             cb,
@@ -106,7 +101,7 @@ mod tests {
     async fn pack_signed_works_secret_not_found() {
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_signed(
+        DIDComm::new(create_did_resolver(), create_kms()).pack_signed(
             &MESSAGE_SIMPLE,
             String::from(format!("{}#key-not-in-secrets-1", ALICE_DID)),
             cb,
@@ -120,7 +115,7 @@ mod tests {
     async fn pack_signed_works_illegal_argument() {
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver()).pack_signed(
+        DIDComm::new(create_did_resolver(), create_kms()).pack_signed(
             &MESSAGE_SIMPLE,
             String::from("not-a-did"),
             cb,

@@ -489,6 +489,7 @@ mod tests {
     const ALICE_PKEY_K256: &str = r#"
     {
         "kty":"EC",
+        "crv":"secp256k1",
         "d":"N3Hm1LXA210YVGGsXw_GklMwcLu_bMgnzDese6YQIyA",
         "x":"aToW5EaTq5mlAf8C5ECYDSkqsJycrW-e1SQ6_GJcAOk",
         "y":"JAGX94caA21WKreXwYUaOCYTBMrqaX4KWIlsQZTHWCk"

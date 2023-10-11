@@ -7,9 +7,9 @@ use didcomm_core::{FromPrior, Message, PackEncryptedMetadata, PackSignedMetadata
 use futures::channel::oneshot::{self, Receiver};
 
 use crate::{
-    DIDResolver, ExampleDIDResolver, ExampleSecretsResolver, OnFromPriorPackResult,
+    DIDResolver, ExampleDIDResolver, ExampleKMS, KeyManagementService, OnFromPriorPackResult,
     OnFromPriorUnpackResult, OnPackEncryptedResult, OnPackPlaintextResult, OnPackSignedResult,
-    OnUnpackResult, OnWrapInForwardResult, SecretsResolver,
+    OnUnpackResult, OnWrapInForwardResult,
 };
 use didcomm_core::test_vectors::{
     ALICE_DID_DOC_WITH_NO_SECRETS, ALICE_SECRETS, BOB_DID_DOC, BOB_SECRETS, CHARLIE_DID_DOC,
@@ -32,8 +32,8 @@ pub(crate) async fn get_error<T>(receiver: Receiver<Result<T>>) -> Error {
         .expect("result is ok")
 }
 
-pub(crate) fn create_secrets_resolver() -> Box<dyn SecretsResolver> {
-    Box::new(ExampleSecretsResolver::new(
+pub(crate) fn create_kms() -> Box<dyn KeyManagementService> {
+    Box::new(ExampleKMS::new(
         ALICE_SECRETS
             .clone()
             .into_iter()

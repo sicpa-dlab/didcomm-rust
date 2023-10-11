@@ -33,15 +33,14 @@ mod tests {
 
     use crate::DIDComm;
 
-    use crate::test_helper::{create_did_resolver, create_secrets_resolver, get_ok, PackResult};
+    use crate::test_helper::{create_did_resolver, create_kms, get_ok, PackResult};
     use didcomm_core::test_vectors::MESSAGE_SIMPLE;
 
     #[tokio::test]
     async fn pack_plaintext_works() {
         let (cb, receiver) = PackResult::new();
 
-        DIDComm::new(create_did_resolver(), create_secrets_resolver())
-            .pack_plaintext(&MESSAGE_SIMPLE, cb);
+        DIDComm::new(create_did_resolver(), create_kms()).pack_plaintext(&MESSAGE_SIMPLE, cb);
 
         let res = get_ok(receiver).await;
         assert!(res.contains("body"));

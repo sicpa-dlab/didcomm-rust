@@ -4,7 +4,8 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
 use crate::{
-    error::JsResult, DIDResolver, JsDIDResolver, JsSecretsResolver, Message, SecretsResolver,
+    error::JsResult, DIDResolver, JsDIDResolver, JsKeyManagementService, KeyManagementService,
+    Message,
 };
 
 #[wasm_bindgen(skip_typescript)]
@@ -14,15 +15,15 @@ impl Message {
         &self,
         sign_by: String,
         did_resolver: DIDResolver,
-        secrets_resolver: SecretsResolver,
+        kms: KeyManagementService,
     ) -> Promise {
         let msg = self.0.clone();
         let did_resolver = JsDIDResolver(did_resolver);
-        let secrets_resolver = JsSecretsResolver(secrets_resolver);
+        let kms = JsKeyManagementService(kms);
 
         future_to_promise(async move {
             let (msg, metadata) = msg
-                .pack_signed(&sign_by, &did_resolver, &secrets_resolver)
+                .pack_signed(&sign_by, &did_resolver, &kms)
                 .await
                 .as_js()?;
 
@@ -48,7 +49,7 @@ impl Message {
 #[wasm_bindgen(typescript_custom_section)]
 const MESSAGE_PACK_ENCRYPTED_TS: &'static str = r#"
 interface Message {
-    /** 
+    /**
      * Produces `DIDComm Signed Message`
      * https://identity.foundation/didcomm-messaging/spec/#didcomm-signed-message.
      *
@@ -62,7 +63,7 @@ interface Message {
      *
      * @param `sign_by` a DID or key ID the sender uses for signing
      * @param `did_resolver` instance of `DIDResolver` to resolve DIDs.
-     * @param `secrets_resolver` instance of SecretsResolver` to resolve sender DID keys secrets
+     * @param `kms` instance of SecretsResolver` to resolve sender DID keys secrets
      *
      * @returns Tuple (signed_message, metadata)
      * - `signed_message` a DIDComm signed message as JSON string
@@ -80,7 +81,7 @@ interface Message {
     pack_signed(
         sign_by: string,
         did_resolver: DIDResolver,
-        secrets_resolver: SecretsResolver,
+        kms: SecretsResolver,
     ): Promise<[string, PackSignedMetadata]>;
 }
 "#;

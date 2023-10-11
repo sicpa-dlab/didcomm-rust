@@ -1,3 +1,17 @@
+use crate::jwe::envelope::JWE;
+use crate::secrets::{KidOrJwk, KnownKeyAlg};
+use crate::{
+    algorithms::AuthCryptAlg,
+    did::DIDResolver,
+    error::{err_msg, ErrorKind, Result, ResultExt},
+    jwe,
+    secrets::KeyManagementService,
+    utils::{
+        crypto::{AsKnownKeyPair, KnownKeyPair},
+        did::did_or_url,
+    },
+    UnpackMetadata, UnpackOptions,
+};
 use askar_crypto::{
     alg::{
         aes::{A256CbcHs512, A256Kw, AesKey},
@@ -7,24 +21,10 @@ use askar_crypto::{
     kdf::ecdh_1pu::Ecdh1PU,
 };
 
-use crate::jwe::envelope::JWE;
-use crate::{
-    algorithms::AuthCryptAlg,
-    did::DIDResolver,
-    error::{err_msg, ErrorKind, Result, ResultExt},
-    jwe,
-    secrets::SecretsResolver,
-    utils::{
-        crypto::{AsKnownKeyPair, KnownKeyPair},
-        did::did_or_url,
-    },
-    UnpackMetadata, UnpackOptions,
-};
-
 pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     msg: &str,
     did_resolver: &'dr (dyn DIDResolver + 'dr),
-    secrets_resolver: &'sr (dyn SecretsResolver + 'sr),
+    kms: &'sr (dyn KeyManagementService + 'sr),
     opts: &UnpackOptions,
     metadata: &mut UnpackMetadata,
 ) -> Result<Option<String>> {
@@ -118,7 +118,7 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     metadata.encrypted = true;
     metadata.encrypted_from_kid = Some(from_kid.into());
 
-    let to_kids_found = secrets_resolver.find_secrets(&to_kids).await?;
+    let to_kids_found = kms.find_secrets(&to_kids).await?;
 
     if to_kids_found.is_empty() {
         Err(err_msg(
@@ -130,21 +130,15 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
     let mut payload: Option<Vec<u8>> = None;
 
     for to_kid in to_kids_found {
-        let to_key = secrets_resolver
-            .get_secret(to_kid)
-            .await?
-            .ok_or_else(|| {
-                err_msg(
-                    ErrorKind::InvalidState,
-                    "Recipient secret not found after existence checking",
-                )
-            })?
-            .as_key_pair()?;
+        let to_key_alg = kms.get_key_alg(to_kid).await.kind(
+            ErrorKind::InvalidState,
+            "Recipient secret not found after existence checking",
+        )?;
 
-        let _payload = match (&from_key, &to_key, &parsed_jwe.protected.enc) {
+        let _payload = match (&from_key, to_key_alg, &parsed_jwe.protected.enc) {
             (
                 KnownKeyPair::X25519(ref from_key),
-                KnownKeyPair::X25519(ref to_key),
+                KnownKeyAlg::X25519,
                 jwe::EncAlgorithm::A256cbcHs512,
             ) => {
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
@@ -154,11 +148,28 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     Ecdh1PU<'_, X25519KeyPair>,
                     X25519KeyPair,
                     AesKey<A256Kw>,
-                >(Some((from_kid, from_key)), (to_kid, to_key))?
+                    _
+                >(Some((from_kid, from_key)), (to_kid, |ephem_key: String,
+                                                        send_key: Option<String>,
+                                                        recip_kid: String,
+                                                        alg: Vec<u8>,
+                                                        apu: Vec<u8>,
+                                                        apv: Vec<u8>,
+                                                        cc_tag: Vec<u8>| {
+                    async move {
+                        let send_key = send_key.ok_or_else(|| {
+                            err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
+                        })?;
+
+                        kms.derive_aes_key_using_ecdh_1pu(
+                            KidOrJwk::X25519Key(ephem_key), KidOrJwk::X25519Key(send_key), KidOrJwk::Kid(recip_kid), alg, apu, apv, cc_tag, true,
+                        ).await
+                    }
+                })).await?
             }
             (
                 KnownKeyPair::P256(ref from_key),
-                KnownKeyPair::P256(ref to_key),
+                KnownKeyAlg::P256,
                 jwe::EncAlgorithm::A256cbcHs512,
             ) => {
                 metadata.enc_alg_auth = Some(AuthCryptAlg::A256cbcHs512Ecdh1puA256kw);
@@ -168,13 +179,30 @@ pub(crate) async fn _try_unpack_authcrypt<'dr, 'sr>(
                     Ecdh1PU<'_, P256KeyPair>,
                     P256KeyPair,
                     AesKey<A256Kw>,
-                >(Some((from_kid, from_key)), (to_kid, to_key))?
+                    _
+                >(Some((from_kid, from_key)), (to_kid, |ephem_key: String,
+                                                        send_key: Option<String>,
+                                                        recip_kid: String,
+                                                        alg: Vec<u8>,
+                                                        apu: Vec<u8>,
+                                                        apv: Vec<u8>,
+                                                        cc_tag: Vec<u8>| {
+                    async move {
+                        let send_key = send_key.ok_or_else(|| {
+                            err_msg(ErrorKind::InvalidState, "No sender key for ecdh-1pu")
+                        })?;
+
+                            kms.derive_aes_key_using_ecdh_1pu(
+                                KidOrJwk::P256Key(ephem_key), KidOrJwk::P256Key(send_key), KidOrJwk::Kid(recip_kid), alg, apu, apv, cc_tag, true,
+                            ).await
+                    }
+                })).await?
             }
-            (KnownKeyPair::X25519(_), KnownKeyPair::P256(_), _) => Err(err_msg(
+            (KnownKeyPair::X25519(_), KnownKeyAlg::P256, _) => Err(err_msg(
                 ErrorKind::Malformed,
                 "Incompatible sender and recipient key agreement curves",
             ))?,
-            (KnownKeyPair::P256(_), KnownKeyPair::X25519(_), _) => Err(err_msg(
+            (KnownKeyPair::P256(_), KnownKeyAlg::X25519, _) => Err(err_msg(
                 ErrorKind::Malformed,
                 "Incompatible sender and recipient key agreement curves",
             ))?,
