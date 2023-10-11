@@ -118,8 +118,8 @@ jobs:
   verify-wasm:
     strategy:
       matrix:
-        os: [ macos-latest, windows-latest, ubuntu-latest ]
-        node: [ 14, 16 ]
+        os: [ macos-latest, ubuntu-latest ]
+        node: [ 14, 16, 18, 20 ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     defaults:
