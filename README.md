@@ -249,5 +249,5 @@ PRs are welcome!
 
 The following CI checks are run against every PR:
 - No warnings from `cargo check --all-targets`
-- All tests must pass with `cargo tests`
+- All tests must pass with `cargo test`
 - Code must be formatted by `cargo fmt --all`
