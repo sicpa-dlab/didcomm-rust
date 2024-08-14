@@ -102,7 +102,7 @@ let msg = Message::build(
 
 // --- Pack encrypted and authenticated message ---
 let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
 let (msg, metadata) = msg
     .pack_encrypted(
@@ -110,7 +110,7 @@ let (msg, metadata) = msg
         Some(ALICE_DID),
         None,
         &did_resolver,
-        &secrets_resolver,
+        &kms,
         &PackEncryptedOptions::default(),
     )
     .await
@@ -123,12 +123,12 @@ println!("Sending message \n{}\n", msg);
 
 // --- Unpacking message ---
 let did_resolver = ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-let secrets_resolver = ExampleSecretsResolver::new(BOB_SECRETS.clone());
+let kms = ExampleSecretsResolver::new(BOB_SECRETS.clone());
 
 let (msg, metadata) = Message::unpack(
     &msg,
     &did_resolver,
-    &secrets_resolver,
+    &kms,
     &UnpackOptions::default(),
 )
 .await
@@ -147,7 +147,7 @@ let (msg, metadata) = msg
         None, // Keep sender as None here
         None,
         &did_resolver,
-        &secrets_resolver,
+        &kms,
         &PackEncryptedOptions::default(),
     )
     .await
@@ -163,7 +163,7 @@ let (msg, metadata) = msg
         Some(ALICE_DID),
         Some(ALICE_DID), // Provide information about signer here
         &did_resolver,
-        &secrets_resolver,
+        &kms,
         &PackEncryptedOptions::default(),
     )
     .await
@@ -194,7 +194,7 @@ let msg = Message::build(
 .finalize();
 
 let (msg, metadata) = msg
-    .pack_signed(ALICE_DID, &did_resolver, &secrets_resolver)
+    .pack_signed(ALICE_DID, &did_resolver, &kms)
     .await
     .expect("Unable pack_signed");
 
@@ -202,7 +202,7 @@ let (msg, metadata) = msg
 let (msg, metadata) = Message::unpack(
     &msg,
     &did_resolver,
-    &secrets_resolver,
+    &kms,
     &UnpackOptions::default(),
 )
 .await
@@ -237,7 +237,7 @@ let msg = msg
 let (msg, metadata) = Message::unpack(
     &msg,
     &did_resolver,
-    &secrets_resolver,
+    &kms,
     &UnpackOptions::default(),
 )
 .await

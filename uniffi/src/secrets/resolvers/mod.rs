@@ -1,3 +1,3 @@
 mod example;
 
-pub use example::ExampleSecretsResolver;
+pub use example::ExampleKMS;

@@ -5,10 +5,10 @@ import {
   BOB_DID,
   BOB_DID_DOC,
   ExampleDIDResolver,
-  ExampleSecretsResolver,
+  ExampleKMS,
   MESSAGE_SIMPLE,
   MockDIDResolver,
-  MockSecretsResolver,
+  MockKMS,
 } from "../test-vectors";
 
 test.each([
@@ -78,14 +78,14 @@ test.each([
       new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC])
     );
 
-    const secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
+    const kms = new ExampleKMS(ALICE_SECRETS);
 
     const res = MESSAGE_SIMPLE.pack_encrypted(
       BOB_DID,
       ALICE_DID,
       null,
       didResolver,
-      secretsResolver,
+      kms,
       {
         forward: false,
       }
@@ -103,7 +103,7 @@ test.each([
       return e;
     })(),
     exp_err:
-      "Malformed: Unable resolve sender secret: Unable get secret: Some Malformed error",
+      "Malformed: Unable produce authcrypt envelope: Unable to derive kw: Unable to derive key: Some Malformed error",
     case: "Malformed",
   },
   {
@@ -113,7 +113,7 @@ test.each([
       return e;
     })(),
     exp_err:
-      "IO error: Unable resolve sender secret: Unable get secret: Some IoError error",
+      "IO error: Unable produce authcrypt envelope: Unable to derive kw: Unable to derive key: Some IoError error",
     case: "IoError",
   },
   {
@@ -123,7 +123,7 @@ test.each([
       return e;
     })(),
     exp_err:
-      "Invalid state: Unable resolve sender secret: Unable get secret: Some InvalidState error",
+      "Invalid state: Unable produce authcrypt envelope: Unable to derive kw: Unable to derive key: Some InvalidState error",
     case: "InvalidState",
   },
   {
@@ -131,7 +131,7 @@ test.each([
       return Error("Unknown error");
     })(),
     exp_err:
-      "Invalid state: Unable resolve sender secret: Unable get secret: Unknown error",
+      "Invalid state: Unable produce authcrypt envelope: Unable to derive kw: Unable to derive key: Unknown error",
     case: "Error",
   },
   {
@@ -139,7 +139,7 @@ test.each([
       return "String error";
     })(),
     exp_err:
-      "Invalid state: Unable resolve sender secret: Unable get secret: String error",
+      "Invalid state: Unable produce authcrypt envelope: Unable to derive kw: Unable to derive key: String error",
     case: "String",
   },
   {
@@ -147,22 +147,33 @@ test.each([
       return 123;
     })(),
     exp_err:
-      "Invalid state: Unable resolve sender secret: Unable get secret: JsValue(123)",
+      "Invalid state: Unable produce authcrypt envelope: Unable to derive kw: Unable to derive key: JsValue(123)",
     case: "Unusual",
   },
 ])(
-  "Secrets.get_secret exception is propogated for $case",
+  "Secrets.derive exception is propogated for $case",
   async ({ err, exp_err }) => {
     const didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
 
-    const secretsResolver = new MockSecretsResolver(
+    const kms = new MockKMS(
       [
         () => {
           throw err;
         },
       ],
       [],
-      new ExampleSecretsResolver(ALICE_SECRETS)
+      [],
+      [
+        () => {
+          throw err;
+        },
+      ],
+      [
+        () => {
+          throw err;
+        },
+      ],
+      new ExampleKMS(ALICE_SECRETS)
     );
 
     const res = MESSAGE_SIMPLE.pack_encrypted(
@@ -170,7 +181,7 @@ test.each([
       ALICE_DID,
       null,
       didResolver,
-      secretsResolver,
+        kms,
       {
         forward: false,
       }
@@ -240,14 +251,17 @@ test.each([
   async ({ err, exp_err }) => {
     const didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
 
-    const secretsResolver = new MockSecretsResolver(
+    const secretsResolver = new MockKMS(
       [],
       [
         () => {
           throw err;
         },
       ],
-      new ExampleSecretsResolver(ALICE_SECRETS)
+      [],
+      [],
+      [],
+      new ExampleKMS(ALICE_SECRETS)
     );
 
     const res = MESSAGE_SIMPLE.pack_encrypted(

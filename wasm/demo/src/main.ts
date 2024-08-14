@@ -7,11 +7,12 @@ import {
   BOB_SECRETS,
 } from "./test-vectors";
 
-import { Message, DIDDoc, DIDResolver, Secret, SecretsResolver } from "didcomm";
+import { Message, DIDDoc, DIDResolver, KeyManagementService } from "didcomm";
 import {
   CHARLIE_DID,
   CHARLIE_DID_DOC,
   CHARLIE_SECRETS,
+  ExampleKMS,
 } from "../../tests-js/src/test-vectors";
 
 class ExampleDIDResolver implements DIDResolver {
@@ -23,24 +24,6 @@ class ExampleDIDResolver implements DIDResolver {
 
   async resolve(did: string): Promise<DIDDoc | null> {
     return this.knownDids.find((ddoc) => ddoc.id === did) || null;
-  }
-}
-
-class ExampleSecretsResolver implements SecretsResolver {
-  knownSecrets: Secret[];
-
-  constructor(knownSecrets: Secret[]) {
-    this.knownSecrets = knownSecrets;
-  }
-
-  async get_secret(secretId: string): Promise<Secret | null> {
-    return this.knownSecrets.find((secret) => secret.id === secretId) || null;
-  }
-
-  async find_secrets(secretIds: string[]): Promise<string[]> {
-    return secretIds.filter((id) =>
-      this.knownSecrets.find((secret) => secret.id === id)
-    );
   }
 }
 
@@ -80,14 +63,14 @@ async function nonRepudiableEncryption() {
 
   // --- Packing encrypted and authenticated message ---
   let didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  let secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
+  let kms = new ExampleKMS(ALICE_SECRETS);
 
   const [encryptedMsg, encryptMetadata] = await msg.pack_encrypted(
     BOB_DID,
     ALICE_DID,
     ALICE_DID,
     didResolver,
-    secretsResolver,
+    kms,
     {
       forward: false, // TODO: should be true by default
     }
@@ -100,12 +83,12 @@ async function nonRepudiableEncryption() {
 
   // --- Unpacking message ---
   didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+  kms = new ExampleKMS(BOB_SECRETS);
 
   const [unpackedMsg, unpackMetadata] = await Message.unpack(
     encryptedMsg,
     didResolver,
-    secretsResolver,
+    kms,
     {}
   );
 
@@ -131,7 +114,7 @@ async function multiRecipient() {
     BOB_DID_DOC,
     CHARLIE_DID_DOC,
   ]);
-  let secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
+  let kms = new ExampleKMS(ALICE_SECRETS);
 
   // --- Packing encrypted and authenticated message for Bob ---
   const [encryptedMsgBob, encryptMetadataBob] = await msg.pack_encrypted(
@@ -139,7 +122,7 @@ async function multiRecipient() {
     ALICE_DID,
     null,
     didResolver,
-    secretsResolver,
+    kms,
     {
       forward: false, // TODO: should be true by default
     }
@@ -157,7 +140,7 @@ async function multiRecipient() {
       ALICE_DID,
       null,
       didResolver,
-      secretsResolver,
+      kms,
       {
         forward: false, // TODO: should be true by default
       }
@@ -170,12 +153,12 @@ async function multiRecipient() {
 
   // --- Unpacking message for Bob ---
   didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+  kms = new ExampleKMS(BOB_SECRETS);
 
   const [unpackedMsgBob, unpackMetadataBob] = await Message.unpack(
     encryptedMsgBob,
     didResolver,
-    secretsResolver,
+    kms,
     {}
   );
 
@@ -187,12 +170,12 @@ async function multiRecipient() {
 
   // --- Unpacking message for Charlie ---
   didResolver = new ExampleDIDResolver([ALICE_DID_DOC, CHARLIE_DID_DOC]);
-  secretsResolver = new ExampleSecretsResolver(CHARLIE_SECRETS);
+  kms = new ExampleKMS(CHARLIE_SECRETS);
 
   const [unpackedMsgCharlie, unpackMetadataCharlie] = await Message.unpack(
     encryptedMsgCharlie,
     didResolver,
-    secretsResolver,
+    kms,
     {}
   );
 
@@ -221,14 +204,14 @@ async function repudiableAuthentcatedEncryption() {
 
   // --- Packing encrypted and authenticated message ---
   let didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  let secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
+  let kms = new ExampleKMS(ALICE_SECRETS);
 
   const [encryptedMsg, encryptMetadata] = await msg.pack_encrypted(
     BOB_DID,
     ALICE_DID,
     null,
     didResolver,
-    secretsResolver,
+    kms,
     {
       forward: false, // TODO: should be true by default
     }
@@ -241,12 +224,12 @@ async function repudiableAuthentcatedEncryption() {
 
   // --- Unpacking message ---
   didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+  kms = new ExampleKMS(BOB_SECRETS);
 
   const [unpackedMsg, unpackMetadata] = await Message.unpack(
     encryptedMsg,
     didResolver,
-    secretsResolver,
+    kms,
     {}
   );
 
@@ -269,14 +252,14 @@ async function repudiableNonAuthentcatedEncryption() {
 
   // --- Packing encrypted and authenticated message ---
   let didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  let secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
+  let kms = new ExampleKMS(ALICE_SECRETS);
 
   const [encryptedMsg, encryptMetadata] = await msg.pack_encrypted(
     BOB_DID,
     null,
     null,
     didResolver,
-    secretsResolver,
+    kms,
     {
       forward: false, // TODO: should be true by default
     }
@@ -289,12 +272,12 @@ async function repudiableNonAuthentcatedEncryption() {
 
   // --- Unpacking message ---
   didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+  kms = new ExampleKMS(BOB_SECRETS);
 
   const [unpackedMsg, unpackMetadata] = await Message.unpack(
     encryptedMsg,
     didResolver,
-    secretsResolver,
+    kms,
     {}
   );
 
@@ -317,12 +300,12 @@ async function signedUnencrypteed() {
 
   // --- Packing encrypted and authenticated message ---
   let didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  let secretsResolver = new ExampleSecretsResolver(ALICE_SECRETS);
+  let kms = new ExampleKMS(ALICE_SECRETS);
 
   const [signedMsg, signMetadata] = await msg.pack_signed(
     ALICE_DID,
     didResolver,
-    secretsResolver
+    kms
   );
 
   console.log("Encryption metadata is\n", signMetadata);
@@ -332,12 +315,12 @@ async function signedUnencrypteed() {
 
   // --- Unpacking message ---
   didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+  kms = new ExampleKMS(BOB_SECRETS);
 
   const [unpackedMsg, unpackMetadata] = await Message.unpack(
     signedMsg,
     didResolver,
-    secretsResolver,
+    kms,
     {}
   );
 
@@ -368,12 +351,12 @@ async function plaintext() {
 
   // --- Unpacking message ---
   didResolver = new ExampleDIDResolver([ALICE_DID_DOC, BOB_DID_DOC]);
-  const secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+  const kms = new ExampleKMS(BOB_SECRETS);
 
   const [unpackedMsg, unpackMetadata] = await Message.unpack(
     plaintextMsg,
     didResolver,
-    secretsResolver,
+    kms,
     {}
   );
 

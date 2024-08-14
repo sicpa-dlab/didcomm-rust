@@ -8,8 +8,8 @@ mod test_vectors;
 use criterion::{async_executor::FuturesExecutor, criterion_group, criterion_main, Criterion};
 
 use didcomm::{
-    algorithms::AnonCryptAlg, did::resolvers::ExampleDIDResolver,
-    secrets::resolvers::ExampleSecretsResolver, PackEncryptedOptions,
+    algorithms::AnonCryptAlg, did::resolvers::ExampleDIDResolver, secrets::resolvers::ExampleKMS,
+    PackEncryptedOptions,
 };
 
 use test_vectors::{
@@ -24,11 +24,11 @@ async fn pack_encrypted(
     from: Option<&str>,
     sign_by: Option<&str>,
     did_resolver: &ExampleDIDResolver,
-    secrets_resolver: &ExampleSecretsResolver,
+    kms: &ExampleKMS,
     opts: &PackEncryptedOptions,
 ) {
     MESSAGE_SIMPLE
-        .pack_encrypted(to, from, sign_by, did_resolver, secrets_resolver, opts)
+        .pack_encrypted(to, from, sign_by, did_resolver, kms, opts)
         .await
         .expect("Unable pack_encrypted");
 }
@@ -42,7 +42,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -50,9 +50,8 @@ fn benchmarks(c: &mut Criterion) {
         };
 
         c.bench_function("pack_encrypted_authcrypt_ed25519_1key", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
+            b.to_async(FuturesExecutor)
+                .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
         });
     }
 
@@ -64,7 +63,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -76,9 +75,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_1key_anoncrypt_a256cbc",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -89,7 +87,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -101,9 +99,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_1key_anoncrypt_a256gsm",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -114,7 +111,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -126,9 +123,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_1key_anoncrypt_xc20p",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -139,7 +135,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -147,9 +143,8 @@ fn benchmarks(c: &mut Criterion) {
         };
 
         c.bench_function("pack_encrypted_authcrypt_ed25519_3keys", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
+            b.to_async(FuturesExecutor)
+                .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
         });
     }
 
@@ -161,7 +156,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -173,9 +168,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_3keys_anoncrypt_a256cbc",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -186,7 +180,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -198,9 +192,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_3keys_anoncrypt_a256gsm",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -211,7 +204,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -223,9 +216,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_3keys_anoncrypt_xc20p",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -236,7 +228,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -246,9 +238,8 @@ fn benchmarks(c: &mut Criterion) {
         };
 
         c.bench_function("pack_encrypted_anoncrypt_ed25519_a256cbc_1key", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
+            b.to_async(FuturesExecutor)
+                .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
         });
     }
 
@@ -258,7 +249,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -268,9 +259,8 @@ fn benchmarks(c: &mut Criterion) {
         };
 
         c.bench_function("pack_encrypted_anoncrypt_ed25519_a256gcm_1key", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
+            b.to_async(FuturesExecutor)
+                .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
         });
     }
 
@@ -280,7 +270,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -290,9 +280,8 @@ fn benchmarks(c: &mut Criterion) {
         };
 
         c.bench_function("pack_encrypted_anoncrypt_ed25519_xc20p_1key", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
+            b.to_async(FuturesExecutor)
+                .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
         });
     }
 
@@ -302,7 +291,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -310,9 +299,8 @@ fn benchmarks(c: &mut Criterion) {
         };
 
         c.bench_function("pack_encrypted_anoncrypt_ed25519_a256cbc_3keys", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
+            b.to_async(FuturesExecutor)
+                .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
         });
     }
 
@@ -322,7 +310,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -332,9 +320,8 @@ fn benchmarks(c: &mut Criterion) {
         };
 
         c.bench_function("pack_encrypted_anoncrypt_ed25519_a256gsm_3keys", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
+            b.to_async(FuturesExecutor)
+                .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
         });
     }
 
@@ -344,7 +331,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -354,9 +341,8 @@ fn benchmarks(c: &mut Criterion) {
         };
 
         c.bench_function("pack_encrypted_anoncrypt_ed25519_xc20p_3keys", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
+            b.to_async(FuturesExecutor)
+                .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
         });
     }
 
@@ -368,7 +354,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -376,9 +362,8 @@ fn benchmarks(c: &mut Criterion) {
         };
 
         c.bench_function("pack_encrypted_authcrypt_p256_1key", move |b| {
-            b.to_async(FuturesExecutor).iter(|| {
-                pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-            });
+            b.to_async(FuturesExecutor)
+                .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
         });
     }
 
@@ -390,7 +375,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -402,9 +387,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_p256_1key_anoncrypt_a256cbc",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -415,7 +399,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -427,9 +411,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_p256_1key_anoncrypt_a256gsm",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -440,7 +423,7 @@ fn benchmarks(c: &mut Criterion) {
         let sign_by = None;
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -452,9 +435,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_p256_1key_anoncrypt_xc20p",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -467,7 +449,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -477,9 +459,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_1key_sign_x25519",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -492,7 +473,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -502,9 +483,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_1key_sign_p256",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -517,7 +497,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -527,9 +507,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_1key_sign_k256",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -542,7 +521,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -554,9 +533,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_1key_anoncrypt_a256cbc_sign_x25519",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -569,7 +547,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -581,9 +559,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_1key_anoncrypt_a256cbc_sign_p256",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -596,7 +573,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -608,9 +585,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_ed25519_1key_anoncrypt_a256cbc_sign_k256",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -623,7 +599,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -635,9 +611,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_p256_1key_anoncrypt_a256cbc_sign_e25519",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -650,7 +625,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -662,9 +637,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_p256_1key_anoncrypt_a256cbc_sign_p256",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }
@@ -677,7 +651,7 @@ fn benchmarks(c: &mut Criterion) {
         let did_resolver =
             ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
 
-        let secrets_resolver = ExampleSecretsResolver::new(ALICE_SECRETS.clone());
+        let kms = ExampleKMS::new(ALICE_SECRETS.clone());
 
         let opts = PackEncryptedOptions {
             forward: false,
@@ -689,9 +663,8 @@ fn benchmarks(c: &mut Criterion) {
         c.bench_function(
             "pack_encrypted_authcrypt_p256_1key_anoncrypt_a256cbc_sign_k256",
             move |b| {
-                b.to_async(FuturesExecutor).iter(|| {
-                    pack_encrypted(to, from, sign_by, &did_resolver, &secrets_resolver, &opts)
-                });
+                b.to_async(FuturesExecutor)
+                    .iter(|| pack_encrypted(to, from, sign_by, &did_resolver, &kms, &opts));
             },
         );
     }

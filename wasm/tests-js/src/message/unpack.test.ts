@@ -5,7 +5,7 @@ import {
   BOB_SECRETS,
   CHARLIE_DID_DOC,
   ExampleDIDResolver,
-  ExampleSecretsResolver,
+  ExampleKMS,
   IMESSAGE_FROM_PRIOR,
   IMESSAGE_MINIMAL,
   IMESSAGE_SIMPLE,
@@ -98,12 +98,12 @@ test.each([
       CHARLIE_DID_DOC,
     ]);
 
-    const secretsResolver = new ExampleSecretsResolver(BOB_SECRETS);
+    const kms = new ExampleKMS(BOB_SECRETS);
 
     const [unpacked, metadata] = await Message.unpack(
       msg,
       didResolver,
-      secretsResolver,
+      kms,
       options
     );
 

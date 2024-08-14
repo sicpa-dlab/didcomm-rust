@@ -7,9 +7,9 @@ mod utils;
 pub use crate::{
     did::DIDResolver,
     message::{FromPrior, Message},
-    secrets::SecretsResolver,
+    secrets::KeyManagementService,
 };
-use crate::{did::JsDIDResolver, secrets::JsSecretsResolver};
+use crate::{did::JsDIDResolver, secrets::JsKeyManagementService};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
