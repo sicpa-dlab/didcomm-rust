@@ -1375,8 +1375,8 @@ public struct Message {
     public var thid: String?
     public var pthid: String?
     public var extraHeaders: [String: String]
-    public var createdTime: UInt64?
-    public var expiresTime: UInt64?
+    public var created_time: UInt64?
+    public var expires_time: UInt64?
     public var fromPrior: String?
     public var attachments: [Attachment]?
 
@@ -1392,8 +1392,8 @@ public struct Message {
         self.thid = thid
         self.pthid = pthid
         self.extraHeaders = extraHeaders
-        self.createdTime = createdTime
-        self.expiresTime = expiresTime
+        self.created_time = created_time
+        self.expires_time = expires_time
         self.fromPrior = fromPrior
         self.attachments = attachments
     }
@@ -1428,10 +1428,10 @@ extension Message: Equatable, Hashable {
         if lhs.extraHeaders != rhs.extraHeaders {
             return false
         }
-        if lhs.createdTime != rhs.createdTime {
+        if lhs.created_time != rhs.created_time {
             return false
         }
-        if lhs.expiresTime != rhs.expiresTime {
+        if lhs.expires_time != rhs.expires_time {
             return false
         }
         if lhs.fromPrior != rhs.fromPrior {
@@ -1453,8 +1453,8 @@ extension Message: Equatable, Hashable {
         hasher.combine(thid)
         hasher.combine(pthid)
         hasher.combine(extraHeaders)
-        hasher.combine(createdTime)
-        hasher.combine(expiresTime)
+        hasher.combine(created_time)
+        hasher.combine(expires_time)
         hasher.combine(fromPrior)
         hasher.combine(attachments)
     }
@@ -1472,8 +1472,8 @@ private extension Message {
             thid: FfiConverterOptionString.read(from: buf),
             pthid: FfiConverterOptionString.read(from: buf),
             extraHeaders: FfiConverterDictionaryJsonValue.read(from: buf),
-            createdTime: FfiConverterOptionUInt64.read(from: buf),
-            expiresTime: FfiConverterOptionUInt64.read(from: buf),
+            created_time: FfiConverterOptionUInt64.read(from: buf),
+            expires_time: FfiConverterOptionUInt64.read(from: buf),
             fromPrior: FfiConverterOptionString.read(from: buf),
             attachments: FfiConverterOptionSequenceRecordAttachment.read(from: buf)
         )
@@ -1489,8 +1489,8 @@ private extension Message {
         FfiConverterOptionString.write(thid, into: buf)
         FfiConverterOptionString.write(pthid, into: buf)
         FfiConverterDictionaryJsonValue.write(extraHeaders, into: buf)
-        FfiConverterOptionUInt64.write(createdTime, into: buf)
-        FfiConverterOptionUInt64.write(expiresTime, into: buf)
+        FfiConverterOptionUInt64.write(created_time, into: buf)
+        FfiConverterOptionUInt64.write(expires_time, into: buf)
         FfiConverterOptionString.write(fromPrior, into: buf)
         FfiConverterOptionSequenceRecordAttachment.write(attachments, into: buf)
     }
