@@ -27,6 +27,16 @@ pub(crate) fn did_or_url(did_or_url: &str) -> (&str, Option<&str>) {
     }
 }
 
+/// The DID of a `from` or `to` header: a DID, or a DID URL with no fragment (DIDComm v2.1).
+/// A DID cannot contain `/` or `?`, so it ends at the first of them. `None` on a fragment.
+pub(crate) fn did_of_header(value: &str) -> Option<&str> {
+    if value.contains('#') {
+        return None;
+    }
+
+    Some(value.find(['/', '?']).map_or(value, |end| &value[..end]))
+}
+
 impl AsKnownKeyPair for VerificationMethod {
     fn key_alg(&self) -> KnownKeyAlg {
         match (&self.type_, &self.verification_material) {
@@ -284,7 +294,7 @@ mod tests {
     use crate::jwk::FromJwkValue;
     use crate::secrets::resolvers::example::{Secret, SecretMaterial, SecretType};
     use crate::utils::crypto::{AsKnownKeyPair, KnownKeyPair};
-    use crate::utils::did::{did_or_url, is_did};
+    use crate::utils::did::{did_of_header, did_or_url, is_did};
     use askar_crypto::alg::ed25519::Ed25519KeyPair;
     use askar_crypto::alg::x25519::X25519KeyPair;
     use serde_json::json;
@@ -489,6 +499,32 @@ mod tests {
 
         let res = did_or_url("#");
         assert_eq!(res, ("", Some("#")));
+    }
+
+    #[test]
+    fn did_of_header_works() {
+        assert_eq!(
+            did_of_header("did:example:alice"),
+            Some("did:example:alice")
+        );
+        assert_eq!(
+            did_of_header("did:example:alice/path"),
+            Some("did:example:alice")
+        );
+        assert_eq!(
+            did_of_header("did:example:alice?service=agent"),
+            Some("did:example:alice")
+        );
+        assert_eq!(
+            did_of_header("did:example:alice/path?query"),
+            Some("did:example:alice")
+        );
+        assert_eq!(
+            did_of_header("did:web:example.com%3A8443"),
+            Some("did:web:example.com%3A8443")
+        );
+        assert_eq!(did_of_header("did:example:alice#key-1"), None);
+        assert_eq!(did_of_header("did:example:alice/path?query#key-1"), None);
     }
 
     #[test]

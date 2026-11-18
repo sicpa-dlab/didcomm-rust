@@ -11,7 +11,7 @@ use crate::{
     error::{err_msg, ErrorKind, Result, ResultContext},
     protocols::routing::wrap_in_forward_if_needed,
     secrets::KeyManagementService,
-    utils::did::{did_or_url, is_did},
+    utils::did::{did_of_header, did_or_url, is_did},
     Message, PackSignedMetadata,
 };
 
@@ -46,8 +46,9 @@ impl Message {
     ///
     /// # Params
     /// - `to` recipient DID or key ID the sender uses encryption.
+    ///   Its DID must be the DID of an element of the plaintext `to`, if set.
     /// - `from` a sender DID or key ID. If set message will be repudiable authenticated or anonymous otherwise.
-    ///    Must match `from` header in Plaintext if the header is set.
+    ///   Its DID must be the DID of the plaintext `from`, if set.
     /// - `sign_by` if `Some` message will be additionally signed to provide additional non-repudiable authentication
     ///    by provided DID/Key. Signed messages are only necessary when the origin of plaintext must be provable
     ///    to third parties, or when the sender can’t be proven to the recipient by authenticated encryption because
@@ -177,7 +178,7 @@ impl Message {
         let (to_did, _) = did_or_url(to);
 
         match self.to {
-            Some(ref sto) if !sto.contains(&to_did.into()) => {
+            Some(ref sto) if !sto.iter().any(|sto| did_of_header(sto) == Some(to_did)) => {
                 Err(err_msg(
                     ErrorKind::IllegalArgument,
                     "`message.to` value does not contain `to` value's DID",
@@ -187,10 +188,14 @@ impl Message {
         }
 
         match (from, &self.from) {
-            (Some(ref from), Some(ref sfrom)) if did_or_url(from).0 != sfrom => Err(err_msg(
-                ErrorKind::IllegalArgument,
-                "`message.from` value is not equal to `from` value's DID",
-            ))?,
+            (Some(ref from), Some(ref sfrom))
+                if did_of_header(sfrom) != Some(did_or_url(from).0) =>
+            {
+                Err(err_msg(
+                    ErrorKind::IllegalArgument,
+                    "`message.from` value is not equal to `from` value's DID",
+                ))?
+            }
             _ => {}
         }
 
@@ -2283,6 +2288,149 @@ mod tests {
                 },
             )
             .await;
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_did_url_in_msg_to() {
+        _pack_encrypted_works_to_did_url_in_msg_to(&format!("{}?service=agent", BOB_DID)).await;
+        _pack_encrypted_works_to_did_url_in_msg_to(&format!("{}/path", BOB_DID)).await;
+
+        async fn _pack_encrypted_works_to_did_url_in_msg_to(to: &str) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+            let alice_kms = ExampleKMS::new(ALICE_SECRETS.clone());
+            let bob_kms = ExampleKMS::new(BOB_SECRETS.clone());
+
+            let mut msg = MESSAGE_SIMPLE.clone();
+            msg.to = Some(vec![CHARLIE_DID.to_string(), to.to_string()]);
+            let (packed, _) = msg
+                .pack_encrypted(
+                    BOB_DID,
+                    ALICE_DID.into(),
+                    None,
+                    &did_resolver,
+                    &alice_kms,
+                    &PackEncryptedOptions {
+                        forward: false,
+                        ..PackEncryptedOptions::default()
+                    },
+                )
+                .await
+                .expect("Unable pack_encrypted");
+
+            let (unpacked, _) =
+                Message::unpack(&packed, &did_resolver, &bob_kms, &UnpackOptions::default())
+                    .await
+                    .expect("Unable unpack");
+
+            assert_eq!(unpacked, msg);
+        }
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_to_did_url_of_other_did_in_msg_to() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.to = Some(vec![format!("{}x?service=agent", BOB_DID)]);
+        let res = msg
+            .pack_encrypted(
+                BOB_DID,
+                ALICE_DID.into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `message.to` value does not contain `to` value's DID"
+        );
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_from_did_url_in_msg_from() {
+        for from in [
+            format!("{}?service=agent", ALICE_DID),
+            format!("{}/path", ALICE_DID),
+        ] {
+            _pack_encrypted_works_from_did_url_in_msg_from(&from, None).await;
+            _pack_encrypted_works_from_did_url_in_msg_from(&from, Some(ALICE_DID)).await;
+        }
+
+        async fn _pack_encrypted_works_from_did_url_in_msg_from(from: &str, sign_by: Option<&str>) {
+            let did_resolver =
+                ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+            let alice_kms = ExampleKMS::new(ALICE_SECRETS.clone());
+            let bob_kms = ExampleKMS::new(BOB_SECRETS.clone());
+
+            let mut msg = MESSAGE_SIMPLE.clone();
+            msg.from = from.to_string().into();
+            let (packed, _) = msg
+                .pack_encrypted(
+                    BOB_DID,
+                    ALICE_DID.into(),
+                    sign_by,
+                    &did_resolver,
+                    &alice_kms,
+                    &PackEncryptedOptions {
+                        forward: false,
+                        ..PackEncryptedOptions::default()
+                    },
+                )
+                .await
+                .expect("Unable pack_encrypted");
+
+            let (unpacked, _) =
+                Message::unpack(&packed, &did_resolver, &bob_kms, &UnpackOptions::default())
+                    .await
+                    .expect("Unable unpack");
+
+            assert_eq!(unpacked, msg);
+        }
+    }
+
+    #[tokio::test]
+    async fn pack_encrypted_works_from_did_url_of_other_did_in_msg_from() {
+        let did_resolver =
+            ExampleDIDResolver::new(vec![ALICE_DID_DOC.clone(), BOB_DID_DOC.clone()]);
+
+        let secrets_resolver = ExampleKMS::new(ALICE_SECRETS.clone());
+
+        let mut msg = MESSAGE_SIMPLE.clone();
+        msg.from = format!("{}x?service=agent", ALICE_DID).into();
+        let res = msg
+            .pack_encrypted(
+                BOB_DID,
+                ALICE_DID.into(),
+                None,
+                &did_resolver,
+                &secrets_resolver,
+                &PackEncryptedOptions {
+                    forward: false,
+                    ..PackEncryptedOptions::default()
+                },
+            )
+            .await;
+
+        let err = res.expect_err("res is ok");
+        assert_eq!(err.kind(), ErrorKind::IllegalArgument);
+
+        assert_eq!(
+            format!("{}", err),
+            "Illegal argument: `message.from` value is not equal to `from` value's DID"
+        );
     }
 
     #[tokio::test]

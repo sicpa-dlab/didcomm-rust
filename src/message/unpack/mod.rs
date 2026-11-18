@@ -11,7 +11,7 @@ use crate::{
     message::unpack::plaintext::_try_unpack_plaintext,
     protocols::routing::try_parse_forward,
     secrets::KeyManagementService,
-    utils::did::did_or_url,
+    utils::did::{did_of_header, did_or_url},
     FromPrior, Message,
 };
 
@@ -45,8 +45,8 @@ impl Message {
     /// - `DIDNotResolved` Sender or recipient DID not found.
     /// - `DIDUrlNotFound` DID doesn't contain mentioned DID Urls (for ex., key id)
     /// - `MessageMalformed` message doesn't correspond to DID Comm or has invalid encryption or signatures,
-    ///   its `from` is not the DID of the authcrypt sender or signer key, or its `to` does not contain
-    ///   the DID of the recipient key.
+    ///   the DID of its `from` is not the DID of the authcrypt sender or signer key, or its `to` does
+    ///   not contain the DID of the recipient key.
     /// - `Unsupported` Used crypto or method is unsupported.
     /// - `SecretNotFound` No recipient secrets found.
     /// - `InvalidState` Indicates library error.
@@ -128,13 +128,14 @@ impl Message {
 
     /// DIDComm Messaging v2.1, Message Layer Addressing Consistency: a plaintext `from` must
     /// be the DID of the authcrypt `skid` and of the signer `kid`, and a plaintext `to` must
-    /// contain the DID of the recipient `kid`.
+    /// contain the DID of the recipient `kid`. Headers may be DID URLs, so DIDs are compared.
     fn _validate_unpack(&self, metadata: &UnpackMetadata) -> Result<()> {
         match (&self.to, &metadata.encrypted_to_kids) {
             (Some(ref to), Some(ref kids))
-                if !kids
-                    .iter()
-                    .all(|kid| to.iter().any(|to| to == did_or_url(kid).0)) =>
+                if !kids.iter().all(|kid| {
+                    to.iter()
+                        .any(|to| did_of_header(to) == Some(did_or_url(kid).0))
+                }) =>
             {
                 Err(err_msg(
                     ErrorKind::Malformed,
@@ -145,18 +146,22 @@ impl Message {
         }
 
         match (&self.from, &metadata.encrypted_from_kid) {
-            (Some(ref from), Some(ref skid)) if did_or_url(skid).0 != from => Err(err_msg(
-                ErrorKind::Malformed,
-                "`message.from` value is not equal to `skid` value's DID",
-            ))?,
+            (Some(ref from), Some(ref skid)) if did_of_header(from) != Some(did_or_url(skid).0) => {
+                Err(err_msg(
+                    ErrorKind::Malformed,
+                    "`message.from` value is not equal to `skid` value's DID",
+                ))?
+            }
             _ => {}
         }
 
         match (&self.from, &metadata.sign_from) {
-            (Some(ref from), Some(ref kid)) if did_or_url(kid).0 != from => Err(err_msg(
-                ErrorKind::Malformed,
-                "`message.from` value is not equal to signer `kid` value's DID",
-            ))?,
+            (Some(ref from), Some(ref kid)) if did_of_header(from) != Some(did_or_url(kid).0) => {
+                Err(err_msg(
+                    ErrorKind::Malformed,
+                    "`message.from` value is not equal to signer `kid` value's DID",
+                ))?
+            }
             _ => {}
         }
 
@@ -2299,6 +2304,215 @@ mod test {
             "Malformed: `message.to` value does not contain recipient `kid` value's DID",
         )
         .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_to_did_url_of_recipient() {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
+
+        let bob_kms = ExampleKMS::new(BOB_SECRETS.clone());
+
+        for to in [
+            format!("{}?service=agent", BOB_DID),
+            format!("{}/path", BOB_DID),
+        ] {
+            let message = Message {
+                to: Some(vec![CHARLIE_DID.into(), to]),
+                ..MESSAGE_SIMPLE.clone()
+            };
+
+            let plaintext = message
+                .pack_plaintext(&did_resolver)
+                .await
+                .expect("Unable pack_plaintext");
+
+            let (msg, _) = anoncrypt(
+                BOB_DID,
+                &did_resolver,
+                plaintext.as_bytes(),
+                &AnonCryptAlg::default(),
+            )
+            .await
+            .expect("Unable anoncrypt");
+
+            let (unpacked, _) =
+                Message::unpack(&msg, &did_resolver, &bob_kms, &UnpackOptions::default())
+                    .await
+                    .expect("Unable unpack");
+
+            assert_eq!(unpacked, message);
+        }
+    }
+
+    #[tokio::test]
+    async fn unpack_works_to_did_url_of_other_did() {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
+
+        // A lookalike DID and a DID URL with a fragment do not match.
+        for to in [
+            format!("{}x?service=agent", BOB_DID),
+            format!("{}#key-x25519-1", BOB_DID),
+        ] {
+            let plaintext = Message {
+                to: Some(vec![to]),
+                ..MESSAGE_SIMPLE.clone()
+            }
+            .pack_plaintext(&did_resolver)
+            .await
+            .expect("Unable pack_plaintext");
+
+            let (msg, _) = anoncrypt(
+                BOB_DID,
+                &did_resolver,
+                plaintext.as_bytes(),
+                &AnonCryptAlg::default(),
+            )
+            .await
+            .expect("Unable anoncrypt");
+
+            _verify_unpack_malformed(
+                &msg,
+                "Malformed: `message.to` value does not contain recipient `kid` value's DID",
+            )
+            .await;
+        }
+    }
+
+    #[tokio::test]
+    async fn unpack_works_from_did_url_of_sender() {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
+
+        let alice_kms = ExampleKMS::new(ALICE_SECRETS.clone());
+        let bob_kms = ExampleKMS::new(BOB_SECRETS.clone());
+
+        for from in [
+            format!("{}?service=agent", ALICE_DID),
+            format!("{}/path", ALICE_DID),
+        ] {
+            let message = Message {
+                from: Some(from),
+                ..MESSAGE_SIMPLE.clone()
+            };
+
+            let plaintext = message
+                .pack_plaintext(&did_resolver)
+                .await
+                .expect("Unable pack_plaintext");
+
+            let (authcrypted, _, _) = authcrypt(
+                BOB_DID,
+                ALICE_DID,
+                &did_resolver,
+                &alice_kms,
+                plaintext.as_bytes(),
+                &AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+                &AnonCryptAlg::default(),
+                false,
+            )
+            .await
+            .expect("Unable authcrypt");
+
+            let (signed, _) = message
+                .pack_signed(ALICE_DID, &did_resolver, &alice_kms)
+                .await
+                .expect("Unable pack_signed");
+
+            let (signed_anoncrypted, _) = anoncrypt(
+                BOB_DID,
+                &did_resolver,
+                signed.as_bytes(),
+                &AnonCryptAlg::default(),
+            )
+            .await
+            .expect("Unable anoncrypt");
+
+            for msg in [&authcrypted, &signed_anoncrypted] {
+                let (unpacked, _) =
+                    Message::unpack(msg, &did_resolver, &bob_kms, &UnpackOptions::default())
+                        .await
+                        .expect("Unable unpack");
+
+                assert_eq!(unpacked, message);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn unpack_works_from_did_url_of_other_did() {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
+
+        let alice_kms = ExampleKMS::new(ALICE_SECRETS.clone());
+
+        // A lookalike DID and a DID URL with a fragment do not match.
+        for from in [
+            format!("{}x?service=agent", ALICE_DID),
+            format!("{}#key-x25519-1", ALICE_DID),
+        ] {
+            let message = Message {
+                from: Some(from),
+                ..MESSAGE_SIMPLE.clone()
+            };
+
+            let plaintext = message
+                .pack_plaintext(&did_resolver)
+                .await
+                .expect("Unable pack_plaintext");
+
+            let (authcrypted, _, _) = authcrypt(
+                BOB_DID,
+                ALICE_DID,
+                &did_resolver,
+                &alice_kms,
+                plaintext.as_bytes(),
+                &AuthCryptAlg::A256cbcHs512Ecdh1puA256kw,
+                &AnonCryptAlg::default(),
+                false,
+            )
+            .await
+            .expect("Unable authcrypt");
+
+            _verify_unpack_malformed(
+                &authcrypted,
+                "Malformed: `message.from` value is not equal to `skid` value's DID",
+            )
+            .await;
+
+            let (signed, _) = message
+                .pack_signed(ALICE_DID, &did_resolver, &alice_kms)
+                .await
+                .expect("Unable pack_signed");
+
+            let (signed_anoncrypted, _) = anoncrypt(
+                BOB_DID,
+                &did_resolver,
+                signed.as_bytes(),
+                &AnonCryptAlg::default(),
+            )
+            .await
+            .expect("Unable anoncrypt");
+
+            _verify_unpack_malformed(
+                &signed_anoncrypted,
+                "Malformed: `message.from` value is not equal to signer `kid` value's DID",
+            )
+            .await;
+        }
     }
 
     async fn _verify_unpack_malformed(msg: &str, exp_error_str: &str) {

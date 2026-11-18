@@ -11,7 +11,15 @@ diverged at `9e79b48`.
 
 - `Message::unpack` rejects an encrypted message whose plaintext `to` does not
   contain the DID of the recipient `kid` (DIDComm Messaging v2.1, Message Layer
-  Addressing Consistency).
+  Addressing Consistency). A `to` element may be a DID URL without a fragment,
+  as the `to` header allows; its DID is what is compared.
+- `Message::unpack` compares the DID of `from` with the authcrypt `skid` and the
+  signer `kid`, so a `from` that is a DID URL without a fragment, as the `from`
+  header allows, is no longer rejected. A `from` or `to` with a fragment is
+  still rejected.
+- `Message::pack_encrypted` accepts a plaintext whose `to` or `from` is a DID URL
+  without a fragment, comparing its DID with the `to` and `from` arguments, so
+  it can send what `Message::unpack` accepts.
 
 ## 0.1.1
 
