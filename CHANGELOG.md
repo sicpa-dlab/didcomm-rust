@@ -5,6 +5,14 @@ All notable changes to this fork are documented here.
 This is a fork of [sicpa-dlab/didcomm-rust](https://github.com/sicpa-dlab/didcomm-rust),
 diverged at `9e79b48`.
 
+## 0.1.2
+
+### Fixed
+
+- `Message::unpack` rejects an encrypted message whose plaintext `to` does not
+  contain the DID of the recipient `kid` (DIDComm Messaging v2.1, Message Layer
+  Addressing Consistency).
+
 ## 0.1.1
 
 ### Fixed

@@ -45,7 +45,8 @@ impl Message {
     /// - `DIDNotResolved` Sender or recipient DID not found.
     /// - `DIDUrlNotFound` DID doesn't contain mentioned DID Urls (for ex., key id)
     /// - `MessageMalformed` message doesn't correspond to DID Comm or has invalid encryption or signatures,
-    ///   or its `from` is not the DID of the authcrypt sender or signer key.
+    ///   its `from` is not the DID of the authcrypt sender or signer key, or its `to` does not contain
+    ///   the DID of the recipient key.
     /// - `Unsupported` Used crypto or method is unsupported.
     /// - `SecretNotFound` No recipient secrets found.
     /// - `InvalidState` Indicates library error.
@@ -126,8 +127,23 @@ impl Message {
     }
 
     /// DIDComm Messaging v2.1, Message Layer Addressing Consistency: a plaintext `from` must
-    /// be the DID of the authcrypt `skid` and of the signer `kid`.
+    /// be the DID of the authcrypt `skid` and of the signer `kid`, and a plaintext `to` must
+    /// contain the DID of the recipient `kid`.
     fn _validate_unpack(&self, metadata: &UnpackMetadata) -> Result<()> {
+        match (&self.to, &metadata.encrypted_to_kids) {
+            (Some(ref to), Some(ref kids))
+                if !kids
+                    .iter()
+                    .all(|kid| to.iter().any(|to| to == did_or_url(kid).0)) =>
+            {
+                Err(err_msg(
+                    ErrorKind::Malformed,
+                    "`message.to` value does not contain recipient `kid` value's DID",
+                ))?
+            }
+            _ => {}
+        }
+
         match (&self.from, &metadata.encrypted_from_kid) {
             (Some(ref from), Some(ref skid)) if did_or_url(skid).0 != from => Err(err_msg(
                 ErrorKind::Malformed,
@@ -276,7 +292,10 @@ async fn has_key_agreement_secret<'dr, 'sr>(
 mod test {
     use crate::{
         did::resolvers::ExampleDIDResolver,
-        message::{pack_encrypted::authcrypt, MessagingServiceMetadata},
+        message::{
+            pack_encrypted::{anoncrypt, authcrypt},
+            MessagingServiceMetadata,
+        },
         protocols::routing::wrap_in_forward,
         secrets::resolvers::ExampleKMS,
         test_vectors::{
@@ -2213,6 +2232,73 @@ mod test {
 
         metadata.signed_message = exp_metadata.signed_message.clone();
         assert_eq!(&metadata, exp_metadata);
+    }
+
+    #[tokio::test]
+    async fn unpack_works_to_not_containing_recipient() {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
+
+        let plaintext = Message {
+            to: Some(vec![CHARLIE_DID.into()]),
+            ..MESSAGE_SIMPLE.clone()
+        }
+        .pack_plaintext(&did_resolver)
+        .await
+        .expect("Unable pack_plaintext");
+
+        // `pack_encrypted` refuses this `to`; the sender builds the envelope directly.
+        let (msg, _) = anoncrypt(
+            BOB_DID,
+            &did_resolver,
+            plaintext.as_bytes(),
+            &AnonCryptAlg::default(),
+        )
+        .await
+        .expect("Unable anoncrypt");
+
+        _verify_unpack_malformed(
+            &msg,
+            "Malformed: `message.to` value does not contain recipient `kid` value's DID",
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn unpack_works_signed_message_forwarded_to_other_recipient() {
+        let did_resolver = ExampleDIDResolver::new(vec![
+            ALICE_DID_DOC.clone(),
+            BOB_DID_DOC.clone(),
+            CHARLIE_DID_DOC.clone(),
+        ]);
+
+        let alice_kms = ExampleKMS::new(ALICE_SECRETS.clone());
+
+        let (signed, _) = Message {
+            to: Some(vec![CHARLIE_DID.into()]),
+            ..MESSAGE_SIMPLE.clone()
+        }
+        .pack_signed(ALICE_DID, &did_resolver, &alice_kms)
+        .await
+        .expect("Unable pack_signed");
+
+        let (msg, _) = anoncrypt(
+            BOB_DID,
+            &did_resolver,
+            signed.as_bytes(),
+            &AnonCryptAlg::default(),
+        )
+        .await
+        .expect("Unable anoncrypt");
+
+        _verify_unpack_malformed(
+            &msg,
+            "Malformed: `message.to` value does not contain recipient `kid` value's DID",
+        )
+        .await;
     }
 
     async fn _verify_unpack_malformed(msg: &str, exp_error_str: &str) {
